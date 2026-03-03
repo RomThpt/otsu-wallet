@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildPayment, validatePayment } from './payment'
+import { buildPayment, buildTokenPayment, validatePayment } from './payment'
 
 describe('payment', () => {
   const validParams = {
@@ -42,8 +42,52 @@ describe('payment', () => {
   })
 
   it('should reject sending to self', () => {
-    expect(() =>
-      validatePayment({ ...validParams, destination: validParams.account }),
-    ).toThrow('Cannot send to yourself')
+    expect(() => validatePayment({ ...validParams, destination: validParams.account })).toThrow(
+      'Cannot send to yourself',
+    )
+  })
+
+  it('should include memos with hex-encoded data', () => {
+    const tx = buildPayment({
+      ...validParams,
+      memos: [{ type: 'text/plain', data: 'hello' }],
+    })
+
+    const memos = tx.Memos as Array<{ Memo: Record<string, string> }>
+    expect(memos).toHaveLength(1)
+    expect(memos[0].Memo.MemoData).toBe('68656C6C6F') // 'hello' in hex
+    expect(memos[0].Memo.MemoType).toBe('746578742F706C61696E') // 'text/plain' in hex
+  })
+
+  it('should omit memos when array is empty', () => {
+    const tx = buildPayment({ ...validParams, memos: [] })
+    expect(tx.Memos).toBeUndefined()
+  })
+
+  it('should handle memo without type', () => {
+    const tx = buildPayment({
+      ...validParams,
+      memos: [{ data: 'deposit' }],
+    })
+
+    const memos = tx.Memos as Array<{ Memo: Record<string, string> }>
+    expect(memos).toHaveLength(1)
+    expect(memos[0].Memo.MemoData).toBe('6465706F736974') // 'deposit' in hex
+    expect(memos[0].Memo.MemoType).toBeUndefined()
+  })
+
+  it('should include memos in token payment', () => {
+    const tx = buildTokenPayment({
+      account: validParams.account,
+      destination: validParams.destination,
+      currency: 'USD',
+      issuer: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+      value: '100',
+      memos: [{ type: 'text/plain', data: 'payment' }],
+    })
+
+    const memos = tx.Memos as Array<{ Memo: Record<string, string> }>
+    expect(memos).toHaveLength(1)
+    expect(memos[0].Memo.MemoData).toBe('7061796D656E74') // 'payment' in hex
   })
 })

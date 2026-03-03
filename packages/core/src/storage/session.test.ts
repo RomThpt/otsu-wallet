@@ -10,11 +10,10 @@ describe('SessionManager', () => {
 
   it('should unlock with a key', async () => {
     const session = new SessionManager()
-    const key = await crypto.subtle.generateKey(
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['encrypt', 'decrypt'],
-    )
+    const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, [
+      'encrypt',
+      'decrypt',
+    ])
 
     session.unlock(key)
     expect(session.isUnlocked).toBe(true)
@@ -23,11 +22,10 @@ describe('SessionManager', () => {
 
   it('should lock', async () => {
     const session = new SessionManager()
-    const key = await crypto.subtle.generateKey(
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['encrypt', 'decrypt'],
-    )
+    const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, [
+      'encrypt',
+      'decrypt',
+    ])
 
     session.unlock(key)
     session.lock()
@@ -39,11 +37,10 @@ describe('SessionManager', () => {
     const session = new SessionManager()
     session.setAutoLockMinutes(0) // Expire immediately
 
-    const key = await crypto.subtle.generateKey(
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['encrypt', 'decrypt'],
-    )
+    const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, [
+      'encrypt',
+      'decrypt',
+    ])
 
     session.unlock(key)
 

@@ -151,6 +151,117 @@ describe('TransactionHistoryClient', () => {
       expect(page.marker).toEqual({ ledger: 99 })
     })
 
+    it('parses NFTokenMint transaction', () => {
+      const client = new TransactionHistoryClient(createMockClient())
+      const entry = {
+        tx_json: {
+          TransactionType: 'NFTokenMint',
+          Account: VIEWER,
+          URI: '68747470733A2F2F6578616D706C652E636F6D',
+          NFTokenTaxon: 0,
+          Fee: '12',
+          Sequence: 3,
+          hash: 'NFTHASH1',
+          ledger_index: 102,
+          date: 750000000,
+        },
+        meta: { TransactionResult: 'tesSUCCESS' },
+      }
+      const tx = client.parseTransaction(entry, VIEWER)
+
+      expect(tx!.type).toBe('NFTokenMint')
+      expect(tx!.direction).toBe('sent')
+      expect(tx!.successful).toBe(true)
+    })
+
+    it('parses CheckCreate transaction', () => {
+      const client = new TransactionHistoryClient(createMockClient())
+      const entry = {
+        tx_json: {
+          TransactionType: 'CheckCreate',
+          Account: VIEWER,
+          Destination: OTHER,
+          SendMax: '5000000',
+          Fee: '12',
+          Sequence: 4,
+          hash: 'CHECKHASH1',
+          ledger_index: 103,
+          date: 750000000,
+        },
+        meta: { TransactionResult: 'tesSUCCESS' },
+      }
+      const tx = client.parseTransaction(entry, VIEWER)
+
+      expect(tx!.type).toBe('CheckCreate')
+      expect(tx!.direction).toBe('sent')
+    })
+
+    it('parses NFTokenAcceptOffer transaction', () => {
+      const client = new TransactionHistoryClient(createMockClient())
+      const entry = {
+        tx_json: {
+          TransactionType: 'NFTokenAcceptOffer',
+          Account: VIEWER,
+          NFTokenSellOffer: 'OFFER123',
+          Fee: '12',
+          Sequence: 5,
+          hash: 'ACCEPTHASH1',
+          ledger_index: 104,
+          date: 750000000,
+        },
+        meta: { TransactionResult: 'tesSUCCESS' },
+      }
+      const tx = client.parseTransaction(entry, VIEWER)
+
+      expect(tx!.type).toBe('NFTokenAcceptOffer')
+    })
+
+    it('parses ContractCall transaction', () => {
+      const client = new TransactionHistoryClient(createMockClient())
+      const entry = {
+        tx_json: {
+          TransactionType: 'ContractCall',
+          Account: VIEWER,
+          Destination: 'rContract123',
+          ContractFunction: 'transfer',
+          Parameters: [{ ContractParameter: { SType: 'STAmount', Value: '1000000', Flags: 1 } }],
+          Fee: '50000',
+          Sequence: 10,
+          hash: 'CONTRACTHASH1',
+          ledger_index: 200,
+          date: 750000000,
+        },
+        meta: { TransactionResult: 'tesSUCCESS' },
+      }
+      const tx = client.parseTransaction(entry, VIEWER)
+
+      expect(tx!.type).toBe('ContractCall')
+      expect(tx!.direction).toBe('sent')
+      expect(tx!.contractCall).toBeDefined()
+      expect(tx!.contractCall!.contractAddress).toBe('rContract123')
+      expect(tx!.contractCall!.functionName).toBe('transfer')
+      expect(tx!.contractCall!.parameters).toHaveLength(1)
+      expect(tx!.contractCall!.parameters![0].sType).toBe('STAmount')
+    })
+
+    it('maps ContractCreate to Other', () => {
+      const client = new TransactionHistoryClient(createMockClient())
+      const entry = {
+        tx_json: {
+          TransactionType: 'ContractCreate',
+          Account: VIEWER,
+          Fee: '12',
+          Sequence: 11,
+          hash: 'CREATEHASH1',
+          ledger_index: 201,
+          date: 750000000,
+        },
+        meta: { TransactionResult: 'tesSUCCESS' },
+      }
+      const tx = client.parseTransaction(entry, VIEWER)
+      expect(tx!.type).toBe('Other')
+    })
+
     it('converts timestamp correctly', () => {
       const client = new TransactionHistoryClient(createMockClient())
       const entry = makePaymentEntry({

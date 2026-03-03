@@ -51,7 +51,8 @@ describe('PriceClient', () => {
   describe('getTokenUsdPrice', () => {
     it('combines token/XRP and XRP/USD prices', async () => {
       const mockClient = {
-        getBookOffers: vi.fn()
+        getBookOffers: vi
+          .fn()
           .mockResolvedValueOnce([
             {
               TakerPays: '2000000', // 2 XRP
