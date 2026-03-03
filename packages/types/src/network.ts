@@ -9,6 +9,10 @@ export interface NetworkConfig {
   type: 'mainnet' | 'testnet' | 'devnet' | 'custom'
 }
 
+export interface CustomNetworkConfig extends NetworkConfig {
+  addedAt: number
+}
+
 export interface AccountInfo {
   address: string
   balance: string

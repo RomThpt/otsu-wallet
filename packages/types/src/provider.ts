@@ -8,12 +8,13 @@ export type ProviderMethod =
   | 'signAndSubmit'
   | 'signMessage'
   | 'switchNetwork'
+  | 'getNFTs'
+  | 'getAccountOffers'
+  | 'getTransactionStatus'
+  | 'getContractInfo'
+  | 'contractCall'
 
-export type ProviderEventType =
-  | 'accountChanged'
-  | 'networkChanged'
-  | 'connected'
-  | 'disconnected'
+export type ProviderEventType = 'accountChanged' | 'networkChanged' | 'connected' | 'disconnected'
 
 export interface OtsuProviderRequest {
   id: string

@@ -21,7 +21,10 @@
 13. [Project Structure](#project-structure)
 14. [Package Breakdown](#package-breakdown)
 15. [Milestones](#milestones)
-16. [Distribution & Licensing](#distribution--licensing)
+16. [Browser Permissions](#browser-permissions)
+17. [Build & CI/CD](#build--cicd)
+18. [API Versioning](#api-versioning)
+19. [Distribution & Licensing](#distribution--licensing)
 
 ---
 
@@ -534,10 +537,24 @@ interface DAppPermission {
   name: string;             // dApp name from page title/meta
   accounts: string[];       // Allowed account addresses
   methods: string[];        // Allowed API methods
+  scopes: PermissionScope[];// Granular capability scopes
   grantedAt: number;        // Unix timestamp
   expiresAt?: number;       // Optional expiry
 }
+
+type PermissionScope = 'read' | 'sign' | 'submit' | 'switchNetwork';
 ```
+
+#### Permission Scopes
+
+| Scope | Allows |
+|-------|--------|
+| `read` | `getAddress`, `getNetwork`, `getBalance`, `getNFTs`, `getAccountOffers`, `getTransactionStatus` |
+| `sign` | `signTransaction`, `signMessage` |
+| `submit` | `signAndSubmit` |
+| `switchNetwork` | `switchNetwork` |
+
+**Backward compatibility:** dApps connected before scopes were introduced default to all scopes granted.
 
 Permissions are managed in Settings > Connected dApps, where users can view, edit, and revoke.
 
@@ -617,6 +634,27 @@ If simulation fails or the transaction type is unrecognized:
 - **Blind signing disabled (default):** Reject with error
 - **Blind signing enabled:** Show raw transaction JSON with prominent warning
 
+### Transaction Fee Management
+
+Fees are handled automatically via `xrpl.js` autofill (`client.prepareTransaction`), which sets the fee based on current network load. No manual fee input is exposed to users.
+
+| Parameter | Value |
+|-----------|-------|
+| **Default fee** | 12 drops (0.000012 XRP) fallback |
+| **Auto-fee** | `xrpl.js` `prepareTransaction` sets fee from network |
+| **Display** | Fee shown in simulation results before signing |
+| **Escalation** | Handled by xrpl.js based on open ledger fee |
+
+The signing window displays the fee in both drops and XRP so users always see the cost before confirming.
+
+### Transaction Memo Support
+
+Transactions support XRPL memo fields. Memos are attached during transaction building and displayed in transaction detail views.
+
+- Memos are optional on all transaction types
+- Displayed in human-readable form when UTF-8, hex otherwise
+- No memo size limit enforced beyond XRPL's native limits
+
 ---
 
 ## UI/UX Design
@@ -637,6 +675,54 @@ Standard Tailwind CSS styling for initial development. Brand design assets (logo
 - Keyboard navigation support
 - Screen reader compatible labels
 - Sufficient color contrast ratios
+
+### Error Handling UX
+
+User-facing errors are communicated via a toast notification system.
+
+```typescript
+interface Toast {
+  id: string;
+  type: 'success' | 'error' | 'info';
+  message: string;
+  duration: number;  // default 3000ms
+}
+```
+
+| Behavior | Detail |
+|----------|--------|
+| **Position** | Fixed, top-right of viewport |
+| **Animation** | TransitionGroup enter/leave |
+| **Auto-dismiss** | After `duration` ms (default 3 seconds) |
+| **Manual dismiss** | Click to close |
+| **Composable** | `useToast()` exposes `success()`, `error()`, `info()` |
+
+Error codes are defined in `@otsu/constants` via the `OtsuError` class (extends `Error` with a `code` property). 41 error codes cover network, signing, transaction, NFT, and DEX operations.
+
+### Internationalization (i18n)
+
+**Explicitly out of scope for v1.** All UI strings are hardcoded in English. The architecture does not preclude adding `vue-i18n` in a future release, but no i18n infrastructure is planned for launch.
+
+### Clipboard Handling
+
+- **Copy address:** One-tap copy buttons on address displays and receive screens
+- **Paste address:** Standard paste into address input fields
+- **Security:** No automatic clipboard clearing; users are responsible for clipboard contents
+- **No clipboard sniffing:** The extension never reads clipboard contents without explicit user action (paste)
+
+### Keyboard Shortcuts
+
+No extension-level keyboard shortcuts (`commands` in manifest) are defined for v1. Navigation is handled via standard Vue Router and in-page UI controls.
+
+### Extension Badge
+
+The extension icon badge is used to indicate pending actions:
+
+| State | Badge |
+|-------|-------|
+| **Pending signing request** | Numeric count of pending requests |
+| **Wallet locked** | No badge |
+| **Normal operation** | No badge |
 
 ### Key Screens
 
@@ -704,6 +790,27 @@ ui/components/
 
 ## Network Support
 
+### WebSocket Connection Management
+
+Single `xrpl.Client` instance per network. Connection lifecycle is managed automatically.
+
+| Parameter | Value |
+|-----------|-------|
+| **Connections per network** | 1 (singleton) |
+| **Max reconnect attempts** | 5 |
+| **Base reconnect delay** | 1,000 ms |
+| **Backoff strategy** | Exponential: `1000 * 2^(attempt-1)` |
+| **Reset** | Attempt counter resets on successful connection |
+| **Lazy connect** | Connection established on first request via `ensureConnected()` |
+
+Rate limiting is enforced via a token bucket algorithm:
+
+| Parameter | Value |
+|-----------|-------|
+| **Max tokens** | 10 |
+| **Refill rate** | 5 tokens/second |
+| **Overflow** | Requests queue until tokens available |
+
 ### Built-in Networks
 
 | Network | WebSocket URL | Type | Features |
@@ -760,6 +867,43 @@ Dual-source approach:
 - Source: XRPL DEX on-chain order books
 - No external price oracle dependencies
 - Display XRP and token values based on live DEX prices
+
+### MV3 State Persistence
+
+Manifest V3 service workers can be terminated at any time. All critical state is persisted to `chrome.storage.local` and rehydrated on service worker restart.
+
+| Data | Storage |
+|------|---------|
+| **Encrypted vault** | IndexedDB via `idb-keyval` |
+| **Wallet state** | `chrome.storage.local` |
+| **Cache** | `WalletCache` backed by `CacheStorage` interface (`ChromeCacheStorage` in extension, `MemoryCacheStorage` in tests) |
+| **Signing requests** | `chrome.storage.local` with `otsu-signing:` key prefix |
+| **dApp permissions** | `chrome.storage.local` |
+
+### Data Migration
+
+Storage uses a versioned schema to support future migrations.
+
+```typescript
+// Vault versioning
+const VAULT_VERSION = 1;
+
+interface EncryptedVault {
+  version: number;
+  ciphertext: string;
+  iv: string;
+  salt: string;
+  iterations: number;
+  authTag: string;
+}
+```
+
+| Behavior | Detail |
+|----------|--------|
+| **Current version** | 1 |
+| **Migration strategy** | Version field checked on load; migration functions run sequentially from stored version to current |
+| **Rollback** | Not supported; backups recommended before major updates |
+| **Breaking changes** | Major version bump triggers migration on first unlock |
 
 ### Offline Support
 
@@ -1134,6 +1278,120 @@ Quality, documentation, and distribution.
 - [ ] Developer documentation site
 - [ ] Auto-update mechanism
 - [ ] Landing page
+
+---
+
+## Browser Permissions
+
+### Manifest Permissions
+
+| Permission | Purpose |
+|------------|---------|
+| `storage` | `chrome.storage.local` for wallet state, permissions, signing requests |
+| `alarms` | Auto-lock timer via `chrome.alarms` |
+| `tabs` | Query tabs for event broadcasting (account/network changes) |
+
+### Content Security Policy
+
+```json
+"content_security_policy": {
+  "extension_pages": "script-src 'self'; object-src 'self'"
+}
+```
+
+### Web Accessible Resources
+
+| Resource | Purpose |
+|----------|---------|
+| `provider/inject.js` | dApp provider injection (`window.xrpl`, `window.gemwallet`, `window.crossmark`) |
+
+### Protocol Handler
+
+The extension registers as a handler for the `web+xrpl` protocol:
+
+```
+web+xrpl://rDestination?amount=1000000&dt=12345 -> popup.html#/send?uri=%s
+```
+
+---
+
+## Build & CI/CD
+
+### CI Pipeline
+
+Triggered on push and pull request to `main`. Runs on Node 20 with pnpm 10.
+
+```
+Steps:
+1. pnpm install
+2. pnpm typecheck        # TypeScript compilation check
+3. pnpm lint             # ESLint (v9, flat config)
+4. pnpm format:check     # Prettier formatting check
+5. pnpm test:coverage    # Vitest with coverage
+6. pnpm build (Chrome)   # Vite build for Chrome
+7. pnpm build (Firefox)  # Vite build for Firefox (BROWSER=firefox)
+```
+
+### Release Pipeline
+
+Triggered on version tags (`v*`).
+
+```
+Steps:
+1. Build Chrome + Firefox extensions
+2. Package via scripts/package.ts (ZIP archives)
+3. Create GitHub Release with:
+   - Chrome extension ZIP
+   - Firefox extension ZIP
+   - Source ZIP (required by Mozilla for review)
+```
+
+### Build Configuration
+
+| Setting | Value |
+|---------|-------|
+| **Build tool** | Vite 6 |
+| **Code splitting** | Manual chunks: `vendor-xrpl` (xrpl, ripple, bip39, @scure) |
+| **MV3 compliance** | Custom plugin renames `_`-prefixed files to `x`-prefixed (MV3 disallows `_` prefix) |
+| **Firefox** | Separate manifest via `BROWSER=firefox` env variable |
+
+### Performance
+
+| Metric | Value |
+|--------|-------|
+| **Vendor chunk** | ~677 KB (`vendor-xrpl.js` -- xrpl.js is large) |
+| **Target** | Keep non-vendor chunks under 200 KB |
+| **Startup** | Lazy connection (WebSocket connects on first request, not on load) |
+
+---
+
+## API Versioning
+
+### `@otsu/api` Package
+
+| Field | Value |
+|-------|-------|
+| **Current version** | `0.0.1` (pre-release) |
+| **Versioning** | Semantic versioning (SemVer) |
+| **Stability** | API is unstable until `1.0.0` |
+
+### Breaking Change Policy
+
+- Pre-`1.0.0`: Breaking changes allowed in minor versions with changelog documentation
+- Post-`1.0.0`: Breaking changes only in major versions
+- Provider detection: dApps use `window.xrpl.isOtsu` flag to detect the provider; this flag is permanent and will never be removed
+- Method additions are non-breaking; method removals or signature changes are breaking
+
+### Provider Methods (Current)
+
+```typescript
+const METHODS = [
+  'connect', 'disconnect', 'getAddress', 'getNetwork',
+  'getBalance', 'signTransaction', 'signAndSubmit',
+  'signMessage', 'switchNetwork', 'getNFTs',
+  'getAccountOffers', 'getTransactionStatus'
+];
+```
 
 ---
 

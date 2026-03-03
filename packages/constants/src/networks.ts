@@ -28,6 +28,8 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     id: 'alphanet',
     name: 'AlphaNet',
     url: 'wss://alphanet.nerdnest.xyz',
+    explorer: 'https://explorer.xrplf.org/wss:alphanet.nerdnest.xyz',
+    faucet: 'https://alphanet.faucet.nerdnest.xyz/accounts',
     features: ['smart-contracts'],
     type: 'custom',
   },

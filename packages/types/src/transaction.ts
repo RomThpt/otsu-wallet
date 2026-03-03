@@ -9,6 +9,15 @@ export type TransactionType =
   | 'EscrowCreate'
   | 'EscrowFinish'
   | 'EscrowCancel'
+  | 'NFTokenMint'
+  | 'NFTokenBurn'
+  | 'NFTokenCreateOffer'
+  | 'NFTokenAcceptOffer'
+  | 'NFTokenCancelOffer'
+  | 'CheckCreate'
+  | 'CheckCash'
+  | 'CheckCancel'
+  | 'ContractCall'
   | 'Other'
 
 export interface TransactionAmount {
@@ -31,6 +40,11 @@ export interface TransactionRecord {
   result: string
   successful: boolean
   memo?: string
+  contractCall?: {
+    contractAddress: string
+    functionName: string
+    parameters?: Array<{ sType: string; value: string; flags: number }>
+  }
 }
 
 export interface TransactionHistoryPage {

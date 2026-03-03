@@ -16,6 +16,7 @@ export interface WalletState {
   activeAccount: string | null
   network: NetworkId
   locked: boolean
+  authMethod: AuthMethod
 }
 
 export type AuthMethod = 'password' | 'passkey'

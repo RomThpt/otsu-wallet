@@ -30,6 +30,38 @@ export type ExtensionMessageType =
   | 'GET_PERMISSIONS'
   | 'REVOKE_PERMISSION'
   | 'PROVIDER_EVENT'
+  | 'GET_NFTS'
+  | 'MINT_NFT'
+  | 'BURN_NFT'
+  | 'SELL_NFT'
+  | 'BUY_NFT'
+  | 'ACCEPT_NFT_OFFER'
+  | 'CANCEL_NFT_OFFER'
+  | 'GET_NFT_OFFERS'
+  | 'CREATE_DEX_OFFER'
+  | 'CANCEL_DEX_OFFER'
+  | 'GET_ORDER_BOOK'
+  | 'GET_ACCOUNT_OFFERS'
+  | 'CREATE_ESCROW'
+  | 'FINISH_ESCROW'
+  | 'CANCEL_ESCROW'
+  | 'CREATE_CHECK'
+  | 'CASH_CHECK'
+  | 'CANCEL_CHECK'
+  | 'UPDATE_ACCOUNT_SETTINGS'
+  | 'GET_ACCOUNT_ESCROWS'
+  | 'GET_ACCOUNT_CHECKS'
+  | 'GET_NFT_METADATA'
+  | 'EXPORT_MNEMONIC'
+  | 'RESET_WALLET'
+  | 'GET_NETWORKS'
+  | 'ADD_CUSTOM_NETWORK'
+  | 'REMOVE_CUSTOM_NETWORK'
+  | 'GET_CONTRACT_INFO'
+  | 'CALL_CONTRACT'
+  | 'CHANGE_AUTH_METHOD'
+  | 'GET_VAULT_DATA'
+  | 'UNLOCK_WITH_VAULT'
 
 export interface ExtensionMessage<T = unknown> {
   type: ExtensionMessageType
@@ -49,6 +81,7 @@ export interface CreateWalletPayload {
 }
 
 export interface UnlockPayload {
+  method?: 'password' | 'passkey'
   password?: string
 }
 
@@ -56,6 +89,7 @@ export interface SendPaymentPayload {
   destination: string
   amount: string
   destinationTag?: number
+  memos?: Array<{ type?: string; data: string }>
 }
 
 export interface SwitchNetworkPayload {
@@ -95,6 +129,7 @@ export interface SendTokenPaymentPayload {
   issuer: string
   value: string
   destinationTag?: number
+  memos?: Array<{ type?: string; data: string }>
 }
 
 export interface GetTransactionHistoryPayload {
@@ -134,3 +169,129 @@ export interface RevokePermissionPayload {
 export interface ProviderEventPayload {
   event: import('./provider').OtsuEvent
 }
+
+export interface MintNftPayload {
+  uri: string
+  taxon?: number
+  flags?: number
+  transferFee?: number
+}
+
+export interface SellNftPayload {
+  nftId: string
+  amount: string
+  destination?: string
+}
+
+export interface BuyNftPayload {
+  nftId: string
+  amount: string
+  owner: string
+}
+
+export interface AcceptNftOfferPayload {
+  offerId: string
+}
+
+export interface CancelNftOfferPayload {
+  offerIds: string[]
+}
+
+export interface GetNftOffersPayload {
+  nftId: string
+}
+
+export interface CreateDexOfferPayload {
+  takerGets: string | { currency: string; issuer: string; value: string }
+  takerPays: string | { currency: string; issuer: string; value: string }
+  expiration?: number
+  flags?: number
+}
+
+export interface CancelDexOfferPayload {
+  offerSequence: number
+}
+
+export interface GetOrderBookPayload {
+  base: { currency: string; issuer?: string }
+  quote: { currency: string; issuer?: string }
+  limit?: number
+}
+
+export interface CreateEscrowPayload {
+  destination: string
+  amount: string
+  condition?: string
+  cancelAfter?: number
+  finishAfter?: number
+  destinationTag?: number
+}
+
+export interface FinishEscrowPayload {
+  owner: string
+  offerSequence: number
+  condition?: string
+  fulfillment?: string
+}
+
+export interface CancelEscrowPayload {
+  owner: string
+  offerSequence: number
+}
+
+export interface CreateCheckPayload {
+  destination: string
+  sendMax: string | { currency: string; issuer: string; value: string }
+  expiration?: number
+  destinationTag?: number
+}
+
+export interface CashCheckPayload {
+  checkID: string
+  amount?: string | { currency: string; issuer: string; value: string }
+  deliverMin?: string | { currency: string; issuer: string; value: string }
+}
+
+export interface CancelCheckPayload {
+  checkID: string
+}
+
+export interface AccountSettingsPayload {
+  domain?: string
+  emailHash?: string
+  setFlag?: number
+  clearFlag?: number
+}
+
+export interface GetNftMetadataPayload {
+  nftId: string
+  uri: string
+}
+
+export interface ExportMnemonicPayload {
+  method?: 'password' | 'passkey'
+  password?: string
+}
+
+export interface AddCustomNetworkPayload {
+  name: string
+  url: string
+  explorer?: string
+  faucet?: string
+}
+
+export interface RemoveCustomNetworkPayload {
+  networkId: string
+}
+
+export interface GetContractInfoPayload {
+  contractAddress: string
+}
+
+export interface ChangeAuthMethodPayload {
+  method: 'password' | 'passkey'
+  password?: string
+  registered?: boolean
+}
+
+export type CallContractPayload = import('./contract').ContractCallParams
