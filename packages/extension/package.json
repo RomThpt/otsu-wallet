@@ -7,6 +7,7 @@
     "@otsu/constants": "workspace:*",
     "@otsu/core": "workspace:*",
     "@otsu/types": "workspace:*",
+    "buffer": "^6.0.3",
     "pinia": "^3.0.4",
     "qrcode": "^1.5.4",
     "vue": "^3.5.29",
@@ -18,6 +19,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/webextension-polyfill": "^0.12.5",
     "@vitejs/plugin-vue": "^5.2.4",
+    "@vue/test-utils": "^2.4.6",
     "autoprefixer": "^10.4.27",
     "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19",
@@ -28,6 +30,11 @@
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build",
+    "build:chrome": "vite build",
+    "build:firefox": "tsx scripts/build-firefox-manifest.ts && BROWSER=firefox vite build",
+    "build:all": "pnpm build:chrome && pnpm build:firefox",
+    "package:chrome": "pnpm build:chrome && tsx scripts/package.ts chrome",
+    "package:firefox": "pnpm build:firefox && tsx scripts/package.ts firefox",
     "typecheck": "vue-tsc --noEmit"
   }
 }

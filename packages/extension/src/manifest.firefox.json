@@ -16,13 +16,19 @@
     }
   },
   "background": {
-    "service_worker": "background/index.ts",
+    "scripts": [
+      "background/index.ts"
+    ],
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content/index.ts"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/index.ts"
+      ],
       "run_at": "document_start"
     }
   ],
@@ -34,16 +40,20 @@
     "alarms",
     "tabs"
   ],
-  "protocol_handlers": [
-    {
-      "protocol": "web+xrpl",
-      "url": "popup.html#/send?uri=%s"
-    }
-  ],
   "web_accessible_resources": [
     {
-      "resources": ["provider/inject.js"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "provider/inject.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "otsu-wallet@otsu.dev",
+      "strict_min_version": "109.0"
+    }
+  }
 }

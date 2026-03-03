@@ -51,13 +51,34 @@ function renameUnderscoreFiles(): Plugin {
   }
 }
 
+const manifestFile =
+  process.env.BROWSER === 'firefox' ? 'manifest.firefox.json' : 'manifest.json'
+
 export default defineConfig({
   root: resolve(__dirname, 'src'),
   plugins: [
     vue(),
     webExtension({
-      manifest: resolve(__dirname, 'src/manifest.json'),
+      manifest: resolve(__dirname, 'src', manifestFile),
       additionalInputs: ['tab.html', 'notification.html', 'provider/inject.ts'],
+      htmlViteConfig: {
+        build: {
+          rollupOptions: {
+            output: {
+              manualChunks(id) {
+                if (
+                  id.includes('node_modules/xrpl') ||
+                  id.includes('node_modules/ripple') ||
+                  id.includes('node_modules/bip39') ||
+                  id.includes('node_modules/@scure')
+                ) {
+                  return 'vendor-xrpl'
+                }
+              },
+            },
+          },
+        },
+      },
     }),
     renameUnderscoreFiles(),
   ],
