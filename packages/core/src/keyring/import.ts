@@ -123,18 +123,17 @@ export function importFromXummSecretNumbers(numbers: string): ImportedAccount {
     const checksum = parseInt(row[5], 10)
     const calculated = value % 9
     if (checksum !== calculated) {
-      throw new OtsuError(
-        ErrorCodes.INVALID_XUMM_NUMBERS,
-        `Checksum mismatch in row ${r + 1}`,
-      )
+      throw new OtsuError(ErrorCodes.INVALID_XUMM_NUMBERS, `Checksum mismatch in row ${r + 1}`)
     }
   }
 
-  const entropyHex = rows.map((row) => {
-    const value = parseInt(row.slice(0, 5), 10)
-    const hex = value.toString(16).padStart(4, '0')
-    return hex
-  }).join('')
+  const entropyHex = rows
+    .map((row) => {
+      const value = parseInt(row.slice(0, 5), 10)
+      const hex = value.toString(16).padStart(4, '0')
+      return hex
+    })
+    .join('')
 
   const entropy = new Uint8Array(16)
   for (let i = 0; i < 16; i++) {

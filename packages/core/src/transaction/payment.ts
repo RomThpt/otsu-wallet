@@ -1,10 +1,16 @@
 import { OtsuError, ErrorCodes } from '@otsu/constants'
 
+export interface MemoEntry {
+  type?: string
+  data: string
+}
+
 export interface PaymentParams {
   account: string
   destination: string
   amount: string
   destinationTag?: number
+  memos?: MemoEntry[]
 }
 
 export function buildPayment(params: PaymentParams): Record<string, unknown> {
@@ -19,6 +25,10 @@ export function buildPayment(params: PaymentParams): Record<string, unknown> {
 
   if (params.destinationTag !== undefined) {
     tx.DestinationTag = params.destinationTag
+  }
+
+  if (params.memos && params.memos.length > 0) {
+    tx.Memos = encodeMemos(params.memos)
   }
 
   return tx
@@ -46,6 +56,7 @@ export interface TokenPaymentParams {
   issuer: string
   value: string
   destinationTag?: number
+  memos?: MemoEntry[]
 }
 
 export function buildTokenPayment(params: TokenPaymentParams): Record<string, unknown> {
@@ -72,7 +83,32 @@ export function buildTokenPayment(params: TokenPaymentParams): Record<string, un
     tx.DestinationTag = params.destinationTag
   }
 
+  if (params.memos && params.memos.length > 0) {
+    tx.Memos = encodeMemos(params.memos)
+  }
+
   return tx
+}
+
+function toHex(text: string): string {
+  const encoder = new TextEncoder()
+  const bytes = encoder.encode(text)
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase()
+}
+
+function encodeMemos(memos: MemoEntry[]): Array<{ Memo: Record<string, string> }> {
+  return memos.map((m) => {
+    const memo: Record<string, string> = {
+      MemoData: toHex(m.data),
+    }
+    if (m.type) {
+      memo.MemoType = toHex(m.type)
+    }
+    return { Memo: memo }
+  })
 }
 
 function isValidAddress(address: string): boolean {

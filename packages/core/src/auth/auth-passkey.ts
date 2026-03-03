@@ -1,14 +1,17 @@
-import {
-  startRegistration,
-  startAuthentication,
-} from '@simplewebauthn/browser'
+import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
 import type { VaultData } from '@otsu/types'
 import { OtsuError, ErrorCodes } from '@otsu/constants'
 import { encrypt, decrypt } from '../storage/crypto'
 
 const PASSKEY_VAULT_KEY = 'otsu-passkey-vault'
 const RP_NAME = 'Otsu Wallet'
-const RP_ID = 'otsu-wallet'
+
+function getRpId(): string {
+  if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
+    return chrome.runtime.id
+  }
+  return globalThis.location?.hostname ?? 'otsu-wallet'
+}
 
 interface PasskeyVaultRecord {
   credentialId: string
@@ -27,7 +30,7 @@ export async function registerPasskey(vaultData: VaultData): Promise<void> {
 
     const registration = await startRegistration({
       optionsJSON: {
-        rp: { name: RP_NAME, id: RP_ID },
+        rp: { name: RP_NAME, id: getRpId() },
         user: {
           id: bufferToBase64url(crypto.getRandomValues(new Uint8Array(32))),
           name: 'Otsu Wallet User',
@@ -70,7 +73,7 @@ export async function registerPasskey(vaultData: VaultData): Promise<void> {
         salt: encrypted.salt,
       }
 
-      localStorage.setItem(PASSKEY_VAULT_KEY, JSON.stringify(record))
+      await chrome.storage.local.set({ [PASSKEY_VAULT_KEY]: record })
     } else {
       const wrappingKey = bufferToHex(crypto.getRandomValues(new Uint8Array(32)))
       const encrypted = await encrypt(plaintext, wrappingKey)
@@ -82,24 +85,22 @@ export async function registerPasskey(vaultData: VaultData): Promise<void> {
         salt: encrypted.salt,
       }
 
-      localStorage.setItem(PASSKEY_VAULT_KEY, JSON.stringify(record))
-      localStorage.setItem(`${PASSKEY_VAULT_KEY}-wrapping`, wrappingKey)
+      await chrome.storage.local.set({ [PASSKEY_VAULT_KEY]: record })
+      await chrome.storage.session.set({ [PASSKEY_VAULT_KEY + '-wrapping']: wrappingKey })
     }
   } catch (error) {
-    throw new OtsuError(
-      ErrorCodes.PASSKEY_REGISTRATION_FAILED,
-      (error as Error).message,
-    )
+    throw new OtsuError(ErrorCodes.PASSKEY_REGISTRATION_FAILED, (error as Error).message)
   }
 }
 
 export async function authenticatePasskey(): Promise<VaultData> {
-  const stored = localStorage.getItem(PASSKEY_VAULT_KEY)
+  const localResult = await chrome.storage.local.get(PASSKEY_VAULT_KEY)
+  const stored: PasskeyVaultRecord | undefined = localResult[PASSKEY_VAULT_KEY]
   if (!stored) {
     throw new OtsuError(ErrorCodes.VAULT_NOT_FOUND, 'No passkey vault found')
   }
 
-  const record: PasskeyVaultRecord = JSON.parse(stored)
+  const record: PasskeyVaultRecord = stored
 
   try {
     const challenge = generateChallenge()
@@ -107,7 +108,7 @@ export async function authenticatePasskey(): Promise<VaultData> {
     const authentication = await startAuthentication({
       optionsJSON: {
         challenge: bufferToBase64url(challenge),
-        rpId: RP_ID,
+        rpId: getRpId(),
         allowCredentials: [
           {
             id: record.credentialId,
@@ -134,9 +135,13 @@ export async function authenticatePasskey(): Promise<VaultData> {
     if (prfResult?.results?.first) {
       key = bufferToHex(new Uint8Array(prfResult.results.first))
     } else {
-      const wrappingKey = localStorage.getItem(`${PASSKEY_VAULT_KEY}-wrapping`)
+      const sessionResult = await chrome.storage.session.get(PASSKEY_VAULT_KEY + '-wrapping')
+      const wrappingKey: string | undefined = sessionResult[PASSKEY_VAULT_KEY + '-wrapping']
       if (!wrappingKey) {
-        throw new OtsuError(ErrorCodes.PASSKEY_NOT_SUPPORTED, 'PRF not available and no wrapping key')
+        throw new OtsuError(
+          ErrorCodes.PASSKEY_NOT_SUPPORTED,
+          'PRF not available and no wrapping key',
+        )
       }
       key = wrappingKey
     }
@@ -157,8 +162,9 @@ export async function authenticatePasskey(): Promise<VaultData> {
   }
 }
 
-export function hasPasskey(): boolean {
-  return localStorage.getItem(PASSKEY_VAULT_KEY) !== null
+export async function hasPasskey(): Promise<boolean> {
+  const result = await chrome.storage.local.get(PASSKEY_VAULT_KEY)
+  return result[PASSKEY_VAULT_KEY] !== undefined
 }
 
 function bufferToBase64url(buffer: Uint8Array): string {

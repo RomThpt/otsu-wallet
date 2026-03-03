@@ -45,9 +45,7 @@ export class TokenMetadataClient {
   async getTokenMetadataBatch(
     tokens: Array<{ currency: string; issuer: string }>,
   ): Promise<TokenMetadata[]> {
-    return Promise.all(
-      tokens.map((t) => this.getTokenMetadata(t.currency, t.issuer)),
-    )
+    return Promise.all(tokens.map((t) => this.getTokenMetadata(t.currency, t.issuer)))
   }
 
   private fallbackMetadata(currency: string, issuer: string): TokenMetadata {

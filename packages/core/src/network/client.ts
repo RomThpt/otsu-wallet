@@ -2,6 +2,7 @@ import { Client } from 'xrpl'
 import type { SubmitResponse } from 'xrpl'
 import { NETWORKS, RESERVES, OtsuError, ErrorCodes } from '@otsu/constants'
 import type { AccountInfo, BalanceInfo, NetworkConfig } from '@otsu/types'
+import { RateLimiter } from './rate-limiter'
 
 const MAX_RECONNECT_ATTEMPTS = 5
 const BASE_RECONNECT_DELAY_MS = 1000
@@ -10,6 +11,7 @@ export class XrplClient {
   private client: Client | null = null
   private networkConfig: NetworkConfig
   private reconnectAttempts = 0
+  private rateLimiter = new RateLimiter({ maxTokens: 10, refillRate: 5 })
 
   constructor(networkId: string = 'testnet') {
     this.networkConfig = NETWORKS[networkId] ?? NETWORKS.testnet
@@ -49,8 +51,15 @@ export class XrplClient {
     this.reconnectAttempts = 0
   }
 
+  async switchToConfig(config: NetworkConfig): Promise<void> {
+    await this.disconnect()
+    this.networkConfig = config
+    this.reconnectAttempts = 0
+  }
+
   async getAccountInfo(address: string): Promise<AccountInfo> {
     await this.ensureConnected()
+    await this.rateLimiter.consume()
 
     try {
       const response = await this.client!.request({
@@ -102,6 +111,7 @@ export class XrplClient {
 
   async submitTransaction(txBlob: string): Promise<SubmitResponse> {
     await this.ensureConnected()
+    await this.rateLimiter.consume()
 
     const response = await this.client!.request({
       command: 'submit',
@@ -113,12 +123,14 @@ export class XrplClient {
 
   async prepareTransaction(transaction: Record<string, unknown>): Promise<Record<string, unknown>> {
     await this.ensureConnected()
+    await this.rateLimiter.consume()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return this.client!.autofill(transaction as any)
   }
 
   async getAccountLines(address: string): Promise<Record<string, unknown>[]> {
     await this.ensureConnected()
+    await this.rateLimiter.consume()
 
     try {
       const response = await this.client!.request({
@@ -143,6 +155,8 @@ export class XrplClient {
     await this.ensureConnected()
 
     try {
+      await this.rateLimiter.consume()
+
       const request: Record<string, unknown> = {
         command: 'account_tx',
         account: address,
@@ -177,6 +191,7 @@ export class XrplClient {
     limit = 10,
   ): Promise<Record<string, unknown>[]> {
     await this.ensureConnected()
+    await this.rateLimiter.consume()
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = await this.client!.request({
@@ -189,8 +204,71 @@ export class XrplClient {
     return ((response.result as Record<string, unknown>).offers ?? []) as Record<string, unknown>[]
   }
 
+  async getAccountObjects(
+    address: string,
+    type?: string,
+    marker?: unknown,
+    limit = 200,
+  ): Promise<{ objects: Record<string, unknown>[]; marker?: unknown }> {
+    await this.ensureConnected()
+    await this.rateLimiter.consume()
+
+    try {
+      const request: Record<string, unknown> = {
+        command: 'account_objects',
+        account: address,
+        ledger_index: 'validated',
+        limit,
+      }
+
+      if (type) request.type = type
+      if (marker) request.marker = marker
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response = await this.client!.request(request as any)
+      const result = response.result as Record<string, unknown>
+
+      return {
+        objects: (result.account_objects ?? []) as Record<string, unknown>[],
+        marker: result.marker,
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message.includes('actNotFound')) {
+        return { objects: [] }
+      }
+      throw new OtsuError(ErrorCodes.NETWORK_ERROR, (error as Error).message)
+    }
+  }
+
+  async getTransaction(hash: string): Promise<{
+    hash: string
+    validated: boolean
+    result: string
+    ledgerIndex: number
+  }> {
+    await this.ensureConnected()
+    await this.rateLimiter.consume()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await this.client!.request({
+      command: 'tx',
+      transaction: hash,
+    } as any)
+
+    const result = response.result as Record<string, unknown>
+    const meta = result.meta as Record<string, unknown> | undefined
+
+    return {
+      hash: result.hash as string,
+      validated: result.validated as boolean,
+      result: (meta?.TransactionResult as string) ?? 'unknown',
+      ledgerIndex: (result.ledger_index as number) ?? 0,
+    }
+  }
+
   async request(command: Record<string, unknown>): Promise<Record<string, unknown>> {
     await this.ensureConnected()
+    await this.rateLimiter.consume()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = await this.client!.request(command as any)
     return response.result as Record<string, unknown>
@@ -198,10 +276,7 @@ export class XrplClient {
 
   async fundWallet(address: string): Promise<{ balance: number }> {
     if (!this.networkConfig.faucet) {
-      throw new OtsuError(
-        ErrorCodes.NETWORK_ERROR,
-        'Faucet not available on this network',
-      )
+      throw new OtsuError(ErrorCodes.NETWORK_ERROR, 'Faucet not available on this network')
     }
 
     await this.ensureConnected()

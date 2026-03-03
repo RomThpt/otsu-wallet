@@ -1,4 +1,11 @@
-import type { TokenBalance, TokenMetadata, TransactionRecord } from '@otsu/types'
+import type {
+  TokenBalance,
+  TokenMetadata,
+  TransactionRecord,
+  NftBalance,
+  NftMetadata,
+  ContractInfo,
+} from '@otsu/types'
 
 export interface CacheStorage {
   get<T>(key: string): Promise<T | null>
@@ -80,6 +87,31 @@ export class WalletCache {
     await this.storage.set(globalKey('account-labels'), labels)
   }
 
+  async getCachedNFTs(address: string): Promise<NftBalance[] | null> {
+    return this.storage.get<NftBalance[]>(accountKey(address, 'nfts'))
+  }
+
+  async setCachedNFTs(address: string, nfts: NftBalance[]): Promise<void> {
+    await this.storage.set(accountKey(address, 'nfts'), nfts)
+    await this.touchAccount(address)
+  }
+
+  async getCachedNFTMetadata(tokenId: string): Promise<NftMetadata | null> {
+    return this.storage.get<NftMetadata>(globalKey(`nft-meta:${tokenId}`))
+  }
+
+  async setCachedNFTMetadata(tokenId: string, metadata: NftMetadata): Promise<void> {
+    await this.storage.set(globalKey(`nft-meta:${tokenId}`), metadata)
+  }
+
+  async getCachedContractInfo(address: string): Promise<ContractInfo | null> {
+    return this.storage.get<ContractInfo>(globalKey(`contract-info:${address}`))
+  }
+
+  async setCachedContractInfo(address: string, info: ContractInfo): Promise<void> {
+    await this.storage.set(globalKey(`contract-info:${address}`), info)
+  }
+
   async getLastUpdated(address: string): Promise<number | null> {
     return this.storage.get<number>(accountKey(address, 'updated-at'))
   }
@@ -87,6 +119,7 @@ export class WalletCache {
   async clearAccountCache(address: string): Promise<void> {
     await this.storage.remove(accountKey(address, 'balance'))
     await this.storage.remove(accountKey(address, 'tokens'))
+    await this.storage.remove(accountKey(address, 'nfts'))
     await this.storage.remove(accountKey(address, 'transactions'))
     await this.storage.remove(accountKey(address, 'updated-at'))
   }

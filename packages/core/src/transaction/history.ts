@@ -42,9 +42,9 @@ export class TransactionHistoryClient {
     const account = txData.Account as string
     const destination = txData.Destination as string | undefined
     const hash = (txData.hash ?? entry.hash) as string
-    const fee = txData.Fee as string ?? '0'
-    const sequence = txData.Sequence as number ?? 0
-    const ledgerIndex = (txData.ledger_index ?? entry.ledger_index) as number ?? 0
+    const fee = (txData.Fee as string) ?? '0'
+    const sequence = (txData.Sequence as number) ?? 0
+    const ledgerIndex = ((txData.ledger_index ?? entry.ledger_index) as number) ?? 0
 
     const rawDate = txData.date as number | undefined
     const timestamp = rawDate ? (rawDate + RIPPLE_EPOCH_OFFSET) * 1000 : 0
@@ -56,7 +56,7 @@ export class TransactionHistoryClient {
     const amount = this.parseAmount(txData, meta, direction)
     const type = this.mapTransactionType(txType)
 
-    return {
+    const record: TransactionRecord = {
       hash,
       type,
       direction,
@@ -70,6 +70,16 @@ export class TransactionHistoryClient {
       result,
       successful,
     }
+
+    if (type === 'ContractCall') {
+      record.contractCall = {
+        contractAddress: destination ?? '',
+        functionName: (txData.ContractFunction as string) ?? '',
+        parameters: this.parseContractParameters(txData),
+      }
+    }
+
+    return record
   }
 
   private determineDirection(
@@ -93,9 +103,8 @@ export class TransactionHistoryClient {
     meta: Record<string, unknown> | undefined,
     direction: TransactionDirection,
   ): TransactionAmount {
-    const rawAmount = direction === 'received' && meta
-      ? (meta.delivered_amount ?? txData.Amount)
-      : txData.Amount
+    const rawAmount =
+      direction === 'received' && meta ? (meta.delivered_amount ?? txData.Amount) : txData.Amount
 
     if (typeof rawAmount === 'string') {
       return { currency: 'XRP', value: rawAmount }
@@ -113,6 +122,22 @@ export class TransactionHistoryClient {
     return { currency: 'XRP', value: '0' }
   }
 
+  private parseContractParameters(
+    txData: Record<string, unknown>,
+  ): Array<{ sType: string; value: string; flags: number }> | undefined {
+    const params = txData.Parameters as Array<Record<string, unknown>> | undefined
+    if (!params || params.length === 0) return undefined
+
+    return params.map((p) => {
+      const inner = (p.ContractParameter ?? p) as Record<string, unknown>
+      return {
+        sType: (inner.SType as string) ?? 'Blob',
+        value: (inner.Value as string) ?? '',
+        flags: (inner.Flags as number) ?? 0,
+      }
+    })
+  }
+
   private mapTransactionType(type: string): TransactionType {
     const known: Record<string, TransactionType> = {
       Payment: 'Payment',
@@ -123,6 +148,15 @@ export class TransactionHistoryClient {
       EscrowCreate: 'EscrowCreate',
       EscrowFinish: 'EscrowFinish',
       EscrowCancel: 'EscrowCancel',
+      NFTokenMint: 'NFTokenMint',
+      NFTokenBurn: 'NFTokenBurn',
+      NFTokenCreateOffer: 'NFTokenCreateOffer',
+      NFTokenAcceptOffer: 'NFTokenAcceptOffer',
+      NFTokenCancelOffer: 'NFTokenCancelOffer',
+      CheckCreate: 'CheckCreate',
+      CheckCash: 'CheckCash',
+      CheckCancel: 'CheckCancel',
+      ContractCall: 'ContractCall',
     }
     return known[type] ?? 'Other'
   }

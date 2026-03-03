@@ -17,13 +17,15 @@ export class PriceClient {
     const takerPays = offer.TakerPays as Record<string, string> | string
     const takerGets = offer.TakerGets as Record<string, string> | string
 
-    const paysValue = typeof takerPays === 'string'
-      ? Number(takerPays) / 1_000_000
-      : Number((takerPays as Record<string, string>).value)
+    const paysValue =
+      typeof takerPays === 'string'
+        ? Number(takerPays) / 1_000_000
+        : Number((takerPays as Record<string, string>).value)
 
-    const getsValue = typeof takerGets === 'string'
-      ? Number(takerGets) / 1_000_000
-      : Number((takerGets as Record<string, string>).value)
+    const getsValue =
+      typeof takerGets === 'string'
+        ? Number(takerGets) / 1_000_000
+        : Number((takerGets as Record<string, string>).value)
 
     if (paysValue === 0) return '0'
 
@@ -32,11 +34,7 @@ export class PriceClient {
   }
 
   async getTokenXrpPrice(currency: string, issuer: string): Promise<string> {
-    const offers = await this.client.getBookOffers(
-      { currency, issuer },
-      { currency: 'XRP' },
-      1,
-    )
+    const offers = await this.client.getBookOffers({ currency, issuer }, { currency: 'XRP' }, 1)
 
     if (offers.length === 0) return '0'
 

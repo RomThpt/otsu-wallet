@@ -1,3 +1,6 @@
 export { buildPayment, validatePayment, buildTokenPayment } from './payment'
 export type { PaymentParams, TokenPaymentParams } from './payment'
 export { TransactionHistoryClient } from './history'
+export { buildCreateEscrow, buildFinishEscrow, buildCancelEscrow } from './escrow'
+export { buildCreateCheck, buildCashCheck, buildCancelCheck } from './check'
+export { buildAccountSet, ACCOUNT_SET_FLAGS } from './account-settings'

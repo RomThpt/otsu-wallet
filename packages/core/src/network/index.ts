@@ -1,2 +1,5 @@
 export { XrplClient } from './client'
 export { PriceClient } from './price-client'
+export { RateLimiter } from './rate-limiter'
+export type { RateLimiterOptions } from './rate-limiter'
+export { parseEscrows, parseChecks } from './account-objects'
