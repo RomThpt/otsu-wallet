@@ -31,6 +31,16 @@ const routes = [
     name: 'add-trustline',
     component: () => import('./views/AddTrustline.vue'),
   },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: () => import('./views/Settings.vue'),
+  },
+  {
+    path: '/settings/dapps',
+    name: 'connected-dapps',
+    component: () => import('./views/ConnectedDApps.vue'),
+  },
 ]
 
 export const router = createRouter({
