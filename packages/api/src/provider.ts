@@ -4,6 +4,11 @@ import type {
   NetworkInfo,
   SignedTransaction,
   SignedMessage,
+  NFTRecord,
+  DexOffer,
+  TransactionStatus,
+  ContractInfo,
+  ContractCallParams,
   OtsuEventType,
   OtsuEventCallback,
 } from './types'
@@ -11,7 +16,7 @@ import type {
 interface WindowXrpl {
   isOtsu: boolean
   isConnected(): boolean
-  connect(): Promise<AddressInfo>
+  connect(params?: { scopes?: string[] }): Promise<AddressInfo>
   disconnect(): Promise<void>
   getAddress(): Promise<AddressInfo>
   getNetwork(): Promise<NetworkInfo>
@@ -20,6 +25,11 @@ interface WindowXrpl {
   signAndSubmit(tx: Record<string, unknown>): Promise<SignedTransaction>
   signMessage(message: string): Promise<SignedMessage>
   switchNetwork(networkId: string): Promise<NetworkInfo>
+  getNFTs(): Promise<NFTRecord[]>
+  getAccountOffers(): Promise<DexOffer[]>
+  getTransactionStatus(hash: string): Promise<TransactionStatus>
+  getContractInfo(contractAddress: string): Promise<ContractInfo>
+  contractCall(params: ContractCallParams): Promise<SignedTransaction>
   on(event: string, callback: (data: unknown) => void): void
   off(event: string, callback: (data: unknown) => void): void
 }
@@ -46,8 +56,8 @@ export class OtsuWallet {
     return getProvider().isConnected()
   }
 
-  async connect(): Promise<AddressInfo> {
-    return getProvider().connect()
+  async connect(params?: { scopes?: string[] }): Promise<AddressInfo> {
+    return getProvider().connect(params)
   }
 
   async disconnect(): Promise<void> {
@@ -80,6 +90,26 @@ export class OtsuWallet {
 
   async switchNetwork(networkId: string): Promise<NetworkInfo> {
     return getProvider().switchNetwork(networkId)
+  }
+
+  async getNFTs(): Promise<NFTRecord[]> {
+    return getProvider().getNFTs() as Promise<NFTRecord[]>
+  }
+
+  async getAccountOffers(): Promise<DexOffer[]> {
+    return getProvider().getAccountOffers() as Promise<DexOffer[]>
+  }
+
+  async getTransactionStatus(hash: string): Promise<TransactionStatus> {
+    return getProvider().getTransactionStatus(hash) as Promise<TransactionStatus>
+  }
+
+  async getContractInfo(contractAddress: string): Promise<ContractInfo> {
+    return getProvider().getContractInfo(contractAddress) as Promise<ContractInfo>
+  }
+
+  async contractCall(params: ContractCallParams): Promise<SignedTransaction> {
+    return getProvider().contractCall(params) as Promise<SignedTransaction>
   }
 
   on(event: OtsuEventType, callback: OtsuEventCallback): void {

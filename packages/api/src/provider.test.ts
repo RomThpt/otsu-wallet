@@ -20,15 +20,9 @@ function createMockProvider() {
     disconnect: vi.fn(() => Promise.resolve()),
     getAddress: vi.fn(() => Promise.resolve({ address: 'rTestAddress123' })),
     getNetwork: vi.fn(() => Promise.resolve({ network: 'mainnet' })),
-    getBalance: vi.fn(() =>
-      Promise.resolve({ available: '100', total: '110', reserved: '10' }),
-    ),
-    signTransaction: vi.fn(() =>
-      Promise.resolve({ tx_blob: 'blob123', hash: 'hash456' }),
-    ),
-    signAndSubmit: vi.fn(() =>
-      Promise.resolve({ tx_blob: 'blob789', hash: 'hashABC' }),
-    ),
+    getBalance: vi.fn(() => Promise.resolve({ available: '100', total: '110', reserved: '10' })),
+    signTransaction: vi.fn(() => Promise.resolve({ tx_blob: 'blob123', hash: 'hash456' })),
+    signAndSubmit: vi.fn(() => Promise.resolve({ tx_blob: 'blob789', hash: 'hashABC' })),
     signMessage: vi.fn(() => Promise.resolve({ signature: 'sig123' })),
     switchNetwork: vi.fn(() => Promise.resolve({ network: 'testnet' })),
     on: vi.fn(),
@@ -84,9 +78,7 @@ describe('OtsuWallet', () => {
     it('throws when extension is not installed', async () => {
       const wallet = new OtsuWallet()
 
-      await expect(wallet.connect()).rejects.toThrow(
-        'Otsu Wallet extension is not installed',
-      )
+      await expect(wallet.connect()).rejects.toThrow('Otsu Wallet extension is not installed')
     })
   })
 
@@ -210,9 +202,7 @@ describe('OtsuWallet', () => {
     it('throws when extension is not installed', () => {
       const wallet = new OtsuWallet()
 
-      expect(() => wallet.isConnected()).toThrow(
-        'Otsu Wallet extension is not installed',
-      )
+      expect(() => wallet.isConnected()).toThrow('Otsu Wallet extension is not installed')
     })
   })
 
