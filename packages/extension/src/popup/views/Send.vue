@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useWalletStore } from '../../stores/wallet'
 import { DROPS_PER_XRP } from '@otsu/constants'
 import { sendMessage } from '../../lib/messaging'
+import { parseXrplUri } from '../../lib/uri-parser'
 import Button from '../../components/common/Button.vue'
 import Input from '../../components/common/Input.vue'
 import Card from '../../components/common/Card.vue'
 
 const router = useRouter()
+const route = useRoute()
 const wallet = useWalletStore()
 
 const destination = ref('')
@@ -50,6 +52,20 @@ const canSend = computed(() => {
 onMounted(async () => {
   if (wallet.tokens.length === 0) {
     try { await wallet.fetchTokens() } catch { /* ignore */ }
+  }
+
+  // Pre-fill from xrpl: URI query param
+  const uri = route.query.uri as string | undefined
+  if (uri) {
+    const parsed = parseXrplUri(decodeURIComponent(uri))
+    if (parsed) {
+      destination.value = parsed.address
+      if (parsed.amount) amount.value = parsed.amount
+      if (parsed.destinationTag !== undefined) destinationTag.value = String(parsed.destinationTag)
+      if (parsed.currency && parsed.issuer) {
+        selectedCurrency.value = `${parsed.currency}:${parsed.issuer}`
+      }
+    }
   }
 })
 

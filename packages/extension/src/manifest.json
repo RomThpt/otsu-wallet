@@ -28,7 +28,14 @@
   ],
   "permissions": [
     "storage",
-    "alarms"
+    "alarms",
+    "tabs"
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+xrpl",
+      "url": "popup.html#/send?uri=%s"
+    }
   ],
   "web_accessible_resources": [
     {
