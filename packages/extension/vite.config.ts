@@ -9,7 +9,7 @@ export default defineConfig({
     vue(),
     webExtension({
       manifest: resolve(__dirname, 'src/manifest.json'),
-      additionalInputs: ['tab.html', 'provider/inject.ts'],
+      additionalInputs: ['tab.html', 'notification.html', 'provider/inject.ts'],
     }),
   ],
   resolve: {
