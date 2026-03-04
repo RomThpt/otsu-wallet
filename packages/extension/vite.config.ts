@@ -2,7 +2,7 @@ import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import webExtension from 'vite-plugin-web-extension'
 import { resolve } from 'path'
-import { readdir, rename } from 'fs/promises'
+import { readdir, rename, mkdir, copyFile } from 'fs/promises'
 
 function renameUnderscoreFiles(): Plugin {
   return {
@@ -30,6 +30,18 @@ function renameUnderscoreFiles(): Plugin {
                 }
               }
             }
+          }
+          // Copy icon assets to dist
+          const srcAssets = resolve(__dirname, 'src/assets')
+          const distAssets = resolve(distDir, 'assets')
+          try {
+            await mkdir(distAssets, { recursive: true })
+            const assets = await readdir(srcAssets)
+            for (const asset of assets) {
+              await copyFile(resolve(srcAssets, asset), resolve(distAssets, asset))
+            }
+          } catch {
+            // assets may not exist
           }
         } catch {
           // dist may not exist yet
