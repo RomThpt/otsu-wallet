@@ -80,7 +80,6 @@ export class TransactionSimulator {
         }
 
         case 'OfferCreate': {
-          // OfferCreate creates a directory entry
           objectsCreated = 1
           const currentXrp = accountBalance
             ? (Number(accountBalance) / DROPS_PER_XRP).toFixed(6)
@@ -90,6 +89,137 @@ export class TransactionSimulator {
             before: currentXrp,
             after: (Number(currentXrp) - Number(feeXrp)).toFixed(6),
             delta: `-${feeXrp}`,
+          })
+          break
+        }
+
+        case 'OfferCancel': {
+          objectsDeleted = 1
+          const currentXrp4 = accountBalance
+            ? (Number(accountBalance) / DROPS_PER_XRP).toFixed(6)
+            : '0'
+          balanceChanges.push({
+            currency: 'XRP',
+            before: currentXrp4,
+            after: (Number(currentXrp4) - Number(feeXrp)).toFixed(6),
+            delta: `-${feeXrp}`,
+          })
+          break
+        }
+
+        case 'NFTokenMint': {
+          objectsCreated = 1
+          const currentXrp5 = accountBalance
+            ? (Number(accountBalance) / DROPS_PER_XRP).toFixed(6)
+            : '0'
+          balanceChanges.push({
+            currency: 'XRP',
+            before: currentXrp5,
+            after: (Number(currentXrp5) - Number(feeXrp)).toFixed(6),
+            delta: `-${feeXrp}`,
+          })
+          break
+        }
+
+        case 'NFTokenBurn': {
+          objectsDeleted = 1
+          const currentXrp6 = accountBalance
+            ? (Number(accountBalance) / DROPS_PER_XRP).toFixed(6)
+            : '0'
+          balanceChanges.push({
+            currency: 'XRP',
+            before: currentXrp6,
+            after: (Number(currentXrp6) - Number(feeXrp)).toFixed(6),
+            delta: `-${feeXrp}`,
+          })
+          break
+        }
+
+        case 'NFTokenCreateOffer': {
+          objectsCreated = 1
+          const currentXrp7 = accountBalance
+            ? (Number(accountBalance) / DROPS_PER_XRP).toFixed(6)
+            : '0'
+          // Buy offers lock XRP
+          const flags = (tx.Flags as number) ?? 0
+          const isSell = (flags & 1) !== 0
+          if (!isSell && typeof tx.Amount === 'string') {
+            const lockAmount = Number(tx.Amount) / DROPS_PER_XRP
+            const totalDeducted = lockAmount + Number(feeXrp)
+            balanceChanges.push({
+              currency: 'XRP',
+              before: currentXrp7,
+              after: (Number(currentXrp7) - totalDeducted).toFixed(6),
+              delta: `-${lockAmount.toFixed(6)}`,
+            })
+          } else {
+            balanceChanges.push({
+              currency: 'XRP',
+              before: currentXrp7,
+              after: (Number(currentXrp7) - Number(feeXrp)).toFixed(6),
+              delta: `-${feeXrp}`,
+            })
+          }
+          break
+        }
+
+        case 'NFTokenAcceptOffer': {
+          const currentXrp8 = accountBalance
+            ? (Number(accountBalance) / DROPS_PER_XRP).toFixed(6)
+            : '0'
+          balanceChanges.push({
+            currency: 'XRP',
+            before: currentXrp8,
+            after: (Number(currentXrp8) - Number(feeXrp)).toFixed(6),
+            delta: `-${feeXrp}`,
+          })
+          break
+        }
+
+        case 'CheckCreate':
+        case 'EscrowCreate': {
+          objectsCreated = 1
+          const currentXrp9 = accountBalance
+            ? (Number(accountBalance) / DROPS_PER_XRP).toFixed(6)
+            : '0'
+          balanceChanges.push({
+            currency: 'XRP',
+            before: currentXrp9,
+            after: (Number(currentXrp9) - Number(feeXrp)).toFixed(6),
+            delta: `-${feeXrp}`,
+          })
+          break
+        }
+
+        case 'ContractCall': {
+          // Fee = gas limit for contract calls
+          const currentXrpContract = accountBalance
+            ? (Number(accountBalance) / DROPS_PER_XRP).toFixed(6)
+            : '0'
+
+          let totalDelta = Number(feeXrp)
+
+          // Check parameters for tfSendAmount flag (0x01) to detect XRP transfers
+          const params = tx.Parameters as Array<Record<string, unknown>> | undefined
+          if (params) {
+            for (const param of params) {
+              const inner = (param.ContractParameter ?? param) as Record<string, unknown>
+              const flags = (inner.Flags as number) ?? 0
+              if (flags & 0x01) {
+                // tfSendAmount - parameter carries a token amount
+                const paramValue = Number(inner.Value ?? 0)
+                if (paramValue > 0) {
+                  totalDelta += paramValue / DROPS_PER_XRP
+                }
+              }
+            }
+          }
+
+          balanceChanges.push({
+            currency: 'XRP',
+            before: currentXrpContract,
+            after: (Number(currentXrpContract) - totalDelta).toFixed(6),
+            delta: `-${totalDelta.toFixed(6)}`,
           })
           break
         }

@@ -3,6 +3,7 @@ import type {
   OtsuProviderResponse,
   SigningRequest,
   DAppPermission,
+  PermissionScope,
   WalletSettings,
   SimulationResult,
   RiskWarning,
@@ -66,6 +67,16 @@ export class ProviderController {
         return this.handleSignMessage(request)
       case 'switchNetwork':
         return this.handleSwitchNetwork(request)
+      case 'getNFTs':
+        return this.handleGetNFTs(request)
+      case 'getAccountOffers':
+        return this.handleGetAccountOffers(request)
+      case 'getTransactionStatus':
+        return this.handleGetTransactionStatus(request)
+      case 'getContractInfo':
+        return this.handleGetContractInfo(request)
+      case 'contractCall':
+        return this.handleContractCall(request)
       default:
         return { id: request.id, error: `Unknown method: ${request.method}` }
     }
@@ -187,12 +198,21 @@ export class ProviderController {
       const address = state.activeAccount
       if (!address) throw new OtsuError(ErrorCodes.SIGNING_ERROR, 'No active account')
 
+      const requestedScopes = (request.params as { scopes?: PermissionScope[] })?.scopes
+      const scopes: PermissionScope[] = requestedScopes ?? [
+        'read',
+        'sign',
+        'submit',
+        'switchNetwork',
+      ]
+
       const permission: DAppPermission = {
         origin,
         favicon: request.favicon,
         title: request.title,
         connectedAt: Date.now(),
         address,
+        scopes,
       }
       this.permissions.set(origin, permission)
       await this.persistPermissions()
@@ -211,20 +231,20 @@ export class ProviderController {
   }
 
   private handleGetAddress(request: OtsuProviderRequest): OtsuProviderResponse {
-    const permission = this.requirePermission(request)
+    const permission = this.requirePermission(request, 'read')
     if (!('address' in permission)) return permission as OtsuProviderResponse
     return { id: request.id, result: { address: permission.address } }
   }
 
   private handleGetNetwork(request: OtsuProviderRequest): OtsuProviderResponse {
-    const permission = this.requirePermission(request)
+    const permission = this.requirePermission(request, 'read')
     if (!('address' in permission)) return permission as OtsuProviderResponse
     const state = this.wallet.getState()
     return { id: request.id, result: { network: state.network } }
   }
 
   private async handleGetBalance(request: OtsuProviderRequest): Promise<OtsuProviderResponse> {
-    const permission = this.requirePermission(request)
+    const permission = this.requirePermission(request, 'read')
     if (!('address' in permission)) return permission as OtsuProviderResponse
 
     try {
@@ -236,25 +256,25 @@ export class ProviderController {
   }
 
   private async handleSignTransaction(request: OtsuProviderRequest): Promise<OtsuProviderResponse> {
-    const permission = this.requirePermission(request)
+    const permission = this.requirePermission(request, 'sign')
     if (!('address' in permission)) return permission as OtsuProviderResponse
     return this.initiateSigningFlow(request)
   }
 
   private async handleSignAndSubmit(request: OtsuProviderRequest): Promise<OtsuProviderResponse> {
-    const permission = this.requirePermission(request)
+    const permission = this.requirePermission(request, 'submit')
     if (!('address' in permission)) return permission as OtsuProviderResponse
     return this.initiateSigningFlow(request)
   }
 
   private async handleSignMessage(request: OtsuProviderRequest): Promise<OtsuProviderResponse> {
-    const permission = this.requirePermission(request)
+    const permission = this.requirePermission(request, 'sign')
     if (!('address' in permission)) return permission as OtsuProviderResponse
     return this.initiateSigningFlow(request)
   }
 
   private async handleSwitchNetwork(request: OtsuProviderRequest): Promise<OtsuProviderResponse> {
-    const permission = this.requirePermission(request)
+    const permission = this.requirePermission(request, 'switchNetwork')
     if (!('address' in permission)) return permission as OtsuProviderResponse
 
     const networkId = (request.params as { networkId: string })?.networkId
@@ -267,6 +287,68 @@ export class ProviderController {
     } catch (error) {
       return { id: request.id, error: (error as Error).message }
     }
+  }
+
+  private async handleGetNFTs(request: OtsuProviderRequest): Promise<OtsuProviderResponse> {
+    const permission = this.requirePermission(request, 'read')
+    if (!('address' in permission)) return permission as OtsuProviderResponse
+
+    try {
+      const nfts = await this.wallet.getNFTs()
+      return { id: request.id, result: nfts }
+    } catch (error) {
+      return { id: request.id, error: (error as Error).message }
+    }
+  }
+
+  private async handleGetAccountOffers(
+    request: OtsuProviderRequest,
+  ): Promise<OtsuProviderResponse> {
+    const permission = this.requirePermission(request, 'read')
+    if (!('address' in permission)) return permission as OtsuProviderResponse
+
+    try {
+      const offers = await this.wallet.getAccountOffers()
+      return { id: request.id, result: offers }
+    } catch (error) {
+      return { id: request.id, error: (error as Error).message }
+    }
+  }
+
+  private async handleGetTransactionStatus(
+    request: OtsuProviderRequest,
+  ): Promise<OtsuProviderResponse> {
+    const permission = this.requirePermission(request, 'read')
+    if (!('address' in permission)) return permission as OtsuProviderResponse
+
+    try {
+      const hash = (request.params as { hash: string })?.hash
+      if (!hash) return { id: request.id, error: 'Missing transaction hash' }
+      const status = await this.wallet.getTransactionStatus(hash)
+      return { id: request.id, result: status }
+    } catch (error) {
+      return { id: request.id, error: (error as Error).message }
+    }
+  }
+
+  private async handleGetContractInfo(request: OtsuProviderRequest): Promise<OtsuProviderResponse> {
+    const permission = this.requirePermission(request, 'read')
+    if (!('address' in permission)) return permission as OtsuProviderResponse
+
+    try {
+      const address = (request.params as { contractAddress: string })?.contractAddress
+      if (!address) return { id: request.id, error: 'Missing contractAddress' }
+      const info = await this.wallet.getContractInfo(address)
+      return { id: request.id, result: info }
+    } catch (error) {
+      return { id: request.id, error: (error as Error).message }
+    }
+  }
+
+  private async handleContractCall(request: OtsuProviderRequest): Promise<OtsuProviderResponse> {
+    const permission = this.requirePermission(request, 'sign')
+    if (!('address' in permission)) return permission as OtsuProviderResponse
+    return this.initiateSigningFlow(request)
   }
 
   // --- Signing flow ---
@@ -367,9 +449,7 @@ export class ProviderController {
       // Open notification window
       try {
         await chrome.windows.create({
-          url: chrome.runtime.getURL(
-            `notification.html?requestId=${signingRequest.id}`,
-          ),
+          url: chrome.runtime.getURL(`notification.html?requestId=${signingRequest.id}`),
           type: 'popup',
           width: NOTIFICATION_WINDOW_WIDTH,
           height: NOTIFICATION_WINDOW_HEIGHT,
@@ -389,12 +469,22 @@ export class ProviderController {
 
   // --- Permissions ---
 
-  private requirePermission(request: OtsuProviderRequest): DAppPermission | OtsuProviderResponse {
+  private requirePermission(
+    request: OtsuProviderRequest,
+    scope?: PermissionScope,
+  ): DAppPermission | OtsuProviderResponse {
     const origin = request.origin
     if (!origin) return { id: request.id, error: ErrorCodes.INVALID_PROVIDER_REQUEST }
 
     const permission = this.permissions.get(origin)
     if (!permission) return { id: request.id, error: ErrorCodes.DAPP_NOT_CONNECTED }
+
+    if (scope) {
+      const grantedScopes = permission.scopes ?? ['read', 'sign', 'submit', 'switchNetwork']
+      if (!grantedScopes.includes(scope)) {
+        return { id: request.id, error: `Permission scope '${scope}' not granted` }
+      }
+    }
 
     return permission
   }

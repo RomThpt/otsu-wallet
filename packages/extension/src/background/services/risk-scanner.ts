@@ -55,7 +55,10 @@ export class RiskScanner {
     warnings.push(
       ...this.checkUnusualPatterns(params.tx, params.accountBalance, params.knownRecipients),
     )
+    warnings.push(...this.checkNFTTransferFee(params.tx))
+    warnings.push(...this.checkLargeEscrow(params.tx, params.accountBalance))
     warnings.push(...this.checkExchangeTag(params.tx))
+    warnings.push(...this.checkContractCall(params.tx))
     if (params.origin) {
       warnings.push(...this.checkDomainVerification(params.origin))
     }
@@ -166,6 +169,86 @@ export class RiskScanner {
     }
 
     return []
+  }
+
+  private checkNFTTransferFee(tx: Record<string, unknown>): RiskWarning[] {
+    if (tx.TransactionType !== 'NFTokenMint') return []
+
+    const transferFee = tx.TransferFee as number | undefined
+    if (transferFee !== undefined && transferFee > 10000) {
+      return [
+        {
+          level: 'medium',
+          code: 'HIGH_NFT_TRANSFER_FEE',
+          message: `NFT transfer fee is ${(transferFee / 1000).toFixed(1)}%`,
+          details:
+            'A transfer fee above 10% means a significant portion of the sale price goes to the issuer on every future transfer.',
+        },
+      ]
+    }
+
+    return []
+  }
+
+  private checkLargeEscrow(tx: Record<string, unknown>, accountBalance?: string): RiskWarning[] {
+    if (tx.TransactionType !== 'EscrowCreate') return []
+
+    const amount = tx.Amount as string | undefined
+    if (amount && accountBalance) {
+      const escrowAmount = Number(amount)
+      const balance = Number(accountBalance)
+      if (balance > 0 && escrowAmount / balance > 0.5) {
+        return [
+          {
+            level: 'high',
+            code: 'LARGE_ESCROW',
+            message: 'This escrow is more than 50% of your balance',
+            details: `Locking ${(escrowAmount / 1_000_000).toFixed(6)} XRP in escrow out of ${(balance / 1_000_000).toFixed(6)} XRP total.`,
+          },
+        ]
+      }
+    }
+
+    return []
+  }
+
+  private checkContractCall(tx: Record<string, unknown>): RiskWarning[] {
+    if (tx.TransactionType !== 'ContractCall') return []
+
+    const warnings: RiskWarning[] = []
+
+    // High gas fee warning (>1 XRP = >1000000 drops)
+    const fee = Number(tx.Fee ?? 0)
+    if (fee > 1_000_000) {
+      warnings.push({
+        level: 'high',
+        code: 'HIGH_CONTRACT_GAS',
+        message: `Gas limit is ${(fee / 1_000_000).toFixed(6)} XRP`,
+        details:
+          'This contract call has a high gas limit. The actual fee may be lower, but the full amount will be reserved.',
+      })
+    }
+
+    // Check for parameters with tfSendAmount flag
+    const params = tx.Parameters as Array<Record<string, unknown>> | undefined
+    if (params) {
+      for (const param of params) {
+        const inner = (param.ContractParameter ?? param) as Record<string, unknown>
+        const flags = (inner.Flags as number) ?? 0
+        if (flags & 0x01) {
+          warnings.push({
+            level: 'medium',
+            code: 'CONTRACT_SENDS_TOKENS',
+            message: 'This contract call transfers tokens',
+            details:
+              'One or more parameters indicate this call will transfer tokens from your account.',
+          })
+          break
+        }
+      }
+    }
+
+    return warnings
   }
 
   private checkDomainVerification(origin: string): RiskWarning[] {

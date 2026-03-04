@@ -180,6 +180,127 @@ describe('TransactionSimulator', () => {
     })
   })
 
+  describe('NFTokenMint', () => {
+    it('should report objectsCreated=1', () => {
+      const tx = {
+        TransactionType: 'NFTokenMint',
+        Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
+        URI: '68747470733A2F2F6578616D706C652E636F6D',
+        NFTokenTaxon: 0,
+        Fee: '12',
+      }
+
+      const result = simulator.simulate(tx, '50000000')
+
+      expect(result.success).toBe(true)
+      expect(result.objectsCreated).toBe(1)
+      expect(result.objectsDeleted).toBe(0)
+    })
+  })
+
+  describe('NFTokenBurn', () => {
+    it('should report objectsDeleted=1', () => {
+      const tx = {
+        TransactionType: 'NFTokenBurn',
+        Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
+        NFTokenID: '00080000ABCD',
+        Fee: '12',
+      }
+
+      const result = simulator.simulate(tx, '50000000')
+
+      expect(result.success).toBe(true)
+      expect(result.objectsDeleted).toBe(1)
+      expect(result.objectsCreated).toBe(0)
+    })
+  })
+
+  describe('NFTokenCreateOffer', () => {
+    it('should report objectsCreated=1 for sell offer', () => {
+      const tx = {
+        TransactionType: 'NFTokenCreateOffer',
+        Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
+        NFTokenID: '00080000ABCD',
+        Amount: '5000000',
+        Flags: 1, // tfSellNFToken
+        Fee: '12',
+      }
+
+      const result = simulator.simulate(tx, '50000000')
+
+      expect(result.success).toBe(true)
+      expect(result.objectsCreated).toBe(1)
+      // Sell offer doesn't lock XRP
+      expect(result.balanceChanges[0].delta).toBe('-0.000012')
+    })
+
+    it('should lock XRP for buy offer', () => {
+      const tx = {
+        TransactionType: 'NFTokenCreateOffer',
+        Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
+        NFTokenID: '00080000ABCD',
+        Amount: '5000000',
+        Flags: 0, // buy offer
+        Fee: '12',
+      }
+
+      const result = simulator.simulate(tx, '50000000')
+
+      expect(result.objectsCreated).toBe(1)
+      expect(result.balanceChanges[0].delta).toBe('-5.000000')
+    })
+  })
+
+  describe('OfferCancel', () => {
+    it('should report objectsDeleted=1', () => {
+      const tx = {
+        TransactionType: 'OfferCancel',
+        Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
+        OfferSequence: 42,
+        Fee: '12',
+      }
+
+      const result = simulator.simulate(tx, '50000000')
+
+      expect(result.success).toBe(true)
+      expect(result.objectsDeleted).toBe(1)
+    })
+  })
+
+  describe('CheckCreate', () => {
+    it('should report objectsCreated=1', () => {
+      const tx = {
+        TransactionType: 'CheckCreate',
+        Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
+        Destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+        SendMax: '10000000',
+        Fee: '12',
+      }
+
+      const result = simulator.simulate(tx, '50000000')
+
+      expect(result.success).toBe(true)
+      expect(result.objectsCreated).toBe(1)
+    })
+  })
+
+  describe('EscrowCreate', () => {
+    it('should report objectsCreated=1', () => {
+      const tx = {
+        TransactionType: 'EscrowCreate',
+        Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
+        Destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+        Amount: '10000000',
+        Fee: '12',
+      }
+
+      const result = simulator.simulate(tx, '50000000')
+
+      expect(result.success).toBe(true)
+      expect(result.objectsCreated).toBe(1)
+    })
+  })
+
   describe('Unknown transaction type', () => {
     it('should only show fee for unknown transaction types', () => {
       const tx = {

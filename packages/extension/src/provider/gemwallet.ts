@@ -42,25 +42,17 @@ export function createGemWalletShim(provider: OtsuProvider) {
       return { result: { signedMessage: result.signature } }
     },
 
-    signTransaction: async (transaction: {
-      transaction: Record<string, unknown>
-    }) => {
+    signTransaction: async (transaction: { transaction: Record<string, unknown> }) => {
       const result = await provider.signTransaction(transaction.transaction)
       return { result: { signature: result.tx_blob } }
     },
 
-    submitTransaction: async (transaction: {
-      transaction: Record<string, unknown>
-    }) => {
+    submitTransaction: async (transaction: { transaction: Record<string, unknown> }) => {
       const result = await provider.signAndSubmit(transaction.transaction)
       return { result: { hash: result.hash } }
     },
 
-    setTrustline: async (trustline: {
-      currency: string
-      issuer: string
-      value: string
-    }) => {
+    setTrustline: async (trustline: { currency: string; issuer: string; value: string }) => {
       const tx: Record<string, unknown> = {
         TransactionType: 'TrustSet',
         LimitAmount: {

@@ -27,34 +27,43 @@ window.addEventListener('message', async (event) => {
       payload: { request },
     })
 
-    window.postMessage({
-      type: 'OTSU_PROVIDER_RESPONSE',
-      id: request.id,
-      result: response?.data,
-      error: response?.error,
-    }, '*')
+    window.postMessage(
+      {
+        type: 'OTSU_PROVIDER_RESPONSE',
+        id: request.id,
+        result: response?.data,
+        error: response?.error,
+      },
+      '*',
+    )
   } catch (error) {
-    window.postMessage({
-      type: 'OTSU_PROVIDER_RESPONSE',
-      id: request.id,
-      error: (error as Error).message,
-    }, '*')
+    window.postMessage(
+      {
+        type: 'OTSU_PROVIDER_RESPONSE',
+        id: request.id,
+        error: (error as Error).message,
+      },
+      '*',
+    )
   }
 })
 
 // 3. Listen for events from background -> forward to page
 chrome.runtime.onMessage.addListener((message) => {
   if (message?.type === 'PROVIDER_EVENT') {
-    window.postMessage({
-      type: 'OTSU_PROVIDER_EVENT',
-      event: message.payload?.event,
-    }, '*')
+    window.postMessage(
+      {
+        type: 'OTSU_PROVIDER_EVENT',
+        event: message.payload?.event,
+      },
+      '*',
+    )
   }
 })
 
 function getFavicon(): string | undefined {
   const link = document.querySelector<HTMLLinkElement>(
-    'link[rel="icon"], link[rel="shortcut icon"]'
+    'link[rel="icon"], link[rel="shortcut icon"]',
   )
   return link?.href ?? undefined
 }

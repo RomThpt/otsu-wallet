@@ -20,8 +20,7 @@ export function createCrossmarkShim(provider: OtsuProvider) {
     methods: {
       signInAndWait: (..._args: unknown[]) => sdk.signInAndWait(),
       signAndWait: (tx: Record<string, unknown>) => sdk.signAndWait(tx),
-      signAndSubmitAndWait: (tx: Record<string, unknown>) =>
-        sdk.signAndSubmitAndWait(tx),
+      signAndSubmitAndWait: (tx: Record<string, unknown>) => sdk.signAndSubmitAndWait(tx),
     },
   }
 

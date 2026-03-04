@@ -215,6 +215,49 @@ describe('OtsuProvider', () => {
     })
   })
 
+  it('sends getNFTs request and resolves with array', async () => {
+    const postMessageSpy = vi.spyOn(window, 'postMessage')
+    const nfts = [{ nftId: 'NFT001' }]
+    const promise = provider.getNFTs()
+    simulateResponse('test-uuid-1', nfts)
+
+    const result = await promise
+    expect(result).toEqual(nfts)
+    expect(postMessageSpy).toHaveBeenCalledWith(
+      {
+        type: 'OTSU_PROVIDER_REQUEST',
+        request: { id: 'test-uuid-1', method: 'getNFTs', params: undefined },
+      },
+      '*',
+    )
+  })
+
+  it('sends getAccountOffers request and resolves with array', async () => {
+    const offers = [{ offerId: 'OFFER1' }]
+    const promise = provider.getAccountOffers()
+    simulateResponse('test-uuid-1', offers)
+
+    const result = await promise
+    expect(result).toEqual(offers)
+  })
+
+  it('sends getTransactionStatus request and resolves with status', async () => {
+    const postMessageSpy = vi.spyOn(window, 'postMessage')
+    const status = { hash: 'ABC123', validated: true, result: 'tesSUCCESS', ledgerIndex: 100 }
+    const promise = provider.getTransactionStatus('ABC123')
+    simulateResponse('test-uuid-1', status)
+
+    const result = await promise
+    expect(result).toEqual(status)
+    expect(postMessageSpy).toHaveBeenCalledWith(
+      {
+        type: 'OTSU_PROVIDER_REQUEST',
+        request: { id: 'test-uuid-1', method: 'getTransactionStatus', params: { hash: 'ABC123' } },
+      },
+      '*',
+    )
+  })
+
   describe('error handling', () => {
     it('rejects when error response is received', async () => {
       const promise = provider.connect()

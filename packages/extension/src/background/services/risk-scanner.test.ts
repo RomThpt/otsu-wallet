@@ -57,9 +57,7 @@ describe('RiskScanner', () => {
     })
 
     it('handles storage errors gracefully', async () => {
-      vi.mocked(chrome.storage.local.get).mockRejectedValueOnce(
-        new Error('storage unavailable'),
-      )
+      vi.mocked(chrome.storage.local.get).mockRejectedValueOnce(new Error('storage unavailable'))
 
       await expect(scanner.initialize()).resolves.toBeUndefined()
     })
@@ -334,6 +332,92 @@ describe('RiskScanner', () => {
     })
   })
 
+  describe('NFT transfer fee', () => {
+    it('returns medium warning for high NFT transfer fee (>10%)', () => {
+      const warnings = scanner.scan({
+        tx: {
+          TransactionType: 'NFTokenMint',
+          TransferFee: 15000, // 15%
+        },
+      })
+
+      expect(warnings).toContainEqual(
+        expect.objectContaining({
+          level: 'medium',
+          code: 'HIGH_NFT_TRANSFER_FEE',
+        }),
+      )
+    })
+
+    it('returns no warning for normal NFT transfer fee', () => {
+      const warnings = scanner.scan({
+        tx: {
+          TransactionType: 'NFTokenMint',
+          TransferFee: 5000, // 5%
+        },
+      })
+
+      const nftWarnings = warnings.filter((w) => w.code === 'HIGH_NFT_TRANSFER_FEE')
+      expect(nftWarnings).toHaveLength(0)
+    })
+
+    it('skips check for non-NFT transactions', () => {
+      const warnings = scanner.scan({
+        tx: {
+          TransactionType: 'Payment',
+          Destination: 'rSafe',
+        },
+      })
+
+      const nftWarnings = warnings.filter((w) => w.code === 'HIGH_NFT_TRANSFER_FEE')
+      expect(nftWarnings).toHaveLength(0)
+    })
+  })
+
+  describe('large escrow', () => {
+    it('returns high warning for large escrow (>50% of balance)', () => {
+      const warnings = scanner.scan({
+        tx: {
+          TransactionType: 'EscrowCreate',
+          Amount: '60000000', // 60 XRP
+        },
+        accountBalance: '100000000', // 100 XRP
+      })
+
+      expect(warnings).toContainEqual(
+        expect.objectContaining({
+          level: 'high',
+          code: 'LARGE_ESCROW',
+        }),
+      )
+    })
+
+    it('returns no warning for small escrow', () => {
+      const warnings = scanner.scan({
+        tx: {
+          TransactionType: 'EscrowCreate',
+          Amount: '10000000', // 10 XRP
+        },
+        accountBalance: '100000000', // 100 XRP
+      })
+
+      const escrowWarnings = warnings.filter((w) => w.code === 'LARGE_ESCROW')
+      expect(escrowWarnings).toHaveLength(0)
+    })
+
+    it('skips check when no accountBalance', () => {
+      const warnings = scanner.scan({
+        tx: {
+          TransactionType: 'EscrowCreate',
+          Amount: '90000000',
+        },
+      })
+
+      const escrowWarnings = warnings.filter((w) => w.code === 'LARGE_ESCROW')
+      expect(escrowWarnings).toHaveLength(0)
+    })
+  })
+
   describe('getOverallRisk', () => {
     it('returns safe when there are no warnings', () => {
       expect(scanner.getOverallRisk([])).toBe('safe')
@@ -395,9 +479,7 @@ describe('RiskScanner', () => {
         origin: 'https://xrpl-airdrop.com', // default blocklist entry
       })
 
-      expect(warnings).toContainEqual(
-        expect.objectContaining({ code: 'PHISHING_DOMAIN' }),
-      )
+      expect(warnings).toContainEqual(expect.objectContaining({ code: 'PHISHING_DOMAIN' }))
     })
 
     it('applies address blocklist immediately after update', async () => {

@@ -42,8 +42,8 @@ export class OtsuProvider {
     return this._connected
   }
 
-  async connect(): Promise<{ address: string }> {
-    const result = (await this._sendRequest('connect')) as { address: string }
+  async connect(params?: { scopes?: string[] }): Promise<{ address: string }> {
+    const result = (await this._sendRequest('connect', params)) as { address: string }
     this._connected = true
     return result
   }
@@ -73,18 +73,14 @@ export class OtsuProvider {
     }>
   }
 
-  async signTransaction(
-    tx: Record<string, unknown>,
-  ): Promise<{ tx_blob: string; hash: string }> {
+  async signTransaction(tx: Record<string, unknown>): Promise<{ tx_blob: string; hash: string }> {
     return this._sendRequest('signTransaction', tx) as Promise<{
       tx_blob: string
       hash: string
     }>
   }
 
-  async signAndSubmit(
-    tx: Record<string, unknown>,
-  ): Promise<{ tx_blob: string; hash: string }> {
+  async signAndSubmit(tx: Record<string, unknown>): Promise<{ tx_blob: string; hash: string }> {
     return this._sendRequest('signAndSubmit', tx) as Promise<{
       tx_blob: string
       hash: string
@@ -100,6 +96,44 @@ export class OtsuProvider {
   async switchNetwork(networkId: string): Promise<{ network: string }> {
     return this._sendRequest('switchNetwork', { networkId }) as Promise<{
       network: string
+    }>
+  }
+
+  async getNFTs(): Promise<unknown[]> {
+    return this._sendRequest('getNFTs') as Promise<unknown[]>
+  }
+
+  async getAccountOffers(): Promise<unknown[]> {
+    return this._sendRequest('getAccountOffers') as Promise<unknown[]>
+  }
+
+  async getTransactionStatus(hash: string): Promise<{
+    hash: string
+    validated: boolean
+    result: string
+    ledgerIndex: number
+  }> {
+    return this._sendRequest('getTransactionStatus', { hash }) as Promise<{
+      hash: string
+      validated: boolean
+      result: string
+      ledgerIndex: number
+    }>
+  }
+
+  async getContractInfo(contractAddress: string): Promise<unknown> {
+    return this._sendRequest('getContractInfo', { contractAddress })
+  }
+
+  async contractCall(params: {
+    contractAddress: string
+    functionName: string
+    parameters?: Array<{ sType: string; value: string; flags: number }>
+    fee?: string
+  }): Promise<{ tx_blob: string; hash: string }> {
+    return this._sendRequest('contractCall', params) as Promise<{
+      tx_blob: string
+      hash: string
     }>
   }
 
