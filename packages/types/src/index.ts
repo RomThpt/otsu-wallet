@@ -23,13 +23,20 @@ export type {
   ExtensionMessage,
   ExtensionMessageType,
   ExtensionResponse,
+  GetSigningRequestPayload,
   GetTransactionHistoryPayload,
   ImportAccountPayload,
+  ProviderEventPayload,
+  ProviderRequestPayload,
   RemoveTrustlinePayload,
+  RevokePermissionPayload,
   SendPaymentPayload,
   SendTokenPaymentPayload,
   SetActiveAccountPayload,
+  SetSettingsPayload,
   SetTrustlinePayload,
+  SigningApprovedPayload,
+  SigningRejectedPayload,
   SwitchNetworkPayload,
   UnlockPayload,
   UpdateAccountLabelPayload,
@@ -60,3 +67,24 @@ export type {
   ImportFormat,
   ImportPayload,
 } from './import'
+
+export type {
+  OtsuProviderRequest,
+  OtsuProviderResponse,
+  OtsuEvent,
+  ProviderEventType,
+  ProviderMethod,
+  SigningRequest,
+} from './provider'
+
+export type { DAppPermission } from './permission'
+
+export type {
+  BalanceChange,
+  RiskLevel,
+  RiskWarning,
+  SimulationResult,
+} from './simulation'
+
+export type { WalletSettings } from './settings'
+export { DEFAULT_SETTINGS } from './settings'

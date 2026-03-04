@@ -21,6 +21,15 @@ export type ExtensionMessageType =
   | 'GET_XRP_PRICE'
   | 'DERIVE_MORE_ACCOUNTS'
   | 'GET_CACHED_DATA'
+  | 'PROVIDER_REQUEST'
+  | 'SIGNING_APPROVED'
+  | 'SIGNING_REJECTED'
+  | 'GET_SIGNING_REQUEST'
+  | 'GET_SETTINGS'
+  | 'SET_SETTINGS'
+  | 'GET_PERMISSIONS'
+  | 'REVOKE_PERMISSION'
+  | 'PROVIDER_EVENT'
 
 export interface ExtensionMessage<T = unknown> {
   type: ExtensionMessageType
@@ -95,4 +104,33 @@ export interface GetTransactionHistoryPayload {
 
 export interface DeriveMoreAccountsPayload {
   count: number
+}
+
+export interface ProviderRequestPayload {
+  request: import('./provider').OtsuProviderRequest
+}
+
+export interface SigningApprovedPayload {
+  requestId: string
+}
+
+export interface SigningRejectedPayload {
+  requestId: string
+  reason?: string
+}
+
+export interface GetSigningRequestPayload {
+  requestId: string
+}
+
+export interface SetSettingsPayload {
+  settings: Partial<import('./settings').WalletSettings>
+}
+
+export interface RevokePermissionPayload {
+  origin: string
+}
+
+export interface ProviderEventPayload {
+  event: import('./provider').OtsuEvent
 }
