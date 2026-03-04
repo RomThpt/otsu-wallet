@@ -9,6 +9,7 @@ import type {
   TransactionHistoryPage,
   TrustlineParams,
   ImportPayload,
+  WalletSettings,
 } from '@otsu/types'
 import { NETWORKS } from '@otsu/constants'
 import {
@@ -21,6 +22,7 @@ import {
   TransactionHistoryClient,
   WalletCache,
   ChromeCacheStorage,
+  SettingsManager,
   generateNewMnemonic,
   deriveAccount,
   deriveAccounts,
@@ -47,6 +49,7 @@ export class WalletController {
   private metadataClient: TokenMetadataClient
   private historyClient = new TransactionHistoryClient(this.client)
   private cache: WalletCache
+  private settings = new SettingsManager()
   private state: WalletState = {
     accounts: [],
     activeAccount: null,
@@ -424,6 +427,26 @@ export class WalletController {
       price: price?.xrpUsd ?? null,
       lastUpdated,
     }
+  }
+
+  // --- Phase 3: Settings ---
+
+  async getSettings(): Promise<WalletSettings> {
+    return this.settings.getSettings()
+  }
+
+  async updateSettings(partial: Partial<WalletSettings>): Promise<WalletSettings> {
+    return this.settings.updateSettings(partial)
+  }
+
+  // --- Phase 3: Signing ---
+
+  getKeyring(): Keyring {
+    return this.keyring
+  }
+
+  getClient(): XrplClient {
+    return this.client
   }
 
   // --- Persistence ---

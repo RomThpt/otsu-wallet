@@ -13,12 +13,20 @@ import type {
   SendTokenPaymentPayload,
   GetTransactionHistoryPayload,
   DeriveMoreAccountsPayload,
+  ProviderRequestPayload,
+  SigningApprovedPayload,
+  SigningRejectedPayload,
+  GetSigningRequestPayload,
+  SetSettingsPayload,
+  RevokePermissionPayload,
 } from '@otsu/types'
 import { WalletController } from './controllers/wallet'
+import { ProviderController } from './controllers/provider'
 
 const controller = new WalletController()
+const providerController = new ProviderController(controller)
 
-export { controller }
+export { controller, providerController }
 
 export async function handleMessage(
   message: ExtensionMessage,
@@ -137,6 +145,57 @@ export async function handleMessage(
       case 'GET_CACHED_DATA': {
         const cached = await controller.getCachedData()
         return { success: true, data: cached }
+      }
+
+      // --- Phase 3 message types ---
+
+      case 'PROVIDER_REQUEST': {
+        const payload = message.payload as ProviderRequestPayload
+        const response = await providerController.handleRequest(payload.request)
+        if (response.error) {
+          return { success: false, error: response.error, data: response }
+        }
+        return { success: true, data: response.result }
+      }
+
+      case 'SIGNING_APPROVED': {
+        const payload = message.payload as SigningApprovedPayload
+        await providerController.handleSigningApproved(payload.requestId)
+        return { success: true }
+      }
+
+      case 'SIGNING_REJECTED': {
+        const payload = message.payload as SigningRejectedPayload
+        await providerController.handleSigningRejected(payload.requestId, payload.reason)
+        return { success: true }
+      }
+
+      case 'GET_SIGNING_REQUEST': {
+        const payload = message.payload as GetSigningRequestPayload
+        const data = await providerController.getSigningRequest(payload.requestId)
+        return { success: true, data }
+      }
+
+      case 'GET_SETTINGS': {
+        const settings = await controller.getSettings()
+        return { success: true, data: settings }
+      }
+
+      case 'SET_SETTINGS': {
+        const payload = message.payload as SetSettingsPayload
+        const settings = await controller.updateSettings(payload.settings)
+        return { success: true, data: settings }
+      }
+
+      case 'GET_PERMISSIONS': {
+        const permissions = await providerController.getPermissions()
+        return { success: true, data: permissions }
+      }
+
+      case 'REVOKE_PERMISSION': {
+        const payload = message.payload as RevokePermissionPayload
+        await providerController.revokePermission(payload.origin)
+        return { success: true }
       }
 
       default:
