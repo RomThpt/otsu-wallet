@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import DAppInfo from './DAppInfo.vue'
 
-defineProps<{
+const props = defineProps<{
   origin: string
   favicon?: string
   title?: string
+  scopes?: string[]
 }>()
 
 defineEmits<{
@@ -12,11 +13,22 @@ defineEmits<{
   deny: []
 }>()
 
-const permissions = [
+const SCOPE_LABELS: Record<string, { label: string; icon: string }> = {
+  read: { label: 'View your wallet address and balance', icon: 'eye' },
+  sign: { label: 'Request transaction signing', icon: 'pencil' },
+  submit: { label: 'Sign and submit transactions', icon: 'pencil' },
+  switchNetwork: { label: 'Switch network', icon: 'globe' },
+}
+
+const DEFAULT_PERMISSIONS = [
   { label: 'View your wallet address', icon: 'eye' },
   { label: 'View current network', icon: 'globe' },
   { label: 'Request transaction signing', icon: 'pencil' },
-] as const
+]
+
+const permissions = props.scopes?.length
+  ? props.scopes.map((s) => SCOPE_LABELS[s] ?? { label: s, icon: 'eye' })
+  : DEFAULT_PERMISSIONS
 </script>
 
 <template>

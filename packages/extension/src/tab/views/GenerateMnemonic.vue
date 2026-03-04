@@ -12,15 +12,21 @@ const words = ref<string[]>([])
 const copied = ref(false)
 
 onMounted(() => {
-  const mnemonic = generateNewMnemonic()
-  words.value = mnemonicToWordArray(mnemonic)
-  store.setMnemonic(words.value)
+  try {
+    const mnemonic = generateNewMnemonic()
+    words.value = mnemonicToWordArray(mnemonic)
+    store.setMnemonic(words.value)
+  } catch (err) {
+    console.error('Failed to generate mnemonic:', err)
+  }
 })
 
 function copyToClipboard() {
   navigator.clipboard.writeText(words.value.join(' '))
   copied.value = true
-  setTimeout(() => { copied.value = false }, 2000)
+  setTimeout(() => {
+    copied.value = false
+  }, 2000)
 }
 </script>
 
@@ -51,9 +57,7 @@ function copyToClipboard() {
         <Button variant="secondary" block @click="copyToClipboard">
           {{ copied ? 'Copied' : 'Copy' }}
         </Button>
-        <Button block @click="router.push('/verify')">
-          Continue
-        </Button>
+        <Button block @click="router.push('/verify')"> Continue </Button>
       </div>
 
       <p class="text-xs text-red-500 dark:text-red-400 text-center">

@@ -28,6 +28,8 @@ const label = computed(() => props.level.charAt(0).toUpperCase() + props.level.s
 
 <template>
   <span
+    role="status"
+    :aria-label="`Risk level: ${label}`"
     class="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full"
     :class="badgeClasses"
   >

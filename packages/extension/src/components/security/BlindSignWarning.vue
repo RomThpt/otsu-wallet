@@ -9,10 +9,17 @@ const formattedJson = computed(() => JSON.stringify(props.tx, null, 2))
 </script>
 
 <template>
-  <div class="rounded-xl border-2 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-4 space-y-3">
+  <div
+    class="rounded-xl border-2 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-4 space-y-3"
+  >
     <!-- Header -->
     <div class="flex items-center gap-2">
-      <svg class="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        class="w-5 h-5 text-red-600 dark:text-red-400 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -32,6 +39,7 @@ const formattedJson = computed(() => JSON.stringify(props.tx, null, 2))
     <!-- Raw TX JSON -->
     <pre
       class="text-xs font-mono bg-gray-900 dark:bg-gray-950 text-gray-100 rounded-lg p-3 overflow-auto max-h-[200px] whitespace-pre-wrap break-all"
-    >{{ formattedJson }}</pre>
+      >{{ formattedJson }}</pre
+    >
   </div>
 </template>

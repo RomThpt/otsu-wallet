@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useWalletStore } from '../../stores/wallet'
 import TransactionItem from '../../components/wallet/TransactionItem.vue'
+import Skeleton from '../../components/common/Skeleton.vue'
 import Button from '../../components/common/Button.vue'
+
+const router = useRouter()
 
 const wallet = useWalletStore()
 const loading = ref(false)
@@ -37,11 +41,24 @@ async function loadMore() {
       <h2 class="text-sm font-bold">Transaction History</h2>
     </div>
 
-    <div v-if="loading && wallet.transactions.length === 0" class="flex-1 flex items-center justify-center">
-      <div class="animate-spin h-6 w-6 border-2 border-primary-500 border-t-transparent rounded-full" />
+    <div
+      v-if="loading && wallet.transactions.length === 0"
+      class="flex-1 divide-y divide-gray-100 dark:divide-gray-800"
+    >
+      <div v-for="i in 4" :key="i" class="px-4 py-3 flex items-center gap-3">
+        <Skeleton variant="circle" width="28px" height="28px" />
+        <div class="flex-1 space-y-2">
+          <Skeleton variant="text" width="50%" />
+          <Skeleton variant="text" width="30%" height="12px" />
+        </div>
+        <Skeleton variant="text" width="50px" />
+      </div>
     </div>
 
-    <div v-else-if="wallet.transactions.length === 0" class="flex-1 flex items-center justify-center p-4">
+    <div
+      v-else-if="wallet.transactions.length === 0"
+      class="flex-1 flex items-center justify-center p-4"
+    >
       <p class="text-sm text-gray-500">No transactions yet</p>
     </div>
 
@@ -50,16 +67,12 @@ async function loadMore() {
         v-for="tx in wallet.transactions"
         :key="tx.hash"
         :tx="tx"
+        class="cursor-pointer"
+        @click="router.push('/history/' + tx.hash)"
       />
 
       <div v-if="wallet.historyHasMore" class="p-4">
-        <Button
-          variant="secondary"
-          size="sm"
-          block
-          :loading="loading"
-          @click="loadMore"
-        >
+        <Button variant="secondary" size="sm" block :loading="loading" @click="loadMore">
           Load More
         </Button>
       </div>

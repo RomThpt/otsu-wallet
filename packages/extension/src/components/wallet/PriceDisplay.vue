@@ -21,8 +21,6 @@ const usdValue = computed(() => {
 <template>
   <span>
     {{ xrpAmount }} XRP
-    <span v-if="usdValue" class="text-gray-500 dark:text-gray-400">
-      (~${{ usdValue }})
-    </span>
+    <span v-if="usdValue" class="text-gray-500 dark:text-gray-400"> (~${{ usdValue }}) </span>
   </span>
 </template>

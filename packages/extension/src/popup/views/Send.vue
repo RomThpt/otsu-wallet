@@ -8,14 +8,18 @@ import { parseXrplUri } from '../../lib/uri-parser'
 import Button from '../../components/common/Button.vue'
 import Input from '../../components/common/Input.vue'
 import Card from '../../components/common/Card.vue'
+import AddressInput from '../../components/common/AddressInput.vue'
+import { useToast } from '../../composables/useToast'
 
 const router = useRouter()
+const toast = useToast()
 const route = useRoute()
 const wallet = useWalletStore()
 
 const destination = ref('')
 const amount = ref('')
 const destinationTag = ref('')
+const memo = ref('')
 const selectedCurrency = ref('XRP')
 const step = ref<'form' | 'confirm' | 'result'>('form')
 const loading = ref(false)
@@ -51,7 +55,11 @@ const canSend = computed(() => {
 
 onMounted(async () => {
   if (wallet.tokens.length === 0) {
-    try { await wallet.fetchTokens() } catch { /* ignore */ }
+    try {
+      await wallet.fetchTokens()
+    } catch {
+      /* ignore */
+    }
   }
 
   // Pre-fill from xrpl: URI query param
@@ -99,13 +107,16 @@ async function executeSend() {
         issuer,
         value: amount.value,
         destinationTag: destinationTag.value ? Number(destinationTag.value) : undefined,
+        memos: memo.value ? [{ type: 'text/plain', data: memo.value }] : undefined,
       })
       if (hash) {
         txHash.value = hash
         step.value = 'result'
+        toast.success('Transaction sent successfully')
         await wallet.fetchBalance()
       } else {
         error.value = 'Transaction failed'
+        toast.error('Transaction failed')
         step.value = 'form'
       }
     } else {
@@ -115,20 +126,24 @@ async function executeSend() {
           destination: destination.value,
           amount: amountDrops.value,
           destinationTag: destinationTag.value ? Number(destinationTag.value) : undefined,
+          memos: memo.value ? [{ type: 'text/plain', data: memo.value }] : undefined,
         },
       })
 
       if (response.success && response.data) {
         txHash.value = response.data.hash
         step.value = 'result'
+        toast.success('Transaction sent successfully')
         await wallet.fetchBalance()
       } else {
         error.value = response.error ?? 'Transaction failed'
+        toast.error(error.value)
         step.value = 'form'
       }
     }
   } catch (e) {
     error.value = (e as Error).message
+    toast.error(error.value)
     step.value = 'form'
   } finally {
     loading.value = false
@@ -147,7 +162,7 @@ async function executeSend() {
         <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Currency</label>
         <select
           v-model="selectedCurrency"
-          class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          class="mt-1.5 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
           <option v-for="opt in currencyOptions" :key="opt.value" :value="opt.value">
             {{ opt.label }}
@@ -155,11 +170,16 @@ async function executeSend() {
         </select>
       </div>
 
-      <Input
+      <AddressInput
         v-model="destination"
         label="Destination Address"
         placeholder="rAddress..."
         :error="destination && !isValidAddress ? 'Invalid XRPL address' : ''"
+        @select-contact="
+          (c) => {
+            if (c.tag) destinationTag = c.tag
+          }
+        "
       />
 
       <div>
@@ -167,7 +187,9 @@ async function executeSend() {
           <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
             Amount {{ isToken ? '' : '(XRP)' }}
           </label>
-          <button class="text-xs text-primary-600 dark:text-primary-400" @click="setMax">Max</button>
+          <button class="text-xs text-primary-600 dark:text-primary-400" @click="setMax">
+            Max
+          </button>
         </div>
         <input
           v-model="amount"
@@ -186,11 +208,16 @@ async function executeSend() {
         hint="Required for exchanges"
       />
 
+      <Input
+        v-model="memo"
+        label="Memo (optional)"
+        placeholder="e.g. Payment for invoice #123"
+        hint="Text memo attached to the transaction"
+      />
+
       <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
 
-      <Button block :disabled="!canSend" @click="confirmSend">
-        Review
-      </Button>
+      <Button block :disabled="!canSend" @click="confirmSend"> Review </Button>
     </template>
 
     <!-- Confirm Step -->
@@ -198,10 +225,12 @@ async function executeSend() {
       <h2 class="text-lg font-bold">Confirm Transaction</h2>
 
       <Card>
-        <div class="space-y-3 text-sm">
+        <div class="space-y-4 text-sm">
           <div class="flex justify-between">
             <span class="text-gray-500 dark:text-gray-400">To</span>
-            <span class="font-mono text-xs">{{ destination.slice(0, 10) }}...{{ destination.slice(-6) }}</span>
+            <span class="font-mono text-xs"
+              >{{ destination.slice(0, 10) }}...{{ destination.slice(-6) }}</span
+            >
           </div>
           <div class="flex justify-between">
             <span class="text-gray-500 dark:text-gray-400">Amount</span>
@@ -212,6 +241,10 @@ async function executeSend() {
           <div v-if="destinationTag" class="flex justify-between">
             <span class="text-gray-500 dark:text-gray-400">Tag</span>
             <span>{{ destinationTag }}</span>
+          </div>
+          <div v-if="memo" class="flex justify-between">
+            <span class="text-gray-500 dark:text-gray-400">Memo</span>
+            <span class="text-xs text-right break-all ml-4">{{ memo }}</span>
           </div>
         </div>
       </Card>
@@ -227,9 +260,21 @@ async function executeSend() {
     <!-- Result Step -->
     <template v-else>
       <div class="text-center py-8">
-        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
-          <svg class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        <div
+          class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-4"
+        >
+          <svg
+            class="h-6 w-6 text-green-600 dark:text-green-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         </div>
         <h2 class="text-lg font-bold">Transaction Sent</h2>

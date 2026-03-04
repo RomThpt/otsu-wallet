@@ -51,7 +51,9 @@ onMounted(async () => {
 <template>
   <div class="w-[400px] min-h-[400px] bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <div v-if="loading" class="flex items-center justify-center h-64">
-      <div class="animate-spin h-6 w-6 border-2 border-primary-500 border-t-transparent rounded-full" />
+      <div
+        class="animate-spin h-6 w-6 border-2 border-primary-500 border-t-transparent rounded-full"
+      />
     </div>
 
     <div v-else-if="error" class="p-6 text-center">

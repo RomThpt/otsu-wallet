@@ -37,9 +37,7 @@ onMounted(() => {
 })
 
 const isCorrect = computed(() => {
-  return verifyIndices.value.every(
-    (idx, i) => selectedWords.value[i] === store.mnemonic[idx],
-  )
+  return verifyIndices.value.every((idx, i) => selectedWords.value[i] === store.mnemonic[idx])
 })
 
 const allSelected = computed(() => {
@@ -59,9 +57,7 @@ const allSelected = computed(() => {
 
       <div class="space-y-4">
         <div v-for="(idx, i) in verifyIndices" :key="idx">
-          <p class="text-sm font-medium mb-2">
-            Word #{{ idx + 1 }}
-          </p>
+          <p class="text-sm font-medium mb-2">Word #{{ idx + 1 }}</p>
           <div class="grid grid-cols-2 gap-2">
             <button
               v-for="word in shuffledOptions[i]"
@@ -81,22 +77,13 @@ const allSelected = computed(() => {
       </div>
 
       <div class="flex gap-3">
-        <Button variant="secondary" block @click="router.push('/generate')">
-          Back
-        </Button>
-        <Button
-          block
-          :disabled="!allSelected || !isCorrect"
-          @click="router.push('/auth')"
-        >
+        <Button variant="secondary" block @click="router.push('/generate')"> Back </Button>
+        <Button block :disabled="!allSelected || !isCorrect" @click="router.push('/auth')">
           Continue
         </Button>
       </div>
 
-      <p
-        v-if="allSelected && !isCorrect"
-        class="text-xs text-red-500 text-center"
-      >
+      <p v-if="allSelected && !isCorrect" class="text-xs text-red-500 text-center">
         One or more words are incorrect. Please try again.
       </p>
     </div>

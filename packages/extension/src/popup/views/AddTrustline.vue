@@ -16,13 +16,9 @@ const limit = ref('1000000')
 const loading = ref(false)
 const error = ref('')
 
-const isValidIssuer = computed(() =>
-  /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(issuer.value),
-)
+const isValidIssuer = computed(() => /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(issuer.value))
 
-const canSubmit = computed(() =>
-  currency.value.trim().length > 0 && isValidIssuer.value,
-)
+const canSubmit = computed(() => currency.value.trim().length > 0 && isValidIssuer.value)
 
 async function handleConfirm() {
   loading.value = true
@@ -35,7 +31,7 @@ async function handleConfirm() {
       limit: limit.value,
     })
     if (hash) {
-      router.push('/tokens')
+      router.push('/explore/tokens')
     } else {
       error.value = 'Failed to set trustline'
       step.value = 'form'
@@ -54,11 +50,7 @@ async function handleConfirm() {
     <template v-if="step === 'form'">
       <h2 class="text-lg font-bold">Add Trustline</h2>
 
-      <Input
-        v-model="currency"
-        label="Currency Code"
-        placeholder="e.g. USD, EUR"
-      />
+      <Input v-model="currency" label="Currency Code" placeholder="e.g. USD, EUR" />
 
       <Input
         v-model="issuer"
@@ -77,7 +69,7 @@ async function handleConfirm() {
       <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
 
       <div class="flex gap-3">
-        <Button variant="secondary" block @click="router.push('/tokens')">Cancel</Button>
+        <Button variant="secondary" block @click="router.push('/explore/tokens')">Cancel</Button>
         <Button block :disabled="!canSubmit" @click="step = 'confirm'">Review</Button>
       </div>
     </template>

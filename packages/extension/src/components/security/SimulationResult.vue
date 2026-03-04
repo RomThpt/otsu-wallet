@@ -35,7 +35,9 @@ const deltaClass = computed(() => (delta: string) => {
     <template v-if="result.balanceChanges.length > 0">
       <table class="w-full text-sm">
         <thead>
-          <tr class="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+          <tr
+            class="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700"
+          >
             <th class="text-left py-1.5 font-medium">Currency</th>
             <th class="text-right py-1.5 font-medium">Before</th>
             <th class="text-right py-1.5 font-medium">After</th>
@@ -72,7 +74,9 @@ const deltaClass = computed(() => (delta: string) => {
     </template>
 
     <!-- Fee -->
-    <div class="flex justify-between items-center text-sm py-1.5 border-t border-gray-200 dark:border-gray-700">
+    <div
+      class="flex justify-between items-center text-sm py-1.5 border-t border-gray-200 dark:border-gray-700"
+    >
       <span class="text-gray-500 dark:text-gray-400">Fee</span>
       <span class="text-gray-900 dark:text-gray-100 font-mono">{{ result.fee }} drops</span>
     </div>

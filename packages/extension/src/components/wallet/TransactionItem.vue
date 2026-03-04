@@ -14,20 +14,32 @@ const displayAmount = computed(() => {
   return `${props.tx.amount.value} ${props.tx.amount.currency}`
 })
 
+const isContractCall = computed(() => props.tx.type === 'ContractCall')
+
 const directionLabel = computed(() => {
+  if (isContractCall.value && props.tx.contractCall) {
+    return `Call: ${props.tx.contractCall.functionName}`
+  }
   switch (props.tx.direction) {
-    case 'sent': return 'Sent'
-    case 'received': return 'Received'
-    case 'self': return 'Self'
-    default: return props.tx.type
+    case 'sent':
+      return 'Sent'
+    case 'received':
+      return 'Received'
+    case 'self':
+      return 'Self'
+    default:
+      return props.tx.type
   }
 })
 
 const directionColor = computed(() => {
   switch (props.tx.direction) {
-    case 'sent': return 'text-red-600 dark:text-red-400'
-    case 'received': return 'text-green-600 dark:text-green-400'
-    default: return 'text-gray-600 dark:text-gray-400'
+    case 'sent':
+      return 'text-red-600 dark:text-red-400'
+    case 'received':
+      return 'text-green-600 dark:text-green-400'
+    default:
+      return 'text-gray-600 dark:text-gray-400'
   }
 })
 
@@ -57,24 +69,75 @@ function truncate(addr: string): string {
 </script>
 
 <template>
-  <div class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+  <div
+    class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+  >
     <!-- Direction Arrow -->
     <div
       class="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
       :class="{
         'bg-red-100 dark:bg-red-900/30': tx.direction === 'sent',
         'bg-green-100 dark:bg-green-900/30': tx.direction === 'received',
-        'bg-gray-100 dark:bg-gray-800': tx.direction !== 'sent' && tx.direction !== 'received',
+        'bg-blue-100 dark:bg-blue-900/30': isContractCall,
+        'bg-gray-100 dark:bg-gray-800':
+          !isContractCall && tx.direction !== 'sent' && tx.direction !== 'received',
       }"
     >
-      <svg v-if="tx.direction === 'sent'" class="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7M17 7H7M17 7v10" />
+      <svg
+        v-if="tx.direction === 'sent'"
+        class="w-4 h-4 text-red-600 dark:text-red-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M7 17L17 7M17 7H7M17 7v10"
+        />
       </svg>
-      <svg v-else-if="tx.direction === 'received'" class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 7L7 17M7 17h10M7 17V7" />
+      <svg
+        v-else-if="tx.direction === 'received'"
+        class="w-4 h-4 text-green-600 dark:text-green-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M17 7L7 17M7 17h10M7 17V7"
+        />
       </svg>
-      <svg v-else class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      <svg
+        v-else-if="isContractCall"
+        class="w-4 h-4 text-blue-600 dark:text-blue-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+        />
+      </svg>
+      <svg
+        v-else
+        class="w-4 h-4 text-gray-500"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M13 10V3L4 14h7v7l9-11h-7z"
+        />
       </svg>
     </div>
 
@@ -97,7 +160,7 @@ function truncate(addr: string): string {
     <!-- Status -->
     <span
       v-if="!tx.successful"
-      class="text-[10px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 shrink-0"
+      class="text-xs px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 shrink-0"
     >
       Failed
     </span>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { SigningRequest, SimulationResult, RiskWarning, WalletSettings } from '@otsu/types'
-import { SIGNING_TIMEOUT_MS } from '@otsu/constants'
+import { SIGNING_TIMEOUT_MS, DROPS_PER_XRP } from '@otsu/constants'
 import { sendMessage } from '../../lib/messaging'
 import DAppInfo from '../../components/dapp/DAppInfo.vue'
 import SimulationResultView from '../../components/security/SimulationResult.vue'
@@ -22,6 +22,30 @@ let timerInterval: ReturnType<typeof setInterval> | undefined
 const remainingSeconds = computed(() => Math.ceil(remainingMs.value / 1000))
 
 const isExpired = computed(() => remainingMs.value <= 0)
+
+const txParams = computed(() => (props.request.params as Record<string, unknown>) ?? {})
+
+const isContractCall = computed(() => txParams.value.TransactionType === 'ContractCall')
+
+const contractCallInfo = computed(() => {
+  if (!isContractCall.value) return null
+  const params = txParams.value
+  const contractParams = params.Parameters as Array<Record<string, unknown>> | undefined
+  return {
+    contractAddress: (params.Destination as string) ?? '',
+    functionName: (params.ContractFunction as string) ?? '',
+    parameters:
+      contractParams?.map((p) => {
+        const inner = (p.ContractParameter ?? p) as Record<string, unknown>
+        return {
+          sType: (inner.SType as string) ?? 'Blob',
+          value: (inner.Value as string) ?? '',
+          flags: (inner.Flags as number) ?? 0,
+        }
+      }) ?? [],
+    gasLimit: (Number(params.Fee ?? 0) / DROPS_PER_XRP).toFixed(6),
+  }
+})
 
 const simulationFailed = computed(() => props.simulation && !props.simulation.success)
 
@@ -81,7 +105,12 @@ async function handleConfirm() {
 </script>
 
 <template>
-  <div class="flex flex-col h-full min-h-[400px]">
+  <div
+    role="dialog"
+    aria-modal="true"
+    aria-label="Transaction signing request"
+    class="flex flex-col h-full min-h-[400px]"
+  >
     <!-- Header -->
     <div class="p-4 border-b border-gray-200 dark:border-gray-700">
       <div class="flex items-center justify-between">
@@ -98,7 +127,8 @@ async function handleConfirm() {
         </span>
       </div>
       <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-        requests {{ request.method === 'signAndSubmit' ? 'signing and submission' : 'transaction signing' }}
+        requests
+        {{ request.method === 'signAndSubmit' ? 'signing and submission' : 'transaction signing' }}
       </p>
     </div>
 
@@ -115,9 +145,53 @@ async function handleConfirm() {
         </p>
       </div>
 
+      <!-- ContractCall info -->
+      <div
+        v-if="contractCallInfo && !isExpired"
+        class="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 space-y-2"
+      >
+        <p class="text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wide">
+          Contract Call
+        </p>
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-gray-500 dark:text-gray-400">Contract</span>
+          <span class="font-mono text-xs">
+            {{ contractCallInfo.contractAddress.slice(0, 8) }}...{{
+              contractCallInfo.contractAddress.slice(-4)
+            }}
+          </span>
+        </div>
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-gray-500 dark:text-gray-400">Function</span>
+          <span class="font-mono text-xs font-medium">{{ contractCallInfo.functionName }}</span>
+        </div>
+        <div v-if="contractCallInfo.parameters.length > 0" class="space-y-1">
+          <div
+            v-for="(param, idx) in contractCallInfo.parameters"
+            :key="idx"
+            class="flex items-center gap-2 text-xs"
+          >
+            <span
+              class="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-800/50 text-blue-700 dark:text-blue-300 font-mono"
+            >
+              {{ param.sType }}
+            </span>
+            <span class="text-gray-600 dark:text-gray-400 font-mono truncate">{{
+              param.value
+            }}</span>
+          </div>
+        </div>
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-gray-500 dark:text-gray-400">Gas limit</span>
+          <span>{{ contractCallInfo.gasLimit }} XRP</span>
+        </div>
+      </div>
+
       <!-- Simulation failed + blind signing disabled -->
       <template v-else-if="simulationFailed && !blindSigningAllowed">
-        <div class="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4">
+        <div
+          class="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4"
+        >
           <p class="text-sm font-medium text-red-800 dark:text-red-200">Simulation Failed</p>
           <p class="text-xs text-red-700 dark:text-red-300 mt-1">
             {{ simulation?.error ?? 'Transaction could not be simulated.' }}
@@ -156,6 +230,7 @@ async function handleConfirm() {
     <!-- Actions -->
     <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex gap-3">
       <button
+        aria-label="Reject transaction"
         class="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
         :disabled="submitting"
         @click="handleReject"
@@ -164,6 +239,7 @@ async function handleConfirm() {
       </button>
       <button
         v-if="canConfirm"
+        aria-label="Confirm transaction"
         class="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 transition-colors disabled:opacity-50"
         :disabled="submitting"
         @click="handleConfirm"

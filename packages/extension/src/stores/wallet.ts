@@ -3,13 +3,21 @@ import { ref } from 'vue'
 import type {
   WalletState,
   Account,
+  AuthMethod,
   TokenBalance,
   TokenMetadata,
   TransactionRecord,
   TransactionHistoryPage,
   ImportAccountPayload,
   TrustlineParams,
+  EscrowRecord,
+  CheckRecord,
+  NetworkConfig,
+  CustomNetworkConfig,
+  AddCustomNetworkPayload,
+  VaultData,
 } from '@otsu/types'
+import { registerPasskey, authenticatePasskey } from '@otsu/core'
 import { sendMessage } from '../lib/messaging'
 
 export const useWalletStore = defineStore('wallet', () => {
@@ -17,6 +25,7 @@ export const useWalletStore = defineStore('wallet', () => {
   const accounts = ref<Account[]>([])
   const activeAccount = ref<string | null>(null)
   const network = ref('testnet')
+  const authMethod = ref<AuthMethod>('password')
   const balance = ref<{ available: string; total: string; reserved: string } | null>(null)
   const loading = ref(false)
 
@@ -29,6 +38,14 @@ export const useWalletStore = defineStore('wallet', () => {
   const historyMarker = ref<unknown>(undefined)
   const historyHasMore = ref(false)
 
+  // Network state
+  const predefinedNetworks = ref<Record<string, NetworkConfig>>({})
+  const customNetworks = ref<CustomNetworkConfig[]>([])
+
+  // Phase 6 state
+  const escrows = ref<EscrowRecord[]>([])
+  const checks = ref<CheckRecord[]>([])
+
   async function fetchState(): Promise<void> {
     const response = await sendMessage<WalletState>({ type: 'GET_STATE' })
     if (response.success && response.data) {
@@ -36,13 +53,24 @@ export const useWalletStore = defineStore('wallet', () => {
       accounts.value = response.data.accounts
       activeAccount.value = response.data.activeAccount
       network.value = response.data.network
+      authMethod.value = response.data.authMethod ?? 'password'
     }
   }
 
-  async function unlock(password: string): Promise<boolean> {
+  async function unlock(method: AuthMethod, password?: string): Promise<boolean> {
     loading.value = true
     try {
-      const response = await sendMessage({ type: 'UNLOCK', payload: { password } })
+      if (method === 'passkey') {
+        const vaultData = await authenticatePasskey()
+        const response = await sendMessage({ type: 'UNLOCK_WITH_VAULT', payload: vaultData })
+        if (response.success) {
+          locked.value = false
+          await fetchState()
+          return true
+        }
+        return false
+      }
+      const response = await sendMessage({ type: 'UNLOCK', payload: { method, password } })
       if (response.success) {
         locked.value = false
         await fetchState()
@@ -200,6 +228,7 @@ export const useWalletStore = defineStore('wallet', () => {
     issuer: string
     value: string
     destinationTag?: number
+    memos?: Array<{ type?: string; data: string }>
   }): Promise<string | null> {
     loading.value = true
     try {
@@ -239,11 +268,120 @@ export const useWalletStore = defineStore('wallet', () => {
     }
   }
 
+  // Network actions
+
+  async function fetchNetworks(): Promise<void> {
+    const response = await sendMessage<{
+      predefined: Record<string, NetworkConfig>
+      custom: CustomNetworkConfig[]
+    }>({ type: 'GET_NETWORKS' })
+    if (response.success && response.data) {
+      predefinedNetworks.value = response.data.predefined
+      customNetworks.value = response.data.custom
+    }
+  }
+
+  async function addCustomNetwork(payload: AddCustomNetworkPayload): Promise<boolean> {
+    const response = await sendMessage<CustomNetworkConfig>({
+      type: 'ADD_CUSTOM_NETWORK',
+      payload,
+    })
+    if (response.success && response.data) {
+      customNetworks.value.push(response.data)
+      return true
+    }
+    return false
+  }
+
+  async function removeCustomNetwork(networkId: string): Promise<boolean> {
+    const response = await sendMessage({
+      type: 'REMOVE_CUSTOM_NETWORK',
+      payload: { networkId },
+    })
+    if (response.success) {
+      customNetworks.value = customNetworks.value.filter((n) => n.id !== networkId)
+      return true
+    }
+    return false
+  }
+
+  // Phase 6 actions
+
+  async function fetchAccountEscrows(): Promise<void> {
+    const response = await sendMessage<EscrowRecord[]>({ type: 'GET_ACCOUNT_ESCROWS' })
+    if (response.success && response.data) {
+      escrows.value = response.data
+    }
+  }
+
+  async function fetchAccountChecks(): Promise<void> {
+    const response = await sendMessage<CheckRecord[]>({ type: 'GET_ACCOUNT_CHECKS' })
+    if (response.success && response.data) {
+      checks.value = response.data
+    }
+  }
+
+  async function resetWallet(): Promise<boolean> {
+    const response = await sendMessage({ type: 'RESET_WALLET' })
+    if (response.success) {
+      locked.value = true
+      accounts.value = []
+      activeAccount.value = null
+      network.value = 'testnet'
+      balance.value = null
+      tokens.value = []
+      transactions.value = []
+      xrpPrice.value = null
+      escrows.value = []
+      checks.value = []
+      return true
+    }
+    return false
+  }
+
+  async function changeAuthMethod(method: AuthMethod, password?: string): Promise<void> {
+    if (method === 'passkey') {
+      const vaultResponse = await sendMessage<VaultData>({ type: 'GET_VAULT_DATA' })
+      if (!vaultResponse.success || !vaultResponse.data) {
+        throw new Error(vaultResponse.error ?? 'Wallet is locked')
+      }
+      await registerPasskey(vaultResponse.data)
+      const response = await sendMessage({
+        type: 'CHANGE_AUTH_METHOD',
+        payload: { method: 'passkey', registered: true },
+      })
+      if (!response.success) {
+        throw new Error(response.error ?? 'Failed to update auth state')
+      }
+    } else {
+      const response = await sendMessage({
+        type: 'CHANGE_AUTH_METHOD',
+        payload: { method, password },
+      })
+      if (!response.success) {
+        throw new Error(response.error ?? 'Failed to switch to password')
+      }
+    }
+    authMethod.value = method
+  }
+
+  async function exportMnemonic(method: AuthMethod, password?: string): Promise<string | null> {
+    const response = await sendMessage<{ mnemonic: string }>({
+      type: 'EXPORT_MNEMONIC',
+      payload: { method, password },
+    })
+    if (response.success && response.data) {
+      return response.data.mnemonic
+    }
+    return null
+  }
+
   return {
     locked,
     accounts,
     activeAccount,
     network,
+    authMethod,
     balance,
     loading,
     tokens,
@@ -269,5 +407,17 @@ export const useWalletStore = defineStore('wallet', () => {
     sendTokenPayment,
     fetchTransactionHistory,
     fetchXrpPrice,
+    predefinedNetworks,
+    customNetworks,
+    escrows,
+    checks,
+    fetchNetworks,
+    addCustomNetwork,
+    removeCustomNetwork,
+    fetchAccountEscrows,
+    fetchAccountChecks,
+    changeAuthMethod,
+    exportMnemonic,
+    resetWallet,
   }
 })

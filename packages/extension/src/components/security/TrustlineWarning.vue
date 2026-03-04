@@ -7,7 +7,10 @@ defineProps<{
 </script>
 
 <template>
-  <div class="rounded-lg p-3 space-y-2" :class="verified ? 'bg-green-50 dark:bg-green-900/20' : 'bg-yellow-50 dark:bg-yellow-900/20'">
+  <div
+    class="rounded-lg p-3 space-y-2"
+    :class="verified ? 'bg-green-50 dark:bg-green-900/20' : 'bg-yellow-50 dark:bg-yellow-900/20'"
+  >
     <template v-if="verified">
       <p class="text-xs font-medium text-green-800 dark:text-green-200">Verified Issuer</p>
       <p v-if="domain" class="text-xs text-green-700 dark:text-green-300">Domain: {{ domain }}</p>

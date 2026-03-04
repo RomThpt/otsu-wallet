@@ -7,3 +7,13 @@
     @apply m-0 p-0 font-sans antialiased;
   }
 }
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 150ms ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

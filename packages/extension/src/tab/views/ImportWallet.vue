@@ -10,7 +10,12 @@ import XummNumbersInput from '../../components/wallet/XummNumbersInput.vue'
 
 const router = useRouter()
 
-type ImportFormat = 'mnemonic' | 'secret_key' | 'family_seed' | 'private_key_hex' | 'xumm_secret_numbers'
+type ImportFormat =
+  | 'mnemonic'
+  | 'secret_key'
+  | 'family_seed'
+  | 'private_key_hex'
+  | 'xumm_secret_numbers'
 
 const step = ref<'format' | 'input' | 'auth' | 'complete'>('format')
 const format = ref<ImportFormat>('mnemonic')
@@ -28,8 +33,8 @@ const formats = [
   { id: 'xumm_secret_numbers' as const, name: 'Xumm Secret Numbers', desc: '8 rows of 6 digits' },
 ]
 
-const passwordValid = computed(() =>
-  password.value.length >= 8 && password.value === confirmPassword.value,
+const passwordValid = computed(
+  () => password.value.length >= 8 && password.value === confirmPassword.value,
 )
 
 function selectFormat(f: ImportFormat) {
@@ -179,9 +184,21 @@ async function handleImport() {
       <!-- Step 4: Complete -->
       <template v-else>
         <div class="text-center py-8">
-          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
-            <svg class="h-8 w-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          <div
+            class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-4"
+          >
+            <svg
+              class="h-8 w-8 text-green-600 dark:text-green-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
           <h2 class="text-xl font-bold">Wallet Imported</h2>

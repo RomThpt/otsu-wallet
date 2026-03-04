@@ -46,8 +46,10 @@ function handleInput(index: number, event: Event) {
           maxlength="6"
           class="block w-full rounded-lg border px-3 py-1.5 text-sm font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-primary-500"
           :class="{
-            'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100': validations[i] === null || validations[i] === true,
-            'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300': validations[i] === false,
+            'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100':
+              validations[i] === null || validations[i] === true,
+            'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300':
+              validations[i] === false,
           }"
           placeholder="000000"
           @input="handleInput(i, $event)"

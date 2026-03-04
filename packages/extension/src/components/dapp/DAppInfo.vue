@@ -20,7 +20,9 @@ const fallbackLetter = computed(() => {
 <template>
   <div class="flex items-center gap-3">
     <!-- Favicon -->
-    <div class="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 overflow-hidden">
+    <div
+      class="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 overflow-hidden"
+    >
       <img
         v-if="favicon"
         :src="favicon"
@@ -28,7 +30,9 @@ const fallbackLetter = computed(() => {
         class="w-6 h-6 object-contain"
         @error="($event.target as HTMLImageElement).style.display = 'none'"
       />
-      <span v-else class="text-sm font-bold text-gray-500 dark:text-gray-400">{{ fallbackLetter }}</span>
+      <span v-else class="text-sm font-bold text-gray-500 dark:text-gray-400">{{
+        fallbackLetter
+      }}</span>
     </div>
 
     <!-- Origin + Title -->

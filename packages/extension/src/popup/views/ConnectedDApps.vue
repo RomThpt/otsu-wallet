@@ -44,17 +44,27 @@ async function handleRevoke(origin: string) {
         @click="router.back()"
       >
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
         </svg>
       </button>
       <h2 class="text-sm font-bold">Connected dApps</h2>
     </div>
 
     <div v-if="loading" class="flex-1 flex items-center justify-center">
-      <div class="animate-spin h-6 w-6 border-2 border-primary-500 border-t-transparent rounded-full" />
+      <div
+        class="animate-spin h-6 w-6 border-2 border-primary-500 border-t-transparent rounded-full"
+      />
     </div>
 
-    <div v-else-if="settingsStore.permissions.length === 0" class="flex-1 flex items-center justify-center p-4">
+    <div
+      v-else-if="settingsStore.permissions.length === 0"
+      class="flex-1 flex items-center justify-center p-4"
+    >
       <p class="text-sm text-gray-500">No connected dApps</p>
     </div>
 
@@ -89,6 +99,15 @@ async function handleRevoke(origin: string) {
           <p class="text-sm font-medium truncate">{{ permission.title || permission.origin }}</p>
           <p class="text-xs text-gray-500 truncate">{{ permission.origin }}</p>
           <p class="text-xs text-gray-400">Connected {{ formatDate(permission.connectedAt) }}</p>
+          <div v-if="permission.scopes?.length" class="flex flex-wrap gap-1 mt-1">
+            <span
+              v-for="scope in permission.scopes"
+              :key="scope"
+              class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+            >
+              {{ scope }}
+            </span>
+          </div>
         </div>
 
         <button

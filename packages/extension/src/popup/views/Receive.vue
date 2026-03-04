@@ -17,7 +17,9 @@ const isTestnet = computed(() => {
 async function copyAddress() {
   await navigator.clipboard.writeText(address.value)
   copied.value = true
-  setTimeout(() => { copied.value = false }, 2000)
+  setTimeout(() => {
+    copied.value = false
+  }, 2000)
 }
 
 onMounted(async () => {
@@ -45,15 +47,12 @@ onMounted(async () => {
 
     <Card>
       <div class="flex flex-col items-center space-y-4">
-        <div
-          v-if="qrDataUrl"
-          class="rounded-lg bg-white p-2"
-        >
-          <img :src="qrDataUrl" alt="QR Code" class="w-48 h-48" />
+        <div v-if="qrDataUrl" class="rounded-lg bg-white p-2">
+          <img :src="qrDataUrl" alt="QR Code" class="w-40 h-40" />
         </div>
         <div
           v-else
-          class="w-48 h-48 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm text-gray-500"
+          class="w-40 h-40 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm text-gray-500"
         >
           Loading QR...
         </div>

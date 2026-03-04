@@ -42,5 +42,13 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
-  return { settings, permissions, loading, fetchSettings, updateSettings, fetchPermissions, revokePermission }
+  return {
+    settings,
+    permissions,
+    loading,
+    fetchSettings,
+    updateSettings,
+    fetchPermissions,
+    revokePermission,
+  }
 })
