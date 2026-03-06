@@ -65,13 +65,19 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
           payload.authMethod,
           payload.password,
           payload.mnemonic,
+          payload.credentialId,
+          payload.prfKey,
         )
         return { success: true, data: result }
       }
 
       case 'UNLOCK': {
         const payload = message.payload as UnlockPayload
-        const state = await controller.unlock(payload.method ?? 'password', payload.password)
+        const state = await controller.unlock(
+          payload.method ?? 'password',
+          payload.password,
+          payload.passkeyKey,
+        )
         return { success: true, data: state }
       }
 
@@ -401,19 +407,13 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
 
       case 'CHANGE_AUTH_METHOD': {
         const payload = message.payload as ChangeAuthMethodPayload
-        await controller.changeAuthMethod(payload.method, payload.password, payload.registered)
+        await controller.changeAuthMethod(
+          payload.method,
+          payload.password,
+          payload.credentialId,
+          payload.prfKey,
+        )
         return { success: true }
-      }
-
-      case 'GET_VAULT_DATA': {
-        const data = controller.getVaultDataForRekey()
-        return { success: true, data }
-      }
-
-      case 'UNLOCK_WITH_VAULT': {
-        const payload = message.payload as import('@otsu/types').VaultData
-        const state = await controller.unlockWithVaultData(payload)
-        return { success: true, data: state }
       }
 
       default:

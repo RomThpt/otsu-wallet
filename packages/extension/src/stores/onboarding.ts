@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { AuthMethod } from '@otsu/types'
+import { performPasskeyRegistration } from '@otsu/core'
 import { sendMessage } from '../lib/messaging'
 
 export const useOnboardingStore = defineStore('onboarding', () => {
@@ -23,12 +24,23 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     error.value = null
 
     try {
+      let credentialId: string | undefined
+      let prfKey: string | undefined
+
+      if (authMethod.value === 'passkey') {
+        const credential = await performPasskeyRegistration()
+        credentialId = credential.credentialId
+        prfKey = credential.prfKey
+      }
+
       const response = await sendMessage({
         type: 'CREATE_WALLET',
         payload: {
           mnemonic: mnemonic.value.join(' '),
           authMethod: authMethod.value,
           password: password.value || undefined,
+          credentialId,
+          prfKey,
         },
       })
 

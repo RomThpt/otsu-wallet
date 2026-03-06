@@ -35,8 +35,39 @@ export class ProviderController {
   private simulator = new TransactionSimulator()
   private riskScanner = new RiskScanner()
   private initialized = false
+  private signingKey: CryptoKey | null = null
 
   constructor(private wallet: WalletController) {}
+
+  private async getSigningKey(): Promise<CryptoKey> {
+    if (!this.signingKey) {
+      this.signingKey = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, [
+        'encrypt',
+        'decrypt',
+      ])
+    }
+    return this.signingKey
+  }
+
+  private async encryptSigningData(data: unknown): Promise<string> {
+    const key = await this.getSigningKey()
+    const iv = crypto.getRandomValues(new Uint8Array(12))
+    const encoded = new TextEncoder().encode(JSON.stringify(data))
+    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded)
+    const combined = new Uint8Array(iv.length + ciphertext.byteLength)
+    combined.set(iv)
+    combined.set(new Uint8Array(ciphertext), iv.length)
+    return btoa(String.fromCharCode(...combined))
+  }
+
+  private async decryptSigningData<T>(encrypted: string): Promise<T> {
+    const key = await this.getSigningKey()
+    const combined = Uint8Array.from(atob(encrypted), (c) => c.charCodeAt(0))
+    const iv = combined.slice(0, 12)
+    const ciphertext = combined.slice(12)
+    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext)
+    return JSON.parse(new TextDecoder().decode(decrypted)) as T
+  }
 
   async initialize(): Promise<void> {
     if (this.initialized) return
@@ -148,7 +179,9 @@ export class ProviderController {
   } | null> {
     try {
       const result = await chrome.storage.local.get(`${SIGNING_REQUEST_PREFIX}${requestId}`)
-      return result[`${SIGNING_REQUEST_PREFIX}${requestId}`] ?? null
+      const encrypted = result[`${SIGNING_REQUEST_PREFIX}${requestId}`] as string | undefined
+      if (!encrypted) return null
+      return await this.decryptSigningData(encrypted)
     } catch {
       return null
     }
@@ -432,15 +465,16 @@ export class ProviderController {
 
       const settings = await this.wallet.getSettings()
 
-      // Persist signing request data to chrome.storage.local for the notification window
+      // Persist encrypted signing request data for the notification window
       try {
+        const encrypted = await this.encryptSigningData({
+          request: signingRequest,
+          simulation,
+          warnings,
+          settings,
+        })
         await chrome.storage.local.set({
-          [`${SIGNING_REQUEST_PREFIX}${signingRequest.id}`]: {
-            request: signingRequest,
-            simulation,
-            warnings,
-            settings,
-          },
+          [`${SIGNING_REQUEST_PREFIX}${signingRequest.id}`]: encrypted,
         })
       } catch {
         // Storage write failed

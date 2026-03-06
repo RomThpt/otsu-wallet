@@ -15,9 +15,8 @@ import type {
   NetworkConfig,
   CustomNetworkConfig,
   AddCustomNetworkPayload,
-  VaultData,
 } from '@otsu/types'
-import { registerPasskey, authenticatePasskey } from '@otsu/core'
+import { performPasskeyRegistration, getPasskeyDecryptionKey } from '@otsu/core'
 import { sendMessage } from '../lib/messaging'
 
 export const useWalletStore = defineStore('wallet', () => {
@@ -60,17 +59,14 @@ export const useWalletStore = defineStore('wallet', () => {
   async function unlock(method: AuthMethod, password?: string): Promise<boolean> {
     loading.value = true
     try {
+      let passkeyKey: string | undefined
       if (method === 'passkey') {
-        const vaultData = await authenticatePasskey()
-        const response = await sendMessage({ type: 'UNLOCK_WITH_VAULT', payload: vaultData })
-        if (response.success) {
-          locked.value = false
-          await fetchState()
-          return true
-        }
-        return false
+        passkeyKey = await getPasskeyDecryptionKey()
       }
-      const response = await sendMessage({ type: 'UNLOCK', payload: { method, password } })
+      const response = await sendMessage({
+        type: 'UNLOCK',
+        payload: { method, password, passkeyKey },
+      })
       if (response.success) {
         locked.value = false
         await fetchState()
@@ -341,17 +337,17 @@ export const useWalletStore = defineStore('wallet', () => {
 
   async function changeAuthMethod(method: AuthMethod, password?: string): Promise<void> {
     if (method === 'passkey') {
-      const vaultResponse = await sendMessage<VaultData>({ type: 'GET_VAULT_DATA' })
-      if (!vaultResponse.success || !vaultResponse.data) {
-        throw new Error(vaultResponse.error ?? 'Wallet is locked')
-      }
-      await registerPasskey(vaultResponse.data)
+      const credential = await performPasskeyRegistration()
       const response = await sendMessage({
         type: 'CHANGE_AUTH_METHOD',
-        payload: { method: 'passkey', registered: true },
+        payload: {
+          method: 'passkey',
+          credentialId: credential.credentialId,
+          prfKey: credential.prfKey,
+        },
       })
       if (!response.success) {
-        throw new Error(response.error ?? 'Failed to update auth state')
+        throw new Error(response.error ?? 'Failed to switch to passkey')
       }
     } else {
       const response = await sendMessage({

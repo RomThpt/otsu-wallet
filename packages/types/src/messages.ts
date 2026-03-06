@@ -60,8 +60,6 @@ export type ExtensionMessageType =
   | 'GET_CONTRACT_INFO'
   | 'CALL_CONTRACT'
   | 'CHANGE_AUTH_METHOD'
-  | 'GET_VAULT_DATA'
-  | 'UNLOCK_WITH_VAULT'
 
 export interface ExtensionMessage<T = unknown> {
   type: ExtensionMessageType
@@ -78,11 +76,14 @@ export interface CreateWalletPayload {
   mnemonic: string
   password?: string
   authMethod: 'password' | 'passkey'
+  credentialId?: string
+  prfKey?: string
 }
 
 export interface UnlockPayload {
   method?: 'password' | 'passkey'
   password?: string
+  passkeyKey?: string
 }
 
 export interface SendPaymentPayload {
@@ -291,7 +292,8 @@ export interface GetContractInfoPayload {
 export interface ChangeAuthMethodPayload {
   method: 'password' | 'passkey'
   password?: string
-  registered?: boolean
+  credentialId?: string
+  prfKey?: string
 }
 
 export type CallContractPayload = import('./contract').ContractCallParams

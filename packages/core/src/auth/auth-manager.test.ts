@@ -9,8 +9,8 @@ vi.mock('./auth-password', () => ({
 }))
 
 vi.mock('./auth-passkey', () => ({
-  registerPasskey: vi.fn(),
-  authenticatePasskey: vi.fn(),
+  storePasskeyVault: vi.fn(),
+  decryptPasskeyVault: vi.fn(),
   hasPasskey: vi.fn().mockResolvedValue(false),
 }))
 

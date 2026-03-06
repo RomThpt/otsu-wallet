@@ -20,11 +20,21 @@ interface PasskeyVaultRecord {
   salt: string
 }
 
+export interface PasskeyRegistrationResult {
+  credentialId: string
+  prfKey: string
+}
+
 function generateChallenge(): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(32))
 }
 
-export async function registerPasskey(vaultData: VaultData): Promise<void> {
+/**
+ * Runs WebAuthn registration ceremony in UI context.
+ * Returns only the credential ID and PRF-derived key -- no vault data involved.
+ * Requires PRF extension support; throws if unavailable.
+ */
+export async function performPasskeyRegistration(): Promise<PasskeyRegistrationResult> {
   try {
     const challenge = generateChallenge()
 
@@ -60,47 +70,55 @@ export async function registerPasskey(vaultData: VaultData): Promise<void> {
       | { enabled?: boolean; results?: { first: ArrayBuffer } }
       | undefined
 
-    const plaintext = JSON.stringify(vaultData)
+    if (!prfResult?.results?.first) {
+      throw new OtsuError(
+        ErrorCodes.PASSKEY_NOT_SUPPORTED,
+        'Your device does not support the PRF extension required for passkey authentication. Please use password authentication.',
+      )
+    }
 
-    if (prfResult?.results?.first) {
-      const prfKey = new Uint8Array(prfResult.results.first)
-      const encrypted = await encrypt(plaintext, bufferToHex(prfKey))
-
-      const record: PasskeyVaultRecord = {
-        credentialId: registration.id,
-        encryptedVault: encrypted.ciphertext,
-        iv: encrypted.iv,
-        salt: encrypted.salt,
-      }
-
-      await chrome.storage.local.set({ [PASSKEY_VAULT_KEY]: record })
-    } else {
-      const wrappingKey = bufferToHex(crypto.getRandomValues(new Uint8Array(32)))
-      const encrypted = await encrypt(plaintext, wrappingKey)
-
-      const record: PasskeyVaultRecord = {
-        credentialId: registration.id,
-        encryptedVault: encrypted.ciphertext,
-        iv: encrypted.iv,
-        salt: encrypted.salt,
-      }
-
-      await chrome.storage.local.set({ [PASSKEY_VAULT_KEY]: record })
-      await chrome.storage.session.set({ [PASSKEY_VAULT_KEY + '-wrapping']: wrappingKey })
+    return {
+      credentialId: registration.id,
+      prfKey: bufferToHex(new Uint8Array(prfResult.results.first)),
     }
   } catch (error) {
+    if (error instanceof OtsuError) throw error
     throw new OtsuError(ErrorCodes.PASSKEY_REGISTRATION_FAILED, (error as Error).message)
   }
 }
 
-export async function authenticatePasskey(): Promise<VaultData> {
+/**
+ * Encrypts vault data with the PRF key and stores the passkey vault record.
+ * Runs in background context -- vault data never leaves the background.
+ */
+export async function storePasskeyVault(
+  vaultData: VaultData,
+  credentialId: string,
+  prfKey: string,
+): Promise<void> {
+  const plaintext = JSON.stringify(vaultData)
+  const encrypted = await encrypt(plaintext, prfKey)
+
+  const record: PasskeyVaultRecord = {
+    credentialId,
+    encryptedVault: encrypted.ciphertext,
+    iv: encrypted.iv,
+    salt: encrypted.salt,
+  }
+
+  await chrome.storage.local.set({ [PASSKEY_VAULT_KEY]: record })
+}
+
+/**
+ * Runs WebAuthn authentication ceremony in UI context.
+ * Returns only the PRF-derived decryption key -- vault data stays in background.
+ */
+export async function getPasskeyDecryptionKey(): Promise<string> {
   const localResult = await chrome.storage.local.get(PASSKEY_VAULT_KEY)
   const stored: PasskeyVaultRecord | undefined = localResult[PASSKEY_VAULT_KEY]
   if (!stored) {
     throw new OtsuError(ErrorCodes.VAULT_NOT_FOUND, 'No passkey vault found')
   }
-
-  const record: PasskeyVaultRecord = stored
 
   try {
     const challenge = generateChallenge()
@@ -111,7 +129,7 @@ export async function authenticatePasskey(): Promise<VaultData> {
         rpId: getRpId(),
         allowCredentials: [
           {
-            id: record.credentialId,
+            id: stored.credentialId,
             type: 'public-key',
           },
         ],
@@ -130,36 +148,41 @@ export async function authenticatePasskey(): Promise<VaultData> {
       | { results?: { first: ArrayBuffer } }
       | undefined
 
-    let key: string
-
-    if (prfResult?.results?.first) {
-      key = bufferToHex(new Uint8Array(prfResult.results.first))
-    } else {
-      const sessionResult = await chrome.storage.session.get(PASSKEY_VAULT_KEY + '-wrapping')
-      const wrappingKey: string | undefined = sessionResult[PASSKEY_VAULT_KEY + '-wrapping']
-      if (!wrappingKey) {
-        throw new OtsuError(
-          ErrorCodes.PASSKEY_NOT_SUPPORTED,
-          'PRF not available and no wrapping key',
-        )
-      }
-      key = wrappingKey
+    if (!prfResult?.results?.first) {
+      throw new OtsuError(
+        ErrorCodes.PASSKEY_NOT_SUPPORTED,
+        'PRF extension not available. Please re-register your passkey or use password authentication.',
+      )
     }
 
-    const plaintext = await decrypt(
-      {
-        ciphertext: record.encryptedVault,
-        iv: record.iv,
-        salt: record.salt,
-      },
-      key,
-    )
-
-    return JSON.parse(plaintext) as VaultData
+    return bufferToHex(new Uint8Array(prfResult.results.first))
   } catch (error) {
     if (error instanceof OtsuError) throw error
     throw new OtsuError(ErrorCodes.INVALID_PASSWORD, (error as Error).message)
   }
+}
+
+/**
+ * Decrypts the passkey vault using the provided key.
+ * Runs in background context -- decrypted data stays in background.
+ */
+export async function decryptPasskeyVault(key: string): Promise<VaultData> {
+  const localResult = await chrome.storage.local.get(PASSKEY_VAULT_KEY)
+  const stored: PasskeyVaultRecord | undefined = localResult[PASSKEY_VAULT_KEY]
+  if (!stored) {
+    throw new OtsuError(ErrorCodes.VAULT_NOT_FOUND, 'No passkey vault found')
+  }
+
+  const plaintext = await decrypt(
+    {
+      ciphertext: stored.encryptedVault,
+      iv: stored.iv,
+      salt: stored.salt,
+    },
+    key,
+  )
+
+  return JSON.parse(plaintext) as VaultData
 }
 
 export async function hasPasskey(): Promise<boolean> {

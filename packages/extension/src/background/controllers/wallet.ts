@@ -133,6 +133,8 @@ export class WalletController {
     authMethod: AuthMethod,
     password?: string,
     existingMnemonic?: string,
+    credentialId?: string,
+    prfKey?: string,
   ): Promise<{ mnemonic: string; address: string }> {
     const mnemonic = existingMnemonic ?? generateNewMnemonic()
     const derived = deriveAccount(mnemonic, 0)
@@ -143,7 +145,14 @@ export class WalletController {
       accounts: [vaultAccount],
     }
 
-    await this.auth.setup(vaultData, authMethod, password)
+    if (authMethod === 'passkey') {
+      if (!credentialId || !prfKey) {
+        throw new Error('Passkey credential required')
+      }
+      await this.auth.setup(vaultData, authMethod, undefined, { credentialId, prfKey })
+    } else {
+      await this.auth.setup(vaultData, authMethod, password)
+    }
 
     this.keyring.load([vaultAccount])
 
@@ -167,30 +176,8 @@ export class WalletController {
     return { mnemonic, address: account.address }
   }
 
-  async unlock(method: AuthMethod, password?: string): Promise<WalletState> {
-    const data = await this.auth.unlock(method, password)
-    this.keyring.load(data.accounts)
-
-    const labels = await this.cache.getAccountLabels()
-
-    this.state.accounts = data.accounts.map((a, i) => ({
-      address: a.address,
-      label: labels[a.address] ?? `Account ${i + 1}`,
-      type: a.type === 'hd' ? ('hd' as const) : ('imported' as const),
-      derivationPath: a.derivationPath,
-      publicKey: a.publicKey,
-      index: a.index,
-    }))
-
-    this.state.activeAccount = this.state.accounts[0]?.address ?? null
-    this.state.locked = false
-
-    await this.persistState()
-    return this.getState()
-  }
-
-  async unlockWithVaultData(data: VaultData): Promise<WalletState> {
-    await this.auth.unlockWithData(data)
+  async unlock(method: AuthMethod, password?: string, passkeyKey?: string): Promise<WalletState> {
+    const data = await this.auth.unlock(method, password, passkeyKey)
     this.keyring.load(data.accounts)
 
     const labels = await this.cache.getAccountLabels()
@@ -732,22 +719,24 @@ export class WalletController {
 
   // --- Change Auth Method ---
 
-  getVaultDataForRekey(): VaultData {
-    const data = this.auth.getVaultData()
-    if (!data) throw new Error('Wallet is locked')
-    return data
-  }
-
   async changeAuthMethod(
     method: AuthMethod,
     password?: string,
-    registered?: boolean,
+    credentialId?: string,
+    prfKey?: string,
   ): Promise<void> {
-    if (!registered) {
-      const data = this.auth.getVaultData()
-      if (!data) throw new Error('Wallet is locked')
+    const data = this.auth.getVaultData()
+    if (!data) throw new Error('Wallet is locked')
+
+    if (method === 'passkey') {
+      if (!credentialId || !prfKey) {
+        throw new Error('Passkey credential required')
+      }
+      await this.auth.setup(data, method, undefined, { credentialId, prfKey })
+    } else {
       await this.auth.setup(data, method, password)
     }
+
     this.state.authMethod = method
     await this.persistState()
   }

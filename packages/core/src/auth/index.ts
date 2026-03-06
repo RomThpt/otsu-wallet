@@ -5,5 +5,12 @@ export {
   vaultExists,
   destroyVault,
 } from './auth-password'
-export { registerPasskey, authenticatePasskey, hasPasskey } from './auth-passkey'
+export {
+  performPasskeyRegistration,
+  getPasskeyDecryptionKey,
+  storePasskeyVault,
+  decryptPasskeyVault,
+  hasPasskey,
+} from './auth-passkey'
+export type { PasskeyRegistrationResult } from './auth-passkey'
 export { AuthManager } from './auth-manager'

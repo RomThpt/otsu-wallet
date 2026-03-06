@@ -77,13 +77,23 @@ function clearMnemonic() {
   }
 }
 
+let clipboardTimer: ReturnType<typeof setTimeout> | null = null
+
 function copyToClipboard() {
   navigator.clipboard.writeText(words.value.join(' '))
   copied.value = true
-  toast.success('Copied to clipboard')
-  setTimeout(() => {
+  toast.success('Copied -- clipboard will be cleared in 15 seconds')
+
+  if (clipboardTimer) clearTimeout(clipboardTimer)
+  clipboardTimer = setTimeout(async () => {
+    try {
+      await navigator.clipboard.writeText('')
+    } catch {
+      // Clipboard API may fail if page not focused
+    }
     copied.value = false
-  }, 2000)
+    clipboardTimer = null
+  }, 15000)
 }
 
 onUnmounted(() => {
@@ -91,6 +101,11 @@ onUnmounted(() => {
   if (clearTimer) {
     clearTimeout(clearTimer)
     clearTimer = null
+  }
+  if (clipboardTimer) {
+    clearTimeout(clipboardTimer)
+    navigator.clipboard.writeText('').catch(() => {})
+    clipboardTimer = null
   }
 })
 </script>
