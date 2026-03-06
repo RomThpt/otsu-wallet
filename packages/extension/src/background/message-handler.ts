@@ -366,6 +366,7 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
         const mnemonic = await controller.exportMnemonic(
           payload.method ?? 'password',
           payload.password,
+          payload.passkeyKey,
         )
         return { success: true, data: { mnemonic } }
       }

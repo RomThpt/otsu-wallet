@@ -743,8 +743,12 @@ export class WalletController {
 
   // --- Phase 6: Export Mnemonic ---
 
-  async exportMnemonic(method: AuthMethod, password?: string): Promise<string> {
-    const data = await this.auth.unlock(method, password)
+  async exportMnemonic(
+    method: AuthMethod,
+    password?: string,
+    passkeyKey?: string,
+  ): Promise<string> {
+    const data = await this.auth.unlock(method, password, passkeyKey)
     if (!data.mnemonic) {
       throw new Error('No mnemonic available (imported-only wallet)')
     }

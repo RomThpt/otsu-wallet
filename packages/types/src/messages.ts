@@ -272,6 +272,7 @@ export interface GetNftMetadataPayload {
 export interface ExportMnemonicPayload {
   method?: 'password' | 'passkey'
   password?: string
+  passkeyKey?: string
 }
 
 export interface AddCustomNetworkPayload {

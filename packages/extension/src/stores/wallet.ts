@@ -362,9 +362,13 @@ export const useWalletStore = defineStore('wallet', () => {
   }
 
   async function exportMnemonic(method: AuthMethod, password?: string): Promise<string | null> {
+    let passkeyKey: string | undefined
+    if (method === 'passkey') {
+      passkeyKey = await getPasskeyDecryptionKey()
+    }
     const response = await sendMessage<{ mnemonic: string }>({
       type: 'EXPORT_MNEMONIC',
-      payload: { method, password },
+      payload: { method, password, passkeyKey },
     })
     if (response.success && response.data) {
       return response.data.mnemonic
