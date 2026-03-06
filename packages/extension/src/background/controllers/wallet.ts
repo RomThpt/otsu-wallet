@@ -748,17 +748,19 @@ export class WalletController {
     password?: string,
     passkeyKey?: string,
   ): Promise<string> {
-    let data: import('@otsu/types').VaultData
+    let data: import('@otsu/types').VaultData | null
 
     if (method === 'passkey') {
       // For passkey, the user already authenticated via WebAuthn in the
-      // popup before sending this message. Use cached vault data if the
-      // wallet is already unlocked to avoid re-decrypting the vault.
-      const cached = this.auth.getVaultData()
-      if (cached) {
-        data = cached
-      } else {
+      // popup before sending this message. Use cached vault data when
+      // available. Fall back to vault decryption if the service worker
+      // restarted and the cache was lost.
+      data = this.auth.getVaultData()
+      if (!data && passkeyKey) {
         data = await this.auth.unlock(method, password, passkeyKey)
+      }
+      if (!data) {
+        throw new Error('Wallet session expired. Please lock and unlock to continue.')
       }
     } else {
       // For password, always re-verify to confirm the user knows it.

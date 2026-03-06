@@ -373,8 +373,8 @@ export const useWalletStore = defineStore('wallet', () => {
     if (response.success && response.data) {
       return response.data.mnemonic
     }
-    if (!response.success && response.error) {
-      throw new Error(response.error)
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to export seed phrase')
     }
     return null
   }

@@ -173,16 +173,23 @@ export async function decryptPasskeyVault(key: string): Promise<VaultData> {
     throw new OtsuError(ErrorCodes.VAULT_NOT_FOUND, 'No passkey vault found')
   }
 
-  const plaintext = await decrypt(
-    {
-      ciphertext: stored.encryptedVault,
-      iv: stored.iv,
-      salt: stored.salt,
-    },
-    key,
-  )
+  try {
+    const plaintext = await decrypt(
+      {
+        ciphertext: stored.encryptedVault,
+        iv: stored.iv,
+        salt: stored.salt,
+      },
+      key,
+    )
 
-  return JSON.parse(plaintext) as VaultData
+    return JSON.parse(plaintext) as VaultData
+  } catch {
+    throw new OtsuError(
+      ErrorCodes.INVALID_PASSWORD,
+      'Failed to decrypt passkey vault. You may need to re-register your passkey.',
+    )
+  }
 }
 
 export async function hasPasskey(): Promise<boolean> {
