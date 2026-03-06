@@ -2,6 +2,9 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import type { Account } from '@otsu/types'
 import AccountTypeIcon from './AccountTypeIcon.vue'
+import { useToast } from '../../composables/useToast'
+
+const toast = useToast()
 
 const props = defineProps<{
   accounts: Account[]
@@ -33,6 +36,11 @@ watch(isOpen, (open) => {
 
 function truncate(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function copyAddress(address: string): void {
+  navigator.clipboard.writeText(address)
+  toast.success('Address copied')
 }
 
 function selectAccount(address: string): void {
@@ -103,7 +111,7 @@ function handleKeydown(event: KeyboardEvent): void {
       role="listbox"
       aria-label="Accounts"
       tabindex="-1"
-      class="absolute top-full left-0 mt-1 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-80 overflow-y-auto outline-none"
+      class="absolute top-full right-0 mt-1 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-80 overflow-y-auto outline-none"
       @keydown="handleKeydown"
     >
       <div class="p-1">
@@ -123,7 +131,24 @@ function handleKeydown(event: KeyboardEvent): void {
           <AccountTypeIcon :type="account.type" />
           <div class="min-w-0 flex-1">
             <p class="text-xs font-medium truncate">{{ account.label }}</p>
-            <p class="text-[10px] text-gray-500 font-mono">{{ truncate(account.address) }}</p>
+            <div class="flex items-center gap-1">
+              <span class="text-[10px] text-gray-500 font-mono">{{
+                truncate(account.address)
+              }}</span>
+              <button
+                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
+                @click.stop="copyAddress(account.address)"
+              >
+                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
           <svg
             v-if="account.address === activeAccount"
