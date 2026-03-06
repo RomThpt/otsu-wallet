@@ -86,7 +86,7 @@ function openImport() {
       <div
         v-for="account in wallet.accounts"
         :key="account.address"
-        class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+        class="group flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
         :class="{
           'bg-primary-50 dark:bg-primary-900/10': account.address === wallet.activeAccount,
         }"
@@ -106,32 +106,33 @@ function openImport() {
               />
             </template>
             <template v-else>
-              <span class="text-sm font-medium truncate">{{ account.label }}</span>
-              <button
-                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
-                @click.stop="startEdit(account.address, account.label)"
+              <span
+                class="text-sm font-medium truncate cursor-default select-none"
+                @dblclick.stop="startEdit(account.address, account.label)"
+                >{{ account.label }}</span
               >
-                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
-              </button>
             </template>
           </div>
           <div class="flex items-center gap-2 mt-0.5">
             <span class="text-xs text-gray-500 font-mono">{{ truncate(account.address) }}</span>
             <button
-              class="text-xs text-primary-600 dark:text-primary-400 hover:underline"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
               @click.stop="copyAddress(account.address, $event)"
             >
-              Copy
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
+              </svg>
             </button>
           </div>
-          <p v-if="account.derivationPath" class="text-[10px] text-gray-400 mt-0.5">
+          <p
+            v-if="account.derivationPath"
+            class="text-[10px] text-gray-400 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
             {{ account.derivationPath }}
           </p>
         </div>
