@@ -373,6 +373,9 @@ export const useWalletStore = defineStore('wallet', () => {
     if (response.success && response.data) {
       return response.data.mnemonic
     }
+    if (!response.success && response.error) {
+      throw new Error(response.error)
+    }
     return null
   }
 

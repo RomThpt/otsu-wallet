@@ -748,7 +748,23 @@ export class WalletController {
     password?: string,
     passkeyKey?: string,
   ): Promise<string> {
-    const data = await this.auth.unlock(method, password, passkeyKey)
+    let data: import('@otsu/types').VaultData
+
+    if (method === 'passkey') {
+      // For passkey, the user already authenticated via WebAuthn in the
+      // popup before sending this message. Use cached vault data if the
+      // wallet is already unlocked to avoid re-decrypting the vault.
+      const cached = this.auth.getVaultData()
+      if (cached) {
+        data = cached
+      } else {
+        data = await this.auth.unlock(method, password, passkeyKey)
+      }
+    } else {
+      // For password, always re-verify to confirm the user knows it.
+      data = await this.auth.unlock(method, password)
+    }
+
     if (!data.mnemonic) {
       throw new Error('No mnemonic available (imported-only wallet)')
     }
