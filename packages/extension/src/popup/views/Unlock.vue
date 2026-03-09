@@ -175,13 +175,11 @@ onUnmounted(() => {
         </div>
 
         <div class="flex gap-2">
+          <!-- prettier-ignore -->
           <Button
             block
             variant="secondary"
-            @click="
-              showResetConfirm = false
-              resetConfirmText = ''
-            "
+            @click="showResetConfirm = false; resetConfirmText = ''"
           >
             Cancel
           </Button>
