@@ -61,6 +61,11 @@ function selectNetwork(networkId: string): void {
   isOpen.value = false
 }
 
+function handleManage(): void {
+  emit('manage')
+  isOpen.value = false
+}
+
 function handleKeydown(event: KeyboardEvent): void {
   const len = allNetworks.value.length
   if (len === 0) return
@@ -200,10 +205,9 @@ function handleKeydown(event: KeyboardEvent): void {
 
       <!-- Manage Networks link -->
       <div class="border-t border-gray-200 dark:border-gray-700 p-1">
-        <!-- prettier-ignore -->
         <button
           class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left text-xs text-primary-600 dark:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-700"
-          @click="emit('manage'); isOpen = false"
+          @click="handleManage"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path

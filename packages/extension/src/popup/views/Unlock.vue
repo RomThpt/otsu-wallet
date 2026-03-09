@@ -89,6 +89,11 @@ async function handleReset() {
   }
 }
 
+function cancelReset() {
+  showResetConfirm.value = false
+  resetConfirmText.value = ''
+}
+
 onUnmounted(() => {
   if (lockoutTimer) clearInterval(lockoutTimer)
 })
@@ -175,14 +180,7 @@ onUnmounted(() => {
         </div>
 
         <div class="flex gap-2">
-          <!-- prettier-ignore -->
-          <Button
-            block
-            variant="secondary"
-            @click="showResetConfirm = false; resetConfirmText = ''"
-          >
-            Cancel
-          </Button>
+          <Button block variant="secondary" @click="cancelReset"> Cancel </Button>
           <Button
             block
             variant="danger"

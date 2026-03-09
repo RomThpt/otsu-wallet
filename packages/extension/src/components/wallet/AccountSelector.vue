@@ -48,6 +48,16 @@ function selectAccount(address: string): void {
   isOpen.value = false
 }
 
+function handleAddAccount(): void {
+  emit('addAccount')
+  isOpen.value = false
+}
+
+function handleLoadMore(): void {
+  emit('loadMore')
+  isOpen.value = false
+}
+
 function handleKeydown(event: KeyboardEvent): void {
   const len = props.accounts.length
   if (len === 0) return
@@ -166,10 +176,9 @@ function handleKeydown(event: KeyboardEvent): void {
       </div>
 
       <div class="border-t border-gray-200 dark:border-gray-700 p-1">
-        <!-- prettier-ignore -->
         <button
           class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left text-xs text-primary-600 dark:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-700"
-          @click="emit('addAccount'); isOpen = false"
+          @click="handleAddAccount"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -181,12 +190,11 @@ function handleKeydown(event: KeyboardEvent): void {
           </svg>
           Add Account
         </button>
-        <!-- prettier-ignore -->
         <button
           v-if="accounts.length >= 50"
           class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
           :disabled="loading"
-          @click="emit('loadMore'); isOpen = false"
+          @click="handleLoadMore"
         >
           Load More Accounts
         </button>

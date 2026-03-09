@@ -121,6 +121,13 @@ async function handleLock() {
   await wallet.lock()
   router.push('/')
 }
+
+function cancelPasswordChange() {
+  showPasswordFields.value = false
+  newPassword.value = ''
+  confirmPassword.value = ''
+  authError.value = ''
+}
 </script>
 
 <template>
@@ -266,12 +273,7 @@ async function handleLock() {
           <div class="flex gap-2">
             <button
               class="flex-1 px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              @click="
-                showPasswordFields = false
-                newPassword = ''
-                confirmPassword = ''
-                authError = ''
-              "
+              @click="cancelPasswordChange"
             >
               Cancel
             </button>
