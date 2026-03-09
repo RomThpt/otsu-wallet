@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@fontsource/barlow-condensed": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
     "@otsu/constants": "workspace:*",
     "@otsu/core": "workspace:*",
     "@otsu/types": "workspace:*",

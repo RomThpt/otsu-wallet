@@ -18,6 +18,22 @@ export default {
           900: '#1e3a8a',
           950: '#172554',
         },
+        eva: {
+          deepest: '#1a0a2e',
+          surface: '#2d1547',
+          elevated: '#3d1f5c',
+          higher: '#4a2670',
+          border: '#5f2a62',
+          text: '#e8d5f5',
+          muted: '#a976c3',
+          accent: '#a0de59',
+          warning: '#f5c024',
+          danger: '#e81900',
+        },
+      },
+      fontFamily: {
+        'eva-body': ['"Barlow Condensed"', 'sans-serif'],
+        'eva-mono': ['"JetBrains Mono"', 'monospace'],
       },
       keyframes: {
         'fade-in': {

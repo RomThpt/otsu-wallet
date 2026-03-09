@@ -1,7 +1,7 @@
 export interface WalletSettings {
   blindSigningEnabled: boolean
   autoLockMinutes: number
-  theme: 'light' | 'dark' | 'system'
+  theme: 'light' | 'dark' | 'system' | 'evangelion'
 }
 
 export const DEFAULT_SETTINGS: WalletSettings = {

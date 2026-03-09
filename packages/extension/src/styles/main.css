@@ -1,3 +1,10 @@
+/* Evangelion theme fonts */
+@import '@fontsource/barlow-condensed/400.css';
+@import '@fontsource/barlow-condensed/600.css';
+@import '@fontsource/barlow-condensed/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/700.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -16,4 +23,268 @@
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* ============================================================
+   EVANGELION (EVA-01) THEME OVERRIDES
+   Palette:
+     deepest   #1a0a2e   surface   #2d1547
+     elevated  #3d1f5c   higher    #4a2670
+     border    #5f2a62   text      #e8d5f5
+     muted     #a976c3   accent    #a0de59
+     warning   #f5c024   danger    #e81900
+   ============================================================ */
+
+/* --- Typography ------------------------------------------------ */
+.evangelion {
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+.evangelion code,
+.evangelion pre,
+.evangelion [class*="font-mono"] {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+.evangelion .font-bold,
+.evangelion .font-semibold,
+.evangelion h1, .evangelion h2, .evangelion h3 {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* --- Angular borders ------------------------------------------- */
+.evangelion *,
+.evangelion *::before,
+.evangelion *::after {
+  border-radius: 0 !important;
+}
+
+/* Preserve spinners and toggles */
+.evangelion .animate-spin,
+.evangelion [role="switch"] span {
+  border-radius: 9999px !important;
+}
+
+/* --- Selection ------------------------------------------------- */
+.evangelion ::selection {
+  background-color: rgba(160, 222, 89, 0.3);
+  color: #e8d5f5;
+}
+
+/* --- Scrollbar ------------------------------------------------- */
+.evangelion ::-webkit-scrollbar {
+  width: 6px;
+}
+.evangelion ::-webkit-scrollbar-track {
+  background: #1a0a2e;
+}
+.evangelion ::-webkit-scrollbar-thumb {
+  background: #5f2a62;
+}
+.evangelion ::-webkit-scrollbar-thumb:hover {
+  background: #4a2670;
+}
+
+/* --- Background overrides -------------------------------------- */
+.evangelion.dark .dark\:bg-gray-950 { background-color: #1a0a2e !important; }
+.evangelion.dark .dark\:bg-gray-900 { background-color: #1a0a2e !important; }
+.evangelion.dark .dark\:bg-gray-800 { background-color: #2d1547 !important; }
+.evangelion.dark .dark\:bg-gray-700 { background-color: #3d1f5c !important; }
+.evangelion.dark .dark\:bg-gray-600 { background-color: #4a2670 !important; }
+.evangelion.dark .dark\:bg-gray-900\/30 { background-color: rgba(26, 10, 46, 0.3) !important; }
+.evangelion.dark .bg-white { background-color: #1a0a2e !important; }
+
+/* Primary backgrounds -> accent tints */
+.evangelion.dark .dark\:bg-primary-500 { background-color: #a0de59 !important; }
+.evangelion.dark .dark\:bg-primary-900\/10 { background-color: rgba(160, 222, 89, 0.1) !important; }
+.evangelion.dark .dark\:bg-primary-900\/20 { background-color: rgba(160, 222, 89, 0.2) !important; }
+.evangelion.dark .dark\:bg-primary-900\/30 { background-color: rgba(160, 222, 89, 0.15) !important; }
+.evangelion.dark .bg-primary-600 { background-color: #8bc846 !important; }
+.evangelion.dark .bg-primary-50 { background-color: rgba(160, 222, 89, 0.1) !important; }
+
+/* Semantic backgrounds */
+.evangelion.dark .dark\:bg-green-900\/10 { background-color: rgba(160, 222, 89, 0.1) !important; }
+.evangelion.dark .dark\:bg-green-900\/20 { background-color: rgba(160, 222, 89, 0.15) !important; }
+.evangelion.dark .dark\:bg-green-900\/30 { background-color: rgba(160, 222, 89, 0.2) !important; }
+.evangelion.dark .dark\:bg-blue-900\/20 { background-color: rgba(93, 42, 120, 0.3) !important; }
+.evangelion.dark .dark\:bg-blue-900\/30 { background-color: rgba(93, 42, 120, 0.4) !important; }
+.evangelion.dark .dark\:bg-blue-800\/50 { background-color: rgba(93, 42, 120, 0.5) !important; }
+.evangelion.dark .dark\:bg-yellow-900\/20 { background-color: rgba(245, 192, 36, 0.15) !important; }
+.evangelion.dark .dark\:bg-yellow-900\/30 { background-color: rgba(245, 192, 36, 0.2) !important; }
+.evangelion.dark .dark\:bg-amber-900\/20 { background-color: rgba(245, 192, 36, 0.15) !important; }
+.evangelion.dark .dark\:bg-amber-900\/30 { background-color: rgba(245, 192, 36, 0.2) !important; }
+.evangelion.dark .dark\:bg-red-900\/10 { background-color: rgba(232, 25, 0, 0.1) !important; }
+.evangelion.dark .dark\:bg-red-900\/20 { background-color: rgba(232, 25, 0, 0.15) !important; }
+.evangelion.dark .dark\:bg-red-900\/30 { background-color: rgba(232, 25, 0, 0.2) !important; }
+.evangelion.dark .dark\:bg-orange-900\/30 { background-color: rgba(245, 192, 36, 0.2) !important; }
+.evangelion.dark .dark\:bg-purple-900\/30 { background-color: rgba(93, 42, 120, 0.3) !important; }
+
+/* --- Hover backgrounds ----------------------------------------- */
+.evangelion.dark .dark\:hover\:bg-gray-800:hover { background-color: #2d1547 !important; }
+.evangelion.dark .dark\:hover\:bg-gray-800\/50:hover { background-color: rgba(45, 21, 71, 0.5) !important; }
+.evangelion.dark .dark\:hover\:bg-gray-700:hover { background-color: #3d1f5c !important; }
+.evangelion.dark .dark\:hover\:bg-gray-600:hover { background-color: #4a2670 !important; }
+.evangelion.dark .dark\:hover\:bg-primary-600:hover { background-color: #8bc846 !important; }
+.evangelion.dark .dark\:hover\:bg-primary-900\/10:hover { background-color: rgba(160, 222, 89, 0.1) !important; }
+.evangelion.dark .dark\:hover\:bg-primary-900\/20:hover { background-color: rgba(160, 222, 89, 0.2) !important; }
+.evangelion.dark .dark\:hover\:bg-green-900\/20:hover { background-color: rgba(160, 222, 89, 0.15) !important; }
+.evangelion.dark .dark\:hover\:bg-green-900\/50:hover { background-color: rgba(160, 222, 89, 0.3) !important; }
+.evangelion.dark .dark\:hover\:bg-red-900\/20:hover { background-color: rgba(232, 25, 0, 0.15) !important; }
+.evangelion.dark .dark\:hover\:bg-red-900\/50:hover { background-color: rgba(232, 25, 0, 0.3) !important; }
+.evangelion.dark .hover\:bg-gray-50:hover { background-color: #3d1f5c !important; }
+.evangelion.dark .hover\:bg-gray-100:hover { background-color: #3d1f5c !important; }
+.evangelion.dark .hover\:bg-primary-700:hover { background-color: #7ab83e !important; }
+
+/* --- Text overrides -------------------------------------------- */
+.evangelion.dark .dark\:text-gray-100 { color: #e8d5f5 !important; }
+.evangelion.dark .dark\:text-gray-300 { color: #d4b8e8 !important; }
+.evangelion.dark .dark\:text-gray-400 { color: #a976c3 !important; }
+.evangelion.dark .dark\:text-gray-500 { color: #8a5da0 !important; }
+.evangelion.dark .dark\:text-gray-600 { color: #6b4580 !important; }
+.evangelion.dark .text-gray-900 { color: #e8d5f5 !important; }
+.evangelion.dark .text-gray-700 { color: #d4b8e8 !important; }
+.evangelion.dark .text-gray-500 { color: #a976c3 !important; }
+.evangelion.dark .text-gray-400 { color: #a976c3 !important; }
+
+/* Primary text -> lime accent */
+.evangelion.dark .dark\:text-primary-300 { color: #b8e87a !important; }
+.evangelion.dark .dark\:text-primary-400 { color: #a0de59 !important; }
+.evangelion.dark .text-primary-700 { color: #a0de59 !important; }
+.evangelion.dark .text-primary-600 { color: #a0de59 !important; }
+.evangelion.dark .text-primary-500 { color: #a0de59 !important; }
+
+/* Green -> lime */
+.evangelion.dark .dark\:text-green-200 { color: #c8f090 !important; }
+.evangelion.dark .dark\:text-green-300 { color: #b8e87a !important; }
+.evangelion.dark .dark\:text-green-400 { color: #a0de59 !important; }
+
+/* Blue -> purple-tinted */
+.evangelion.dark .dark\:text-blue-200 { color: #d4b8e8 !important; }
+.evangelion.dark .dark\:text-blue-300 { color: #c4a0d8 !important; }
+.evangelion.dark .dark\:text-blue-400 { color: #a976c3 !important; }
+
+/* Yellow/amber -> gold */
+.evangelion.dark .dark\:text-yellow-200 { color: #f8d860 !important; }
+.evangelion.dark .dark\:text-yellow-300 { color: #f5c024 !important; }
+.evangelion.dark .dark\:text-yellow-400 { color: #e8b010 !important; }
+.evangelion.dark .dark\:text-amber-300 { color: #f5c024 !important; }
+
+/* Orange -> gold */
+.evangelion.dark .dark\:text-orange-300 { color: #f5c024 !important; }
+.evangelion.dark .dark\:text-orange-400 { color: #e8b010 !important; }
+
+/* Purple -> lighter purple */
+.evangelion.dark .dark\:text-purple-300 { color: #c4a0d8 !important; }
+
+/* Red -> danger */
+.evangelion.dark .dark\:text-red-200 { color: #f5a0a0 !important; }
+.evangelion.dark .dark\:text-red-300 { color: #f08080 !important; }
+.evangelion.dark .dark\:text-red-400 { color: #e81900 !important; }
+.evangelion.dark .dark\:text-red-400\/80 { color: rgba(232, 25, 0, 0.8) !important; }
+
+/* Hover text */
+.evangelion.dark .dark\:hover\:text-gray-300:hover { color: #d4b8e8 !important; }
+.evangelion.dark .dark\:hover\:text-red-400:hover { color: #e81900 !important; }
+
+/* --- Border overrides ------------------------------------------ */
+.evangelion.dark .dark\:border-gray-600 { border-color: #5f2a62 !important; }
+.evangelion.dark .dark\:border-gray-700 { border-color: #5f2a62 !important; }
+.evangelion.dark .dark\:border-gray-800 { border-color: #3d1f5c !important; }
+.evangelion.dark .border-gray-200 { border-color: #5f2a62 !important; }
+.evangelion.dark .border-gray-100 { border-color: #3d1f5c !important; }
+.evangelion.dark .border-primary-500 { border-color: #a0de59 !important; }
+
+/* Semantic borders */
+.evangelion.dark .dark\:border-green-700 { border-color: rgba(160, 222, 89, 0.4) !important; }
+.evangelion.dark .dark\:border-green-800 { border-color: rgba(160, 222, 89, 0.3) !important; }
+.evangelion.dark .dark\:border-blue-800 { border-color: rgba(93, 42, 120, 0.5) !important; }
+.evangelion.dark .dark\:border-red-600 { border-color: rgba(232, 25, 0, 0.5) !important; }
+.evangelion.dark .dark\:border-red-700 { border-color: rgba(232, 25, 0, 0.4) !important; }
+.evangelion.dark .dark\:border-red-800 { border-color: rgba(232, 25, 0, 0.3) !important; }
+.evangelion.dark .dark\:border-orange-800 { border-color: rgba(245, 192, 36, 0.3) !important; }
+.evangelion.dark .dark\:border-yellow-800 { border-color: rgba(245, 192, 36, 0.3) !important; }
+
+/* Hover borders */
+.evangelion.dark .dark\:hover\:border-gray-500:hover { border-color: #a976c3 !important; }
+.evangelion.dark .dark\:hover\:border-gray-600:hover { border-color: #5f2a62 !important; }
+
+/* --- Divide overrides ------------------------------------------ */
+.evangelion.dark .dark\:divide-gray-800 > :not([hidden]) ~ :not([hidden]) { border-color: #3d1f5c !important; }
+
+/* --- Gradient overrides ---------------------------------------- */
+.evangelion.dark .dark\:from-gray-700 { --tw-gradient-from: #3d1f5c !important; }
+.evangelion.dark .dark\:to-gray-700 { --tw-gradient-to: #3d1f5c !important; }
+.evangelion.dark .dark\:via-gray-600 { --tw-gradient-via: #4a2670 !important; }
+
+/* --- Ring overrides -------------------------------------------- */
+.evangelion.dark .focus\:ring-primary-500:focus { --tw-ring-color: rgba(160, 222, 89, 0.5) !important; }
+
+/* --- Non-dark-prefixed base overrides (in eva context) ---------- */
+.evangelion.dark .bg-white { background-color: #1a0a2e !important; }
+.evangelion.dark .bg-gray-50 { background-color: #2d1547 !important; }
+.evangelion.dark .bg-gray-100 { background-color: #2d1547 !important; }
+
+/* --- L-bracket corner accents on cards ------------------------- */
+.evangelion [class*="shadow-sm"][class*="border"] {
+  position: relative;
+}
+
+.evangelion [class*="shadow-sm"][class*="border"]::before,
+.evangelion [class*="shadow-sm"][class*="border"]::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: #a0de59;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.evangelion [class*="shadow-sm"][class*="border"]::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid;
+  border-left: 2px solid;
+  border-color: #a0de59;
+}
+
+.evangelion [class*="shadow-sm"][class*="border"]::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid;
+  border-right: 2px solid;
+  border-color: #a0de59;
+}
+
+/* --- Accent text glow ------------------------------------------ */
+.evangelion .dark\:text-primary-400,
+.evangelion .text-primary-600,
+.evangelion .text-primary-500 {
+  text-shadow: 0 0 8px rgba(160, 222, 89, 0.3);
+}
+
+/* --- Button overrides ------------------------------------------ */
+.evangelion.dark .bg-primary-600 { background-color: #a0de59 !important; color: #1a0a2e !important; }
+.evangelion.dark .hover\:bg-primary-700:hover { background-color: #8bc846 !important; color: #1a0a2e !important; }
+.evangelion.dark .bg-red-600 { background-color: #e81900 !important; }
+.evangelion.dark .hover\:bg-red-700:hover { background-color: #c41500 !important; }
+
+/* --- Input overrides ------------------------------------------- */
+.evangelion.dark input,
+.evangelion.dark textarea,
+.evangelion.dark select {
+  font-family: 'Barlow Condensed', sans-serif !important;
+}
+
+.evangelion.dark .dark\:bg-gray-900 input,
+.evangelion.dark .dark\:bg-gray-900 textarea,
+.evangelion.dark input.dark\:bg-gray-900,
+.evangelion.dark textarea.dark\:bg-gray-900 {
+  background-color: #1a0a2e !important;
+}
+
+/* --- Placeholder text ------------------------------------------ */
+.evangelion.dark ::placeholder {
+  color: #6b4580 !important;
 }

@@ -3,11 +3,13 @@ import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '../../stores/settings'
 import { useWalletStore } from '../../stores/wallet'
+import { useTheme } from '../../composables/useTheme'
 import Button from '../../components/common/Button.vue'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const wallet = useWalletStore()
+const { setTheme: applyThemeToDOM } = useTheme()
 const loading = ref(false)
 const error = ref('')
 
@@ -31,6 +33,7 @@ const THEME_OPTIONS = [
   { value: 'light' as const, label: 'Light' },
   { value: 'dark' as const, label: 'Dark' },
   { value: 'system' as const, label: 'System' },
+  { value: 'evangelion' as const, label: 'EVA-01' },
 ]
 
 const blindSigning = computed(() => settingsStore.settings?.blindSigningEnabled ?? false)
@@ -66,8 +69,9 @@ async function setAutoLock(minutes: number) {
   }
 }
 
-async function setTheme(value: 'light' | 'dark' | 'system') {
+async function setTheme(value: 'light' | 'dark' | 'system' | 'evangelion') {
   try {
+    applyThemeToDOM(value)
     await settingsStore.updateSettings({ theme: value })
   } catch (e) {
     error.value = (e as Error).message

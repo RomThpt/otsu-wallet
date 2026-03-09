@@ -2,8 +2,11 @@
 import { ref, onMounted } from 'vue'
 import type { SigningRequest, SimulationResult, RiskWarning, WalletSettings } from '@otsu/types'
 import { sendMessage } from '../lib/messaging'
+import { useTheme } from '../composables/useTheme'
 import SignTransaction from './views/SignTransaction.vue'
 import ConnectionPrompt from './views/ConnectionPrompt.vue'
+
+useTheme()
 
 const loading = ref(true)
 const error = ref('')
