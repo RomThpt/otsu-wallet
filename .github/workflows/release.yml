@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -37,6 +37,18 @@ jobs:
       - name: Package Firefox extension
         run: pnpm --filter @otsu/extension package:firefox
 
+      - name: Lint Firefox extension with web-ext
+        run: pnpm --filter @otsu/extension web-ext:lint
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-packages
+          path: |
+            packages/extension/otsu-wallet-*-chrome.zip
+            packages/extension/otsu-wallet-*-firefox.zip
+            packages/extension/otsu-wallet-*-firefox-source.zip
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -45,3 +57,70 @@ jobs:
             packages/extension/otsu-wallet-*-firefox.zip
             packages/extension/otsu-wallet-*-firefox-source.zip
           generate_release_notes: true
+
+  publish-chrome:
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.ref_name, 'beta') && !contains(github.ref_name, 'rc') }}
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension-packages
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: pnpm add -g chrome-webstore-upload-cli
+
+      - name: Upload to Chrome Web Store
+        run: |
+          chrome-webstore-upload upload \
+            --source otsu-wallet-*-chrome.zip \
+            --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
+            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
+            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
+            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }} \
+            --auto-publish
+        continue-on-error: true
+
+  publish-firefox:
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.ref_name, 'beta') && !contains(github.ref_name, 'rc') }}
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension-packages
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: pnpm add -g web-ext
+
+      - name: Extract Firefox extension
+        run: |
+          mkdir -p firefox-ext
+          unzip otsu-wallet-*-firefox.zip -d firefox-ext
+
+      - name: Upload to Firefox Add-ons
+        run: |
+          web-ext sign \
+            --source-dir ./firefox-ext \
+            --artifacts-dir ./artifacts \
+            --api-key ${{ secrets.AMO_JWT_ISSUER }} \
+            --api-secret ${{ secrets.AMO_JWT_SECRET }} \
+            --channel listed \
+            --upload-source-code otsu-wallet-*-firefox-source.zip
+        continue-on-error: true
