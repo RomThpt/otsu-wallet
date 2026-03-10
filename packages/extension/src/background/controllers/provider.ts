@@ -121,6 +121,14 @@ export class ProviderController {
 
     try {
       const { request } = pending
+
+      if (request.method === 'connect') {
+        pending.resolve({ id: request.id })
+        this.pendingRequests.delete(requestId)
+        await this.clearSigningRequest(requestId)
+        return
+      }
+
       const tx = request.params as Record<string, unknown>
       const sender = this.wallet.getState().activeAccount
       if (!sender) throw new OtsuError(ErrorCodes.SIGNING_ERROR, 'No active account')
