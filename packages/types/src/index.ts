@@ -8,7 +8,14 @@ export type {
   WalletState,
 } from './wallet'
 
-export type { AccountInfo, BalanceInfo, CustomNetworkConfig, NetworkConfig } from './network'
+export type {
+  AccountInfo,
+  BalanceInfo,
+  ChainType,
+  CustomNetworkConfig,
+  EvmBalanceInfo,
+  NetworkConfig,
+} from './network'
 
 export type { EncryptedVault, SessionState, VaultAccount, VaultData } from './storage'
 
@@ -58,6 +65,14 @@ export type {
   GetContractInfoPayload,
   CallContractPayload,
   ChangeAuthMethodPayload,
+  EvmSendTransactionPayload,
+  EvmGetTokensPayload,
+  EvmCallContractPayload,
+  EvmEstimateGasPayload,
+  EvmAddTokenPayload,
+  BridgeEstimatePayload,
+  BridgeTransferPayload,
+  BridgeStatusPayload,
 } from './messages'
 
 export type { TokenBalance, TokenMetadata, TrustlineParams } from './token'
@@ -132,6 +147,15 @@ export type {
 export type { DAppPermission, PermissionScope } from './permission'
 
 export type { BalanceChange, RiskLevel, RiskWarning, SimulationResult } from './simulation'
+
+export type {
+  Erc20Token,
+  EvmContractCallParams,
+  EvmTransactionReceipt,
+  EvmTransactionRequest,
+} from './evm'
+
+export type { BridgeDirection, BridgeEstimate, BridgeStatus, BridgeTransaction } from './bridge'
 
 export type { WalletSettings } from './settings'
 export { DEFAULT_SETTINGS } from './settings'

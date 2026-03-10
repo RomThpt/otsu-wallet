@@ -11,7 +11,13 @@ const qrDataUrl = ref('')
 const address = computed(() => wallet.activeAccount ?? '')
 
 const isTestnet = computed(() => {
-  return ['testnet', 'devnet'].includes(wallet.network)
+  return ['testnet', 'devnet'].includes(wallet.network) || wallet.network === 'evm-testnet'
+})
+
+const isEvm = computed(() => wallet.isEvmNetwork)
+
+const currencyLabel = computed(() => {
+  return 'XRP'
 })
 
 async function copyAddress() {
@@ -43,7 +49,7 @@ onMounted(async () => {
 
 <template>
   <div class="p-4 space-y-4">
-    <h2 class="text-lg font-bold">Receive XRP</h2>
+    <h2 class="text-lg font-bold">Receive {{ currencyLabel }}</h2>
 
     <Card>
       <div class="flex flex-col items-center space-y-4">
@@ -58,7 +64,15 @@ onMounted(async () => {
         </div>
 
         <div class="w-full">
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Your address</p>
+          <div class="flex items-center gap-2 mb-1">
+            <p class="text-xs text-gray-500 dark:text-gray-400">Your address</p>
+            <span
+              v-if="isEvm"
+              class="px-1 py-0.5 rounded text-[9px] font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400"
+            >
+              EVM
+            </span>
+          </div>
           <p class="text-xs font-mono break-all bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
             {{ address }}
           </p>

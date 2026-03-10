@@ -60,6 +60,15 @@ export type ExtensionMessageType =
   | 'GET_CONTRACT_INFO'
   | 'CALL_CONTRACT'
   | 'CHANGE_AUTH_METHOD'
+  | 'EVM_SEND_TRANSACTION'
+  | 'EVM_GET_TOKENS'
+  | 'EVM_CALL_CONTRACT'
+  | 'EVM_ESTIMATE_GAS'
+  | 'EVM_ADD_TOKEN'
+  | 'BRIDGE_ESTIMATE'
+  | 'BRIDGE_TRANSFER'
+  | 'BRIDGE_STATUS'
+  | 'BRIDGE_HISTORY'
 
 export interface ExtensionMessage<T = unknown> {
   type: ExtensionMessageType
@@ -298,3 +307,48 @@ export interface ChangeAuthMethodPayload {
 }
 
 export type CallContractPayload = import('./contract').ContractCallParams
+
+export interface EvmSendTransactionPayload {
+  to: string
+  value?: string
+  data?: string
+  gasLimit?: string
+}
+
+export interface EvmGetTokensPayload {
+  address?: string
+}
+
+export interface EvmCallContractPayload {
+  contractAddress: string
+  abi: string
+  functionName: string
+  args?: unknown[]
+  value?: string
+}
+
+export interface EvmEstimateGasPayload {
+  to: string
+  value?: string
+  data?: string
+}
+
+export interface EvmAddTokenPayload {
+  contractAddress: string
+}
+
+export interface BridgeEstimatePayload {
+  direction: import('./bridge').BridgeDirection
+  amount: string
+}
+
+export interface BridgeTransferPayload {
+  direction: import('./bridge').BridgeDirection
+  amount: string
+  sourceAddress: string
+  destinationAddress: string
+}
+
+export interface BridgeStatusPayload {
+  txHash: string
+}

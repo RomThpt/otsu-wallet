@@ -223,7 +223,7 @@ describe('WalletController integration', () => {
 
       const state = controller.getState()
       expect(state.locked).toBe(false)
-      expect(state.accounts).toHaveLength(1)
+      expect(state.accounts).toHaveLength(2) // 1 XRPL + 1 EVM
       expect(state.accounts[0].type).toBe('hd')
       expect(state.activeAccount).toMatch(/^r/)
     })
@@ -290,10 +290,11 @@ describe('WalletController integration', () => {
 
       const newAccounts = await controller.deriveMoreAccounts(1)
 
-      expect(newAccounts).toHaveLength(1)
-      expect(newAccounts[0].type).toBe('hd')
-      expect(newAccounts[0].index).toBe(1)
-      expect(newAccounts[0].address).toMatch(/^r/)
+      expect(newAccounts).toHaveLength(2) // 1 XRPL + 1 EVM
+      const xrplAccount = newAccounts.find((a) => a.address.startsWith('r'))!
+      expect(xrplAccount.type).toBe('hd')
+      expect(xrplAccount.index).toBe(1)
+      expect(xrplAccount.address).toMatch(/^r/)
     })
 
     it('total account count grows after deriving more accounts', async () => {
@@ -302,7 +303,7 @@ describe('WalletController integration', () => {
 
       await controller.deriveMoreAccounts(2)
 
-      expect(controller.getState().accounts).toHaveLength(3)
+      expect(controller.getState().accounts).toHaveLength(6) // 3 XRPL + 3 EVM
     })
 
     it('each derived account has a unique address', async () => {
@@ -360,7 +361,7 @@ describe('WalletController integration', () => {
         value: 'sn259rEFXrQrWyx3Q7XneWcwV6dfL',
       })
 
-      expect(controller.getState().accounts).toHaveLength(2)
+      expect(controller.getState().accounts).toHaveLength(3) // 2 XRPL (1 hd + 1 imported) + 1 EVM
     })
 
     it('imported account becomes the active account', async () => {

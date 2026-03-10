@@ -1,3 +1,5 @@
+import type { ChainType } from './network'
+
 export type AccountType = 'hd' | 'imported' | 'hardware' | 'multisig'
 
 export interface Account {
@@ -7,6 +9,7 @@ export interface Account {
   derivationPath?: string
   publicKey: string
   index?: number
+  chainType: ChainType
 }
 
 export type NetworkId = 'mainnet' | 'testnet' | 'devnet' | 'alphanet' | string

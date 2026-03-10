@@ -2,6 +2,9 @@ export { generateNewMnemonic, isValidMnemonic, mnemonicToWordArray } from './mne
 export { deriveAccount, deriveAccounts, derivedToVaultAccount } from './hd-deriver'
 export type { DerivedAccount } from './hd-deriver'
 export { Keyring } from './keyring'
+export { deriveEvmAccount, deriveEvmAccounts, evmDerivedToVaultAccount } from './evm-deriver'
+export type { EvmDerivedAccount } from './evm-deriver'
+export { EvmKeyring } from './evm-keyring'
 export {
   importAccount,
   importFromMnemonic,

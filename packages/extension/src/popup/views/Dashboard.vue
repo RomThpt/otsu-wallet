@@ -10,6 +10,7 @@ const wallet = useWalletStore()
 const loading = ref(true)
 
 const isActivated = computed(() => {
+  if (wallet.isEvmNetwork) return true
   if (!wallet.balance) return true
   return Number(wallet.balance.total) > 0
 })
@@ -23,7 +24,11 @@ const hasFaucet = computed(() => {
 
 onMounted(async () => {
   try {
-    await Promise.all([wallet.fetchBalance(), wallet.fetchXrpPrice()])
+    if (wallet.isEvmNetwork) {
+      await wallet.fetchEvmBalance()
+    } else {
+      await Promise.all([wallet.fetchBalance(), wallet.fetchXrpPrice()])
+    }
   } catch {
     // Will show "--" balances
   } finally {
@@ -34,7 +39,11 @@ onMounted(async () => {
 async function handleFaucet() {
   const success = await wallet.requestFaucet()
   if (success) {
-    await wallet.fetchBalance()
+    if (wallet.isEvmNetwork) {
+      await wallet.fetchEvmBalance()
+    } else {
+      await wallet.fetchBalance()
+    }
   }
 }
 
@@ -54,6 +63,19 @@ async function handleLock() {
           <Skeleton variant="text" width="70%" />
         </div>
       </template>
+
+      <!-- EVM balance display -->
+      <template v-else-if="wallet.isEvmNetwork">
+        <div class="space-y-2">
+          <p class="text-sm text-gray-500 dark:text-gray-400">Balance</p>
+          <p class="text-2xl font-bold">
+            {{ wallet.evmBalance?.formatted ?? '0' }}
+            <span class="text-base font-normal text-gray-500">XRP</span>
+          </p>
+        </div>
+      </template>
+
+      <!-- XRPL balance display -->
       <ReserveBreakdown v-else :balance="wallet.balance" :xrp-price="wallet.xrpPrice" />
     </Card>
 

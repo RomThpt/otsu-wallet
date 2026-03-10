@@ -87,6 +87,11 @@ const routes = [
     component: () => import('./views/AccountSettings.vue'),
   },
   {
+    path: '/bridge',
+    name: 'bridge',
+    component: () => import('./views/Bridge.vue'),
+  },
+  {
     path: '/accounts',
     name: 'accounts',
     component: () => import('./views/AccountManagement.vue'),

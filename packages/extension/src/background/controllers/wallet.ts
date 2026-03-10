@@ -1,8 +1,10 @@
 import type {
   WalletState,
   VaultData,
+  VaultAccount,
   Account,
   AuthMethod,
+  ChainType,
   SendPaymentPayload,
   TokenBalance,
   TokenMetadata,
@@ -33,6 +35,12 @@ import type {
   AddCustomNetworkPayload,
   ContractInfo,
   ContractCallParams,
+  EvmBalanceInfo,
+  EvmTransactionReceipt,
+  Erc20Token,
+  BridgeDirection,
+  BridgeEstimate,
+  BridgeTransaction,
 } from '@otsu/types'
 import { NETWORKS } from '@otsu/constants'
 import {
@@ -75,6 +83,16 @@ import {
   NftMetadataClient,
   ContractClient,
   buildContractCall,
+  EvmKeyring,
+  EvmClient,
+  Erc20Client,
+  BridgeService,
+  deriveEvmAccount,
+  deriveEvmAccounts,
+  evmDerivedToVaultAccount,
+  evmParseEther,
+  EvmContract,
+  EvmJsonRpcProvider,
 } from '@otsu/core'
 
 const STATE_STORAGE_KEY = 'otsu-wallet-state'
@@ -101,6 +119,10 @@ export class WalletController {
   private nftMetadataClient: NftMetadataClient
   private contractClient: ContractClient
   private settings = new SettingsManager()
+  private evmClient: EvmClient | null = null
+  private evmKeyring = new EvmKeyring()
+  private erc20Client: Erc20Client | null = null
+  private bridgeService: BridgeService | null = null
   private customNetworks: CustomNetworkConfig[] = []
   private state: WalletState = {
     accounts: [],
@@ -129,6 +151,15 @@ export class WalletController {
     return { ...this.state, locked: !this.auth.isUnlocked }
   }
 
+  get currentChainType(): ChainType {
+    const networkConfig = this.getNetworkConfig(this.state.network)
+    return networkConfig?.chainType ?? 'xrpl'
+  }
+
+  private getNetworkConfig(networkId: string): NetworkConfig | undefined {
+    return NETWORKS[networkId] ?? this.customNetworks.find((n) => n.id === networkId)
+  }
+
   async createWallet(
     authMethod: AuthMethod,
     password?: string,
@@ -140,9 +171,12 @@ export class WalletController {
     const derived = deriveAccount(mnemonic, 0)
     const vaultAccount = derivedToVaultAccount(derived)
 
+    const evmDerived = deriveEvmAccount(mnemonic, 0)
+    const evmVaultAccount = evmDerivedToVaultAccount(evmDerived)
+
     const vaultData: VaultData = {
       mnemonic,
-      accounts: [vaultAccount],
+      accounts: [vaultAccount, evmVaultAccount],
     }
 
     if (authMethod === 'passkey') {
@@ -155,6 +189,7 @@ export class WalletController {
     }
 
     this.keyring.load([vaultAccount])
+    this.evmKeyring.load([evmVaultAccount])
 
     const account: Account = {
       address: derived.address,
@@ -163,9 +198,20 @@ export class WalletController {
       derivationPath: derived.derivationPath,
       publicKey: derived.publicKey,
       index: 0,
+      chainType: 'xrpl',
     }
 
-    this.state.accounts = [account]
+    const evmAccount: Account = {
+      address: evmDerived.address,
+      label: 'EVM Account 1',
+      type: 'hd',
+      derivationPath: evmDerived.derivationPath,
+      publicKey: evmDerived.publicKey,
+      index: 0,
+      chainType: 'evm',
+    }
+
+    this.state.accounts = [account, evmAccount]
     this.state.activeAccount = account.address
     this.state.locked = false
     this.state.authMethod = authMethod
@@ -178,17 +224,44 @@ export class WalletController {
 
   async unlock(method: AuthMethod, password?: string, passkeyKey?: string): Promise<WalletState> {
     const data = await this.auth.unlock(method, password, passkeyKey)
-    this.keyring.load(data.accounts)
+
+    // Migrate: derive EVM accounts for pre-existing wallets that lack them
+    let evmAccounts = data.accounts.filter((a) => a.chainType === 'evm')
+    if (evmAccounts.length === 0 && data.mnemonic) {
+      const xrplHdAccounts = data.accounts.filter(
+        (a) => (a.chainType ?? 'xrpl') === 'xrpl' && a.type === 'hd',
+      )
+      const evmVaultAccounts: VaultAccount[] = []
+      for (const xrplAcc of xrplHdAccounts) {
+        const evmDerived = deriveEvmAccount(data.mnemonic, xrplAcc.index ?? 0)
+        evmVaultAccounts.push(evmDerivedToVaultAccount(evmDerived))
+      }
+      if (evmVaultAccounts.length === 0) {
+        const evmDerived = deriveEvmAccount(data.mnemonic, 0)
+        evmVaultAccounts.push(evmDerivedToVaultAccount(evmDerived))
+      }
+      data.accounts.push(...evmVaultAccounts)
+      evmAccounts = evmVaultAccounts
+      await this.auth.setup(data, method, password)
+    }
+
+    const xrplAccounts = data.accounts.filter((a) => (a.chainType ?? 'xrpl') === 'xrpl')
+
+    this.keyring.load(xrplAccounts)
+    this.evmKeyring.load(evmAccounts)
 
     const labels = await this.cache.getAccountLabels()
 
     this.state.accounts = data.accounts.map((a, i) => ({
       address: a.address,
-      label: labels[a.address] ?? `Account ${i + 1}`,
+      label:
+        labels[a.address] ??
+        (a.chainType === 'evm' ? `EVM Account ${(a.index ?? 0) + 1}` : `Account ${i + 1}`),
       type: a.type === 'hd' ? ('hd' as const) : ('imported' as const),
       derivationPath: a.derivationPath,
       publicKey: a.publicKey,
       index: a.index,
+      chainType: a.chainType ?? 'xrpl',
     }))
 
     this.state.activeAccount = this.state.accounts[0]?.address ?? null
@@ -201,6 +274,7 @@ export class WalletController {
   lock(): void {
     this.auth.lock()
     this.keyring.clear()
+    this.evmKeyring.clear()
     this.state.locked = true
   }
 
@@ -248,13 +322,43 @@ export class WalletController {
   }
 
   async switchNetwork(networkId: string): Promise<void> {
-    const custom = this.customNetworks.find((n) => n.id === networkId)
-    if (custom) {
-      await this.client.switchToConfig(custom)
+    const config = this.getNetworkConfig(networkId)
+
+    if (config?.chainType === 'evm') {
+      if (!this.evmClient) {
+        this.evmClient = new EvmClient()
+      }
+      this.evmClient.switchNetwork(config)
+
+      this.erc20Client = Erc20Client.create(config.url, config.chainId)
+
+      const env = config.type === 'mainnet' ? 'mainnet' : 'testnet'
+      this.bridgeService = new BridgeService(env as 'mainnet' | 'testnet')
+
+      const bridgeTxs = await this.cache.getBridgeTransactions()
+      this.bridgeService.loadTransactions(bridgeTxs)
     } else {
-      await this.client.switchNetwork(networkId)
+      const custom = this.customNetworks.find((n) => n.id === networkId)
+      if (custom) {
+        await this.client.switchToConfig(custom)
+      } else {
+        await this.client.switchNetwork(networkId)
+      }
     }
+
     this.state.network = networkId
+
+    // Auto-switch active account to matching chain type
+    if (config) {
+      const currentAccount = this.state.accounts.find((a) => a.address === this.state.activeAccount)
+      if (currentAccount && currentAccount.chainType !== config.chainType) {
+        const matchingAccount = this.state.accounts.find((a) => a.chainType === config.chainType)
+        if (matchingAccount) {
+          this.state.activeAccount = matchingAccount.address
+        }
+      }
+    }
+
     await this.persistState()
   }
 
@@ -276,6 +380,7 @@ export class WalletController {
       explorer: payload.explorer,
       faucet: payload.faucet,
       type: 'custom',
+      chainType: 'xrpl',
       addedAt: Date.now(),
     }
     this.customNetworks.push(config)
@@ -317,6 +422,7 @@ export class WalletController {
       derivationPath: imported.derivationPath,
       publicKey: imported.publicKey,
       index: imported.index,
+      chainType: 'xrpl',
     }
 
     this.state.accounts.push(account)
@@ -332,20 +438,31 @@ export class WalletController {
     const data = this.auth.getVaultData()
     if (!data) throw new Error('Wallet is locked')
 
-    const existingHdCount = this.state.accounts.filter((a) => a.type === 'hd').length
-    const newAccounts = deriveAccounts(data.mnemonic, existingHdCount + count).slice(
-      existingHdCount,
+    const existingXrplHdCount = this.state.accounts.filter(
+      (a) => a.type === 'hd' && a.chainType === 'xrpl',
+    ).length
+    const existingEvmHdCount = this.state.accounts.filter(
+      (a) => a.type === 'hd' && a.chainType === 'evm',
+    ).length
+
+    const newXrplAccounts = deriveAccounts(data.mnemonic, existingXrplHdCount + count).slice(
+      existingXrplHdCount,
+    )
+    const newEvmAccounts = deriveEvmAccounts(data.mnemonic, existingEvmHdCount + count).slice(
+      existingEvmHdCount,
     )
 
     const labels = await this.cache.getAccountLabels()
     const result: Account[] = []
 
-    for (const derived of newAccounts) {
+    for (const derived of newXrplAccounts) {
       const vaultAccount = derivedToVaultAccount(derived)
       data.accounts.push(vaultAccount)
       this.keyring.addAccount(vaultAccount)
 
-      const label = labels[derived.address] ?? `Account ${this.state.accounts.length + 1}`
+      const label =
+        labels[derived.address] ??
+        `Account ${existingXrplHdCount + result.filter((a) => a.chainType === 'xrpl').length + 1}`
       const account: Account = {
         address: derived.address,
         label,
@@ -353,6 +470,29 @@ export class WalletController {
         derivationPath: derived.derivationPath,
         publicKey: derived.publicKey,
         index: derived.index,
+        chainType: 'xrpl',
+      }
+
+      this.state.accounts.push(account)
+      result.push(account)
+    }
+
+    for (const derived of newEvmAccounts) {
+      const vaultAccount = evmDerivedToVaultAccount(derived)
+      data.accounts.push(vaultAccount)
+      this.evmKeyring.addAccount(vaultAccount)
+
+      const label =
+        labels[derived.address] ??
+        `EVM Account ${existingEvmHdCount + result.filter((a) => a.chainType === 'evm').length + 1}`
+      const account: Account = {
+        address: derived.address,
+        label,
+        type: 'hd',
+        derivationPath: derived.derivationPath,
+        publicKey: derived.publicKey,
+        index: derived.index,
+        chainType: 'evm',
       }
 
       this.state.accounts.push(account)
@@ -808,6 +948,161 @@ export class WalletController {
     return this.signAndSubmit(tx, sender)
   }
 
+  // --- EVM Methods ---
+
+  getEvmClient(): EvmClient | null {
+    return this.evmClient
+  }
+
+  getEvmKeyring(): EvmKeyring {
+    return this.evmKeyring
+  }
+
+  async evmGetBalance(address?: string): Promise<EvmBalanceInfo> {
+    if (!this.evmClient?.isConnected) throw new Error('EVM client not connected')
+    const addr = address ?? this.state.activeAccount
+    if (!addr) throw new Error('No active account')
+    return this.evmClient.getBalance(addr)
+  }
+
+  async evmSendTransaction(params: {
+    to: string
+    value?: string
+    data?: string
+    gasLimit?: string
+  }): Promise<string> {
+    if (!this.evmClient?.isConnected) throw new Error('EVM client not connected')
+    const sender = this.state.activeAccount
+    if (!sender) throw new Error('No active account')
+
+    const nonce = await this.evmClient.getNonce(sender)
+    const feeData = await this.evmClient.getFeeData()
+
+    const tx = this.evmClient.buildTransaction({
+      to: params.to,
+      value: params.value,
+      data: params.data,
+      gasLimit: params.gasLimit,
+      nonce,
+    })
+
+    tx.maxFeePerGas = feeData.maxFeePerGas
+    tx.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas
+
+    const signedTx = await this.evmKeyring.signTransaction(sender, tx)
+    const response = await this.evmClient.sendRawTransaction(signedTx)
+    return response.hash
+  }
+
+  async evmEstimateGas(params: { to: string; value?: string; data?: string }): Promise<string> {
+    if (!this.evmClient?.isConnected) throw new Error('EVM client not connected')
+    return this.evmClient.estimateGas({
+      to: params.to,
+      value: params.value ? evmParseEther(params.value) : undefined,
+      data: params.data,
+    })
+  }
+
+  async evmGetTokens(address?: string): Promise<Erc20Token[]> {
+    if (!this.erc20Client) throw new Error('ERC-20 client not initialized')
+    const addr = address ?? this.state.activeAccount
+    if (!addr) throw new Error('No active account')
+    return this.erc20Client.getTokenList(addr)
+  }
+
+  async evmAddToken(contractAddress: string): Promise<Erc20Token> {
+    if (!this.erc20Client) throw new Error('ERC-20 client not initialized')
+    const addr = this.state.activeAccount
+    if (!addr) throw new Error('No active account')
+    return this.erc20Client.getBalance(contractAddress, addr)
+  }
+
+  async evmCallContract(params: {
+    contractAddress: string
+    abi: string
+    functionName: string
+    args?: unknown[]
+    value?: string
+  }): Promise<string> {
+    if (!this.evmClient?.isConnected) throw new Error('EVM client not connected')
+    const config = this.getNetworkConfig(this.state.network)
+    if (!config) throw new Error('No network config')
+
+    const provider = new EvmJsonRpcProvider(config.url, config.chainId)
+    const abi = JSON.parse(params.abi) as string[]
+    const contract = new EvmContract(params.contractAddress, abi, provider)
+    const data = contract.interface.encodeFunctionData(params.functionName, params.args ?? [])
+
+    return this.evmSendTransaction({
+      to: params.contractAddress,
+      data,
+      value: params.value,
+    })
+  }
+
+  async evmGetTransactionHistory(address?: string): Promise<EvmTransactionReceipt[]> {
+    if (!this.evmClient?.isConnected) throw new Error('EVM client not connected')
+    const addr = address ?? this.state.activeAccount
+    if (!addr) throw new Error('No active account')
+    return this.evmClient.getTransactionHistory(addr)
+  }
+
+  // --- Bridge Methods ---
+
+  async bridgeEstimate(direction: BridgeDirection, amount: string): Promise<BridgeEstimate> {
+    if (!this.bridgeService) throw new Error('Bridge service not initialized')
+    return this.bridgeService.estimateBridgeFee(direction, amount)
+  }
+
+  async bridgeTransfer(params: {
+    direction: BridgeDirection
+    amount: string
+    sourceAddress: string
+    destinationAddress: string
+  }): Promise<BridgeTransaction> {
+    if (!this.bridgeService) throw new Error('Bridge service not initialized')
+
+    const estimate = await this.bridgeService.estimateBridgeFee(params.direction, params.amount)
+
+    let sourceTxHash: string | undefined
+
+    if (params.direction === 'xrpl-to-evm') {
+      const memos = this.bridgeService.buildXrplBridgeMemo(params.destinationAddress)
+      const gateway = this.bridgeService.gatewayAddresses.xrplGateway
+      sourceTxHash = await this.sendPayment({
+        destination: gateway,
+        amount: params.amount,
+        memos,
+      })
+    } else {
+      sourceTxHash = await this.evmSendTransaction({
+        to: this.bridgeService.gatewayAddresses.evmGateway,
+        value: params.amount,
+      })
+    }
+
+    const bridgeTx = this.bridgeService.createBridgeTransaction({
+      direction: params.direction,
+      sourceAddress: params.sourceAddress,
+      destinationAddress: params.destinationAddress,
+      sourceAmount: params.amount,
+      destinationAmount: estimate.destinationAmount,
+      sourceTxHash,
+    })
+
+    await this.cache.addBridgeTransaction(bridgeTx)
+    return bridgeTx
+  }
+
+  async bridgeGetStatus(txHash: string): Promise<import('@otsu/types').BridgeStatus> {
+    if (!this.bridgeService) throw new Error('Bridge service not initialized')
+    return this.bridgeService.pollBridgeStatus(txHash)
+  }
+
+  async bridgeGetHistory(): Promise<BridgeTransaction[]> {
+    return this.cache.getBridgeTransactions()
+  }
+
   // --- Common transaction flow ---
 
   private async signAndSubmit(tx: Record<string, unknown>, sender: string): Promise<string> {
@@ -820,6 +1115,7 @@ export class WalletController {
   async resetWallet(): Promise<void> {
     await this.auth.reset()
     this.keyring.clear()
+    this.evmKeyring.clear()
     this.state = {
       accounts: [],
       activeAccount: null,
@@ -859,7 +1155,15 @@ export class WalletController {
         this.state.activeAccount = persisted.activeAccount
         this.state.network = persisted.network
         this.state.authMethod = persisted.authMethod ?? 'password'
-        if (persisted.network !== 'testnet') {
+
+        const config = this.getNetworkConfig(persisted.network)
+        if (config?.chainType === 'evm') {
+          if (!this.evmClient) {
+            this.evmClient = new EvmClient()
+          }
+          this.evmClient.switchNetwork(config)
+          this.erc20Client = Erc20Client.create(config.url, config.chainId)
+        } else if (persisted.network !== 'testnet') {
           const custom = this.customNetworks.find((n) => n.id === persisted.network)
           if (custom) {
             await this.client.switchToConfig(custom)

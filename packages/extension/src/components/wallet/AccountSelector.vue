@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import type { Account } from '@otsu/types'
+import type { Account, ChainType } from '@otsu/types'
 import AccountTypeIcon from './AccountTypeIcon.vue'
 import { useToast } from '../../composables/useToast'
 
@@ -10,6 +10,7 @@ const props = defineProps<{
   accounts: Account[]
   activeAccount: string | null
   loading?: boolean
+  chainType?: ChainType
 }>()
 
 const emit = defineEmits<{
@@ -22,11 +23,16 @@ const isOpen = ref(false)
 const focusedIndex = ref(-1)
 const dropdownRef = ref<HTMLElement | null>(null)
 
-const active = computed(() => props.accounts.find((a) => a.address === props.activeAccount))
+const filteredAccounts = computed(() => {
+  if (!props.chainType) return props.accounts
+  return props.accounts.filter((a) => a.chainType === props.chainType)
+})
+
+const active = computed(() => filteredAccounts.value.find((a) => a.address === props.activeAccount))
 
 watch(isOpen, (open) => {
   if (open) {
-    const activeIndex = props.accounts.findIndex((a) => a.address === props.activeAccount)
+    const activeIndex = filteredAccounts.value.findIndex((a) => a.address === props.activeAccount)
     focusedIndex.value = activeIndex >= 0 ? activeIndex : 0
     nextTick(() => dropdownRef.value?.focus())
   } else {
@@ -35,6 +41,9 @@ watch(isOpen, (open) => {
 })
 
 function truncate(address: string): string {
+  if (address.startsWith('0x')) {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`
+  }
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
@@ -59,7 +68,7 @@ function handleLoadMore(): void {
 }
 
 function handleKeydown(event: KeyboardEvent): void {
-  const len = props.accounts.length
+  const len = filteredAccounts.value.length
   if (len === 0) return
 
   switch (event.key) {
@@ -74,7 +83,7 @@ function handleKeydown(event: KeyboardEvent): void {
     case 'Enter':
       event.preventDefault()
       if (focusedIndex.value >= 0 && focusedIndex.value < len) {
-        selectAccount(props.accounts[focusedIndex.value].address)
+        selectAccount(filteredAccounts.value[focusedIndex.value].address)
       }
       break
     case 'Escape':
@@ -82,6 +91,11 @@ function handleKeydown(event: KeyboardEvent): void {
       isOpen.value = false
       break
   }
+}
+
+function chainIcon(account: Account): string | null {
+  if (account.chainType === 'evm') return 'EVM'
+  return null
 }
 </script>
 
@@ -100,6 +114,12 @@ function handleKeydown(event: KeyboardEvent): void {
           <p class="text-xs font-medium truncate max-w-[140px]">{{ active.label }}</p>
           <p class="text-[11px] text-gray-500 font-mono">{{ truncate(active.address) }}</p>
         </div>
+        <span
+          v-if="active.chainType === 'evm'"
+          class="px-1 py-0.5 rounded text-[9px] font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400"
+        >
+          EVM
+        </span>
       </template>
       <template v-else>
         <span class="text-xs text-gray-500">No account</span>
@@ -126,7 +146,7 @@ function handleKeydown(event: KeyboardEvent): void {
     >
       <div class="p-1">
         <button
-          v-for="(account, index) in accounts"
+          v-for="(account, index) in filteredAccounts"
           :key="account.address"
           role="option"
           :aria-selected="account.address === activeAccount"
@@ -140,7 +160,15 @@ function handleKeydown(event: KeyboardEvent): void {
         >
           <AccountTypeIcon :type="account.type" />
           <div class="min-w-0 flex-1">
-            <p class="text-xs font-medium truncate">{{ account.label }}</p>
+            <div class="flex items-center gap-1">
+              <p class="text-xs font-medium truncate">{{ account.label }}</p>
+              <span
+                v-if="chainIcon(account)"
+                class="px-1 py-0.5 rounded text-[8px] font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 shrink-0"
+              >
+                {{ chainIcon(account) }}
+              </span>
+            </div>
             <div class="flex items-center gap-1">
               <span class="text-[10px] text-gray-500 font-mono">{{
                 truncate(account.address)
@@ -191,7 +219,7 @@ function handleKeydown(event: KeyboardEvent): void {
           Add Account
         </button>
         <button
-          v-if="accounts.length >= 50"
+          v-if="filteredAccounts.length >= 50"
           class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
           :disabled="loading"
           @click="handleLoadMore"

@@ -19,6 +19,7 @@ export interface VaultAccount {
   derivationPath?: string
   type: 'hd' | 'imported'
   index?: number
+  chainType?: import('./network').ChainType
 }
 
 export interface SessionState {

@@ -5,6 +5,7 @@ import type {
   NftBalance,
   NftMetadata,
   ContractInfo,
+  BridgeTransaction,
 } from '@otsu/types'
 
 export interface CacheStorage {
@@ -126,6 +127,34 @@ export class WalletCache {
 
   async clearAllCache(): Promise<void> {
     await this.storage.clear()
+  }
+
+  async getBridgeTransactions(): Promise<BridgeTransaction[]> {
+    return (await this.storage.get<BridgeTransaction[]>(globalKey('bridge-transactions'))) ?? []
+  }
+
+  async setBridgeTransactions(transactions: BridgeTransaction[]): Promise<void> {
+    await this.storage.set(globalKey('bridge-transactions'), transactions)
+  }
+
+  async addBridgeTransaction(transaction: BridgeTransaction): Promise<void> {
+    const existing = await this.getBridgeTransactions()
+    existing.unshift(transaction)
+    await this.setBridgeTransactions(existing)
+  }
+
+  async updateBridgeTransaction(id: string, updates: Partial<BridgeTransaction>): Promise<void> {
+    const transactions = await this.getBridgeTransactions()
+    const index = transactions.findIndex((tx) => tx.id === id)
+    if (index !== -1) {
+      Object.assign(transactions[index], updates, { updatedAt: Date.now() })
+      await this.setBridgeTransactions(transactions)
+    }
+  }
+
+  async removeBridgeTransaction(id: string): Promise<void> {
+    const transactions = await this.getBridgeTransactions()
+    await this.setBridgeTransactions(transactions.filter((tx) => tx.id !== id))
   }
 
   private async touchAccount(address: string): Promise<void> {

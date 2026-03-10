@@ -1,6 +1,13 @@
 export { NETWORKS } from './networks'
 export { RESERVES, DROPS_PER_XRP } from './reserves'
-export { DERIVATION_PATH, BIP44_COIN_TYPE, MNEMONIC_STRENGTH, ALGORITHM } from './derivation'
+export {
+  DERIVATION_PATH,
+  BIP44_COIN_TYPE,
+  EVM_DERIVATION_PATH,
+  EVM_BIP44_COIN_TYPE,
+  MNEMONIC_STRENGTH,
+  ALGORITHM,
+} from './derivation'
 export { ErrorCodes, OtsuError } from './errors'
 export type { ErrorCode } from './errors'
 export {
@@ -36,3 +43,16 @@ export {
   CONTRACT_INFO_CACHE_TTL_MS,
   CONTRACT_DEFAULT_FEE,
 } from './contract'
+export {
+  EVM_CHAIN_IDS,
+  XRP_DECIMALS_XRPL,
+  XRP_DECIMALS_EVM,
+  AXELAR_GATEWAY,
+  BRIDGE_POLL_INTERVAL_MS,
+  BRIDGE_TIMEOUT_MS,
+  BRIDGE_MIN_AMOUNT,
+  BRIDGE_MAX_AMOUNT,
+  EVM_DEFAULT_GAS_LIMIT,
+  EVM_ERC20_GAS_LIMIT,
+  BLOCKSCOUT_API,
+} from './evm'

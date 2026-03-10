@@ -7,6 +7,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     url: 'wss://xrplcluster.com',
     explorer: 'https://livenet.xrpl.org',
     type: 'mainnet',
+    chainType: 'xrpl',
   },
   testnet: {
     id: 'testnet',
@@ -15,6 +16,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     explorer: 'https://testnet.xrpl.org',
     faucet: 'https://faucet.altnet.rippletest.net/accounts',
     type: 'testnet',
+    chainType: 'xrpl',
   },
   devnet: {
     id: 'devnet',
@@ -23,6 +25,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     explorer: 'https://devnet.xrpl.org',
     faucet: 'https://faucet.devnet.rippletest.net/accounts',
     type: 'devnet',
+    chainType: 'xrpl',
   },
   alphanet: {
     id: 'alphanet',
@@ -32,5 +35,35 @@ export const NETWORKS: Record<string, NetworkConfig> = {
     faucet: 'https://alphanet.faucet.nerdnest.xyz/accounts',
     features: ['smart-contracts'],
     type: 'custom',
+    chainType: 'xrpl',
+  },
+  'evm-mainnet': {
+    id: 'evm-mainnet',
+    name: 'EVM Sidechain',
+    url: 'https://rpc.xrplevm.org',
+    explorer: 'https://explorer.xrplevm.org',
+    type: 'mainnet',
+    chainType: 'evm',
+    chainId: 1440002,
+    nativeCurrency: {
+      name: 'XRP',
+      symbol: 'XRP',
+      decimals: 18,
+    },
+  },
+  'evm-testnet': {
+    id: 'evm-testnet',
+    name: 'EVM Testnet',
+    url: 'https://rpc.testnet.xrplevm.org',
+    explorer: 'https://explorer.testnet.xrplevm.org',
+    faucet: 'https://faucet.testnet.xrplevm.org',
+    type: 'testnet',
+    chainType: 'evm',
+    chainId: 1449000,
+    nativeCurrency: {
+      name: 'XRP',
+      symbol: 'XRP',
+      decimals: 18,
+    },
   },
 } as const

@@ -15,6 +15,7 @@ const accounts: Account[] = [
     publicKey: 'ED123',
     type: 'hd',
     label: 'Account 1',
+    chainType: 'xrpl',
   },
   {
     index: 1,
@@ -22,6 +23,7 @@ const accounts: Account[] = [
     publicKey: 'ED456',
     type: 'hd',
     label: 'Account 2',
+    chainType: 'xrpl',
   },
 ]
 

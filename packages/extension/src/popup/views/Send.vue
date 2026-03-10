@@ -25,8 +25,21 @@ const step = ref<'form' | 'confirm' | 'result'>('form')
 const loading = ref(false)
 const error = ref('')
 const txHash = ref('')
+const estimatedGas = ref<string | null>(null)
+
+const isEvm = computed(() => wallet.isEvmNetwork)
 
 const currencyOptions = computed(() => {
+  if (isEvm.value) {
+    const options = [{ value: 'XRP', label: 'XRP' }]
+    for (const token of wallet.evmTokens) {
+      options.push({
+        value: `erc20:${token.contractAddress}`,
+        label: token.symbol,
+      })
+    }
+    return options
+  }
   const options = [{ value: 'XRP', label: 'XRP' }]
   for (const token of wallet.tokens) {
     options.push({
@@ -40,6 +53,9 @@ const currencyOptions = computed(() => {
 const isToken = computed(() => selectedCurrency.value !== 'XRP')
 
 const isValidAddress = computed(() => {
+  if (isEvm.value) {
+    return /^0x[0-9a-fA-F]{40}$/.test(destination.value)
+  }
   return /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(destination.value)
 })
 
@@ -53,8 +69,26 @@ const canSend = computed(() => {
   return isValidAddress.value && parseFloat(amount.value) > 0
 })
 
+const addressPlaceholder = computed(() => {
+  return isEvm.value ? '0x...' : 'rAddress...'
+})
+
+const addressError = computed(() => {
+  if (!destination.value) return ''
+  if (!isValidAddress.value) {
+    return isEvm.value ? 'Invalid EVM address' : 'Invalid XRPL address'
+  }
+  return ''
+})
+
 onMounted(async () => {
-  if (wallet.tokens.length === 0) {
+  if (isEvm.value) {
+    try {
+      await wallet.fetchEvmTokens()
+    } catch {
+      /* ignore */
+    }
+  } else if (wallet.tokens.length === 0) {
     try {
       await wallet.fetchTokens()
     } catch {
@@ -62,35 +96,61 @@ onMounted(async () => {
     }
   }
 
-  // Pre-fill from xrpl: URI query param
-  const uri = route.query.uri as string | undefined
-  if (uri) {
-    const parsed = parseXrplUri(decodeURIComponent(uri))
-    if (parsed) {
-      destination.value = parsed.address
-      if (parsed.amount) amount.value = parsed.amount
-      if (parsed.destinationTag !== undefined) destinationTag.value = String(parsed.destinationTag)
-      if (parsed.currency && parsed.issuer) {
-        selectedCurrency.value = `${parsed.currency}:${parsed.issuer}`
+  // Pre-fill from xrpl: URI query param (XRPL only)
+  if (!isEvm.value) {
+    const uri = route.query.uri as string | undefined
+    if (uri) {
+      const parsed = parseXrplUri(decodeURIComponent(uri))
+      if (parsed) {
+        destination.value = parsed.address
+        if (parsed.amount) amount.value = parsed.amount
+        if (parsed.destinationTag !== undefined)
+          destinationTag.value = String(parsed.destinationTag)
+        if (parsed.currency && parsed.issuer) {
+          selectedCurrency.value = `${parsed.currency}:${parsed.issuer}`
+        }
       }
     }
   }
 })
 
 function setMax() {
-  if (isToken.value) {
-    const [currency, issuer] = selectedCurrency.value.split(':')
-    const token = wallet.tokens.find((t) => t.currency === currency && t.issuer === issuer)
-    if (token) amount.value = token.value
-  } else if (wallet.balance) {
-    const available = Number(wallet.balance.available) / DROPS_PER_XRP
-    amount.value = Math.max(0, available - 0.000012).toFixed(6)
+  if (isEvm.value) {
+    if (isToken.value) {
+      const addr = selectedCurrency.value.replace('erc20:', '')
+      const token = wallet.evmTokens.find((t) => t.contractAddress === addr)
+      if (token) amount.value = token.formattedBalance
+    } else if (wallet.evmBalance) {
+      amount.value = wallet.evmBalance.formatted
+    }
+  } else {
+    if (isToken.value) {
+      const [currency, issuer] = selectedCurrency.value.split(':')
+      const token = wallet.tokens.find((t) => t.currency === currency && t.issuer === issuer)
+      if (token) amount.value = token.value
+    } else if (wallet.balance) {
+      const available = Number(wallet.balance.available) / DROPS_PER_XRP
+      amount.value = Math.max(0, available - 0.000012).toFixed(6)
+    }
   }
 }
 
-function confirmSend() {
+async function confirmSend() {
   if (!canSend.value) return
   error.value = ''
+
+  if (isEvm.value) {
+    try {
+      const gas = await wallet.estimateEvmGas({
+        to: destination.value,
+        value: isToken.value ? undefined : amount.value,
+      })
+      estimatedGas.value = gas
+    } catch {
+      estimatedGas.value = null
+    }
+  }
+
   step.value = 'confirm'
 }
 
@@ -99,7 +159,22 @@ async function executeSend() {
   error.value = ''
 
   try {
-    if (isToken.value) {
+    if (isEvm.value) {
+      const hash = await wallet.sendEvmTransaction({
+        to: destination.value,
+        value: isToken.value ? undefined : amount.value,
+      })
+      if (hash) {
+        txHash.value = hash
+        step.value = 'result'
+        toast.success('Transaction sent successfully')
+        await wallet.fetchEvmBalance()
+      } else {
+        error.value = 'Transaction failed'
+        toast.error('Transaction failed')
+        step.value = 'form'
+      }
+    } else if (isToken.value) {
       const [currency, issuer] = selectedCurrency.value.split(':')
       const hash = await wallet.sendTokenPayment({
         destination: destination.value,
@@ -173,8 +248,8 @@ async function executeSend() {
       <AddressInput
         v-model="destination"
         label="Destination Address"
-        placeholder="rAddress..."
-        :error="destination && !isValidAddress ? 'Invalid XRPL address' : ''"
+        :placeholder="addressPlaceholder"
+        :error="addressError"
         @select-contact="
           (c) => {
             if (c.tag) destinationTag = c.tag
@@ -194,26 +269,29 @@ async function executeSend() {
         <input
           v-model="amount"
           type="number"
-          step="0.000001"
+          :step="isEvm ? '0.000000000000000001' : '0.000001'"
           min="0"
-          placeholder="0.000000"
+          :placeholder="isEvm ? '0.000000000000000000' : '0.000000'"
           class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       </div>
 
-      <Input
-        v-model="destinationTag"
-        label="Destination Tag (optional)"
-        placeholder="e.g. 12345"
-        hint="Required for exchanges"
-      />
+      <!-- Destination tag and memo (XRPL only) -->
+      <template v-if="!isEvm">
+        <Input
+          v-model="destinationTag"
+          label="Destination Tag (optional)"
+          placeholder="e.g. 12345"
+          hint="Required for exchanges"
+        />
 
-      <Input
-        v-model="memo"
-        label="Memo (optional)"
-        placeholder="e.g. Payment for invoice #123"
-        hint="Text memo attached to the transaction"
-      />
+        <Input
+          v-model="memo"
+          label="Memo (optional)"
+          placeholder="e.g. Payment for invoice #123"
+          hint="Text memo attached to the transaction"
+        />
+      </template>
 
       <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
 
@@ -238,13 +316,21 @@ async function executeSend() {
               {{ amount }} {{ isToken ? selectedCurrency.split(':')[0] : 'XRP' }}
             </span>
           </div>
-          <div v-if="destinationTag" class="flex justify-between">
+          <div v-if="!isEvm && destinationTag" class="flex justify-between">
             <span class="text-gray-500 dark:text-gray-400">Tag</span>
             <span>{{ destinationTag }}</span>
           </div>
-          <div v-if="memo" class="flex justify-between">
+          <div v-if="!isEvm && memo" class="flex justify-between">
             <span class="text-gray-500 dark:text-gray-400">Memo</span>
             <span class="text-xs text-right break-all ml-4">{{ memo }}</span>
+          </div>
+          <div v-if="isEvm && estimatedGas" class="flex justify-between">
+            <span class="text-gray-500 dark:text-gray-400">Est. Gas</span>
+            <span class="text-xs">{{ estimatedGas }}</span>
+          </div>
+          <div v-if="isEvm" class="flex justify-between">
+            <span class="text-gray-500 dark:text-gray-400">Network</span>
+            <span class="text-xs">EVM Sidechain</span>
           </div>
         </div>
       </Card>

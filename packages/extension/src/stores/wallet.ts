@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type {
   WalletState,
   Account,
   AuthMethod,
+  ChainType,
   TokenBalance,
   TokenMetadata,
   TransactionRecord,
@@ -15,6 +16,9 @@ import type {
   NetworkConfig,
   CustomNetworkConfig,
   AddCustomNetworkPayload,
+  Erc20Token,
+  BridgeTransaction,
+  BridgeEstimate,
 } from '@otsu/types'
 import { performPasskeyRegistration, getPasskeyDecryptionKey } from '@otsu/core'
 import { sendMessage } from '../lib/messaging'
@@ -41,9 +45,23 @@ export const useWalletStore = defineStore('wallet', () => {
   const predefinedNetworks = ref<Record<string, NetworkConfig>>({})
   const customNetworks = ref<CustomNetworkConfig[]>([])
 
+  // EVM state
+  const evmTokens = ref<Erc20Token[]>([])
+  const evmBalance = ref<{ balance: string; formatted: string } | null>(null)
+  const bridgeTransactions = ref<BridgeTransaction[]>([])
+
   // Phase 6 state
   const escrows = ref<EscrowRecord[]>([])
   const checks = ref<CheckRecord[]>([])
+
+  const currentChainType = computed((): ChainType => {
+    const config =
+      predefinedNetworks.value[network.value] ??
+      customNetworks.value.find((n) => n.id === network.value)
+    return config?.chainType ?? 'xrpl'
+  })
+
+  const isEvmNetwork = computed(() => currentChainType.value === 'evm')
 
   async function fetchState(): Promise<void> {
     const response = await sendMessage<WalletState>({ type: 'GET_STATE' })
@@ -85,6 +103,9 @@ export const useWalletStore = defineStore('wallet', () => {
     tokens.value = []
     transactions.value = []
     xrpPrice.value = null
+    evmBalance.value = null
+    evmTokens.value = []
+    bridgeTransactions.value = []
   }
 
   async function fetchBalance(): Promise<void> {
@@ -97,11 +118,20 @@ export const useWalletStore = defineStore('wallet', () => {
   }
 
   async function switchNetwork(networkId: string): Promise<void> {
-    await sendMessage({ type: 'SWITCH_NETWORK', payload: { networkId } })
+    const response = await sendMessage<{ activeAccount?: string }>({
+      type: 'SWITCH_NETWORK',
+      payload: { networkId },
+    })
     network.value = networkId
     balance.value = null
     tokens.value = []
     transactions.value = []
+    evmBalance.value = null
+    evmTokens.value = []
+    if (response.success && response.data?.activeAccount) {
+      activeAccount.value = response.data.activeAccount
+    }
+    await fetchState()
   }
 
   async function requestFaucet(): Promise<boolean> {
@@ -379,6 +409,107 @@ export const useWalletStore = defineStore('wallet', () => {
     return null
   }
 
+  // EVM actions
+
+  async function fetchEvmBalance(): Promise<void> {
+    const response = await sendMessage<{ balance: string; formatted: string }>({
+      type: 'GET_BALANCE',
+    })
+    if (response.success && response.data) {
+      evmBalance.value = response.data
+    }
+  }
+
+  async function fetchEvmTokens(): Promise<void> {
+    const response = await sendMessage<Erc20Token[]>({
+      type: 'EVM_GET_TOKENS',
+      payload: {},
+    })
+    if (response.success && response.data) {
+      evmTokens.value = response.data
+    }
+  }
+
+  async function sendEvmTransaction(params: {
+    to: string
+    value?: string
+    data?: string
+  }): Promise<string | null> {
+    loading.value = true
+    try {
+      const response = await sendMessage<{ hash: string }>({
+        type: 'EVM_SEND_TRANSACTION',
+        payload: params,
+      })
+      if (response.success && response.data) {
+        return response.data.hash
+      }
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function estimateEvmGas(params: {
+    to: string
+    value?: string
+    data?: string
+  }): Promise<string | null> {
+    const response = await sendMessage<{ gas: string }>({
+      type: 'EVM_ESTIMATE_GAS',
+      payload: params,
+    })
+    if (response.success && response.data) {
+      return response.data.gas
+    }
+    return null
+  }
+
+  // Bridge actions
+
+  async function bridgeEstimate(
+    direction: 'xrpl-to-evm' | 'evm-to-xrpl',
+    amount: string,
+  ): Promise<BridgeEstimate | null> {
+    const response = await sendMessage<BridgeEstimate>({
+      type: 'BRIDGE_ESTIMATE',
+      payload: { direction, amount },
+    })
+    if (response.success && response.data) {
+      return response.data
+    }
+    return null
+  }
+
+  async function bridgeTransfer(params: {
+    direction: 'xrpl-to-evm' | 'evm-to-xrpl'
+    amount: string
+    sourceAddress: string
+    destinationAddress: string
+  }): Promise<BridgeTransaction | null> {
+    loading.value = true
+    try {
+      const response = await sendMessage<BridgeTransaction>({
+        type: 'BRIDGE_TRANSFER',
+        payload: params,
+      })
+      if (response.success && response.data) {
+        bridgeTransactions.value.unshift(response.data)
+        return response.data
+      }
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchBridgeHistory(): Promise<void> {
+    const response = await sendMessage<BridgeTransaction[]>({ type: 'BRIDGE_HISTORY' })
+    if (response.success && response.data) {
+      bridgeTransactions.value = response.data
+    }
+  }
+
   return {
     locked,
     accounts,
@@ -394,6 +525,11 @@ export const useWalletStore = defineStore('wallet', () => {
     cachedAt,
     historyMarker,
     historyHasMore,
+    currentChainType,
+    isEvmNetwork,
+    evmBalance,
+    evmTokens,
+    bridgeTransactions,
     fetchState,
     unlock,
     lock,
@@ -422,5 +558,12 @@ export const useWalletStore = defineStore('wallet', () => {
     changeAuthMethod,
     exportMnemonic,
     resetWallet,
+    fetchEvmBalance,
+    fetchEvmTokens,
+    sendEvmTransaction,
+    estimateEvmGas,
+    bridgeEstimate,
+    bridgeTransfer,
+    fetchBridgeHistory,
   }
 })

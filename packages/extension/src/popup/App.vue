@@ -101,6 +101,7 @@ async function handleSwitchNetwork(networkId: string) {
           :accounts="wallet.accounts"
           :active-account="wallet.activeAccount"
           :loading="wallet.loading"
+          :chain-type="wallet.currentChainType"
           @select="handleSelectAccount"
           @add-account="$router.push('/accounts')"
           @load-more="handleDeriveMore"

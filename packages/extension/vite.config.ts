@@ -60,7 +60,12 @@ export default defineConfig({
     vue(),
     webExtension({
       manifest: resolve(__dirname, 'src', manifestFile),
-      additionalInputs: ['tab.html', 'notification.html', 'provider/inject.ts'],
+      additionalInputs: [
+        'tab.html',
+        'notification.html',
+        'provider/inject.ts',
+        'provider/evm-inject.ts',
+      ],
       htmlViteConfig: {
         build: {
           rollupOptions: {
@@ -73,6 +78,12 @@ export default defineConfig({
                   id.includes('node_modules/@scure')
                 ) {
                   return 'vendor-xrpl'
+                }
+                if (id.includes('node_modules/ethers')) {
+                  return 'vendor-ethers'
+                }
+                if (id.includes('node_modules/@axelar-network')) {
+                  return 'vendor-axelar'
                 }
               },
             },

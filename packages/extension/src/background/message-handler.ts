@@ -42,6 +42,14 @@ import type {
   GetContractInfoPayload,
   CallContractPayload,
   ChangeAuthMethodPayload,
+  EvmSendTransactionPayload,
+  EvmGetTokensPayload,
+  EvmCallContractPayload,
+  EvmEstimateGasPayload,
+  EvmAddTokenPayload,
+  BridgeEstimatePayload,
+  BridgeTransferPayload,
+  BridgeStatusPayload,
 } from '@otsu/types'
 import { WalletController } from './controllers/wallet'
 import { ProviderController } from './controllers/provider'
@@ -415,6 +423,63 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
           payload.prfKey,
         )
         return { success: true }
+      }
+
+      // --- EVM message types ---
+
+      case 'EVM_SEND_TRANSACTION': {
+        const payload = message.payload as EvmSendTransactionPayload
+        const hash = await controller.evmSendTransaction(payload)
+        return { success: true, data: { hash } }
+      }
+
+      case 'EVM_GET_TOKENS': {
+        const payload = (message.payload as EvmGetTokensPayload) ?? {}
+        const tokens = await controller.evmGetTokens(payload.address)
+        return { success: true, data: tokens }
+      }
+
+      case 'EVM_CALL_CONTRACT': {
+        const payload = message.payload as EvmCallContractPayload
+        const hash = await controller.evmCallContract(payload)
+        return { success: true, data: { hash } }
+      }
+
+      case 'EVM_ESTIMATE_GAS': {
+        const payload = message.payload as EvmEstimateGasPayload
+        const gas = await controller.evmEstimateGas(payload)
+        return { success: true, data: { gas } }
+      }
+
+      case 'EVM_ADD_TOKEN': {
+        const payload = message.payload as EvmAddTokenPayload
+        const token = await controller.evmAddToken(payload.contractAddress)
+        return { success: true, data: token }
+      }
+
+      // --- Bridge message types ---
+
+      case 'BRIDGE_ESTIMATE': {
+        const payload = message.payload as BridgeEstimatePayload
+        const estimate = await controller.bridgeEstimate(payload.direction, payload.amount)
+        return { success: true, data: estimate }
+      }
+
+      case 'BRIDGE_TRANSFER': {
+        const payload = message.payload as BridgeTransferPayload
+        const bridgeTx = await controller.bridgeTransfer(payload)
+        return { success: true, data: bridgeTx }
+      }
+
+      case 'BRIDGE_STATUS': {
+        const payload = message.payload as BridgeStatusPayload
+        const status = await controller.bridgeGetStatus(payload.txHash)
+        return { success: true, data: { status } }
+      }
+
+      case 'BRIDGE_HISTORY': {
+        const history = await controller.bridgeGetHistory()
+        return { success: true, data: history }
       }
 
       default:

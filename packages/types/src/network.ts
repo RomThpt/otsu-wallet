@@ -1,3 +1,5 @@
+export type ChainType = 'xrpl' | 'evm'
+
 export interface NetworkConfig {
   id: string
   name: string
@@ -7,6 +9,13 @@ export interface NetworkConfig {
   networkId?: number
   features?: string[]
   type: 'mainnet' | 'testnet' | 'devnet' | 'custom'
+  chainType: ChainType
+  chainId?: number
+  nativeCurrency?: {
+    name: string
+    symbol: string
+    decimals: number
+  }
 }
 
 export interface CustomNetworkConfig extends NetworkConfig {
@@ -28,4 +37,9 @@ export interface BalanceInfo {
   baseReserve: string
   ownerReserve: string
   ownerCount: number
+}
+
+export interface EvmBalanceInfo {
+  balance: string
+  formatted: string
 }
