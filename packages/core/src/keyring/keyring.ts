@@ -1,5 +1,8 @@
 import { Wallet } from 'xrpl'
 import type { Transaction } from 'xrpl'
+import { secp256k1 } from '@noble/curves/secp256k1.js'
+import { sha256 } from '@noble/hashes/sha2.js'
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
 import type { VaultAccount } from '@otsu/types'
 import { OtsuError, ErrorCodes } from '@otsu/constants'
 
@@ -45,6 +48,26 @@ export class Keyring {
 
     const wallet = new Wallet(account.publicKey, account.privateKey)
     return wallet.sign(transaction)
+  }
+
+  signMessage(address: string, message: string): { signature: string; publicKey: string } {
+    const account = this.accounts.get(address)
+    if (!account) {
+      throw new OtsuError(ErrorCodes.SIGNING_ERROR, `Account not found: ${address}`)
+    }
+
+    const privateKeyHex = account.privateKey.startsWith('00')
+      ? account.privateKey.slice(2)
+      : account.privateKey
+    const privateKeyBytes = hexToBytes(privateKeyHex)
+    const messageBytes = new TextEncoder().encode(message)
+    const hash = sha256(messageBytes)
+    const sig = secp256k1.sign(hash, privateKeyBytes)
+
+    return {
+      signature: bytesToHex(sig),
+      publicKey: account.publicKey,
+    }
   }
 
   clear(): void {

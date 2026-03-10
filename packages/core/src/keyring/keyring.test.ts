@@ -46,6 +46,41 @@ describe('Keyring', () => {
     expect(signed.hash).toBeTruthy()
   })
 
+  describe('signMessage', () => {
+    it('should sign a message and return signature + publicKey', () => {
+      const keyring = new Keyring()
+      keyring.load([vaultAccount])
+
+      const result = keyring.signMessage(vaultAccount.address, 'hello world')
+      expect(result.signature).toBeTruthy()
+      expect(result.signature).toMatch(/^[0-9a-f]{128}$/i)
+      expect(result.publicKey).toBe(vaultAccount.publicKey)
+    })
+
+    it('should produce different signatures for different messages', () => {
+      const keyring = new Keyring()
+      keyring.load([vaultAccount])
+
+      const sig1 = keyring.signMessage(vaultAccount.address, 'message one')
+      const sig2 = keyring.signMessage(vaultAccount.address, 'message two')
+      expect(sig1.signature).not.toBe(sig2.signature)
+    })
+
+    it('should produce deterministic signatures for the same message', () => {
+      const keyring = new Keyring()
+      keyring.load([vaultAccount])
+
+      const sig1 = keyring.signMessage(vaultAccount.address, 'deterministic')
+      const sig2 = keyring.signMessage(vaultAccount.address, 'deterministic')
+      expect(sig1.signature).toBe(sig2.signature)
+    })
+
+    it('should throw for unknown address', () => {
+      const keyring = new Keyring()
+      expect(() => keyring.signMessage('rUnknown', 'test')).toThrow('Account not found')
+    })
+  })
+
   it('should clear all accounts', () => {
     const keyring = new Keyring()
     keyring.load([vaultAccount])

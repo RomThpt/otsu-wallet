@@ -124,16 +124,23 @@ export class ProviderController {
 
       if (request.method === 'connect') {
         pending.resolve({ id: request.id })
-        this.pendingRequests.delete(requestId)
-        await this.clearSigningRequest(requestId)
         return
       }
 
-      const tx = request.params as Record<string, unknown>
       const sender = this.wallet.getState().activeAccount
       if (!sender) throw new OtsuError(ErrorCodes.SIGNING_ERROR, 'No active account')
 
       const keyring = this.wallet.getKeyring()
+
+      if (request.method === 'signMessage') {
+        const message = (request.params as { message: string })?.message
+        if (!message) throw new OtsuError(ErrorCodes.SIGNING_ERROR, 'Missing message')
+        const { signature } = keyring.signMessage(sender, message)
+        pending.resolve({ id: request.id, result: { signature } })
+        return
+      }
+
+      const tx = request.params as Record<string, unknown>
       const client = this.wallet.getClient()
 
       tx.Account = sender
