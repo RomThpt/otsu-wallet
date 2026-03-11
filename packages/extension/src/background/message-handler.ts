@@ -50,7 +50,6 @@ import type {
   BridgeEstimatePayload,
   BridgeTransferPayload,
   BridgeStatusPayload,
-  IdentityCallbackPayload,
   IdentityLinkWalletPayload,
 } from '@otsu/types'
 import { WalletController } from './controllers/wallet'
@@ -489,13 +488,7 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
       // --- Identity message types ---
 
       case 'IDENTITY_LOGIN': {
-        const url = await identityController.startLogin()
-        return { success: true, data: { url } }
-      }
-
-      case 'IDENTITY_CALLBACK': {
-        const payload = message.payload as IdentityCallbackPayload
-        await identityController.handleCallback(payload.code, payload.state)
+        await identityController.login()
         return { success: true }
       }
 

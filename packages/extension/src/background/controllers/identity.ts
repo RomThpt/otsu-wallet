@@ -28,8 +28,6 @@ interface StoredProfile {
   fetchedAt: number
 }
 
-const PKCE_STORAGE_KEY = 'otsu-identity-pkce'
-
 export class IdentityController {
   private tokens: StoredTokens | null = null
   private profile: IdentityProfile | null = null
@@ -54,45 +52,37 @@ export class IdentityController {
     this.initialized = true
   }
 
-  async startLogin(): Promise<string> {
+  async login(): Promise<void> {
     const verifier = generateCodeVerifier()
     const challenge = await deriveCodeChallenge(verifier)
     const state = generateCodeVerifier(32)
-    const redirectUri = browser.runtime.getURL('identity-callback.html')
+    const redirectUri = browser.identity.getRedirectURL()
     const url = buildAuthorizationUrl(redirectUri, state, challenge)
 
-    // Store PKCE data -- prefer session storage (survives SW restart, cleared on browser close)
-    // Firefox MV2 may not have session storage, fall back to local
-    const pkceData = { verifier, state }
-    try {
-      await browser.storage.session.set({ [PKCE_STORAGE_KEY]: pkceData })
-    } catch {
-      await browser.storage.local.set({ [PKCE_STORAGE_KEY]: pkceData })
+    // Launch the auth flow in a browser-managed popup
+    const callbackUrl = await browser.identity.launchWebAuthFlow({
+      url,
+      interactive: true,
+    })
+
+    if (!callbackUrl) {
+      throw new Error('Login was cancelled')
     }
 
-    return url
-  }
+    // Extract code and state from the callback URL
+    const params = new URL(callbackUrl).searchParams
+    const code = params.get('code')
+    const returnedState = params.get('state')
 
-  async handleCallback(code: string, state: string): Promise<void> {
-    // Retrieve PKCE data
-    let stored: Record<string, unknown>
-    try {
-      stored = await browser.storage.session.get(PKCE_STORAGE_KEY)
-    } catch {
-      stored = await browser.storage.local.get(PKCE_STORAGE_KEY)
+    if (!code || !returnedState) {
+      throw new Error('Missing code or state in callback')
     }
 
-    const pkceData = stored[PKCE_STORAGE_KEY] as { verifier: string; state: string } | undefined
-    if (!pkceData) {
-      throw new Error('No pending login found')
-    }
-
-    if (pkceData.state !== state) {
+    if (returnedState !== state) {
       throw new Error('Invalid state parameter')
     }
 
-    const redirectUri = browser.runtime.getURL('identity-callback.html')
-    const tokenResponse = await exchangeCode(code, redirectUri, pkceData.verifier)
+    const tokenResponse = await exchangeCode(code, redirectUri, verifier)
 
     this.tokens = {
       accessToken: tokenResponse.access_token,
@@ -101,13 +91,6 @@ export class IdentityController {
     }
 
     await browser.storage.local.set({ [IDENTITY_STORAGE_KEY]: this.tokens })
-
-    // Clean up PKCE data
-    try {
-      await browser.storage.session.remove(PKCE_STORAGE_KEY)
-    } catch {
-      await browser.storage.local.remove(PKCE_STORAGE_KEY)
-    }
 
     // Fetch profile immediately
     this.profile = await getProfile(this.tokens.accessToken)

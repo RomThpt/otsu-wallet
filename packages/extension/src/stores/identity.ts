@@ -49,12 +49,11 @@ export const useIdentityStore = defineStore('identity', () => {
   async function login() {
     loading.value = true
     try {
-      const response = await sendMessage<{ url: string }>({ type: 'IDENTITY_LOGIN' })
-      if (!response.success || !response.data) {
+      const response = await sendMessage({ type: 'IDENTITY_LOGIN' })
+      if (!response.success) {
         throw new Error(response.error ?? 'Failed to start login')
       }
-      // Open the authorization URL in a new tab
-      window.open(response.data.url, '_blank')
+      await fetchState()
     } finally {
       loading.value = false
     }
