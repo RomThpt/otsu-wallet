@@ -63,6 +63,7 @@ export default defineConfig({
       additionalInputs: [
         'tab.html',
         'notification.html',
+        'identity-callback.html',
         'provider/inject.ts',
         'provider/evm-inject.ts',
       ],
