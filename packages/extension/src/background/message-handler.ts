@@ -50,14 +50,17 @@ import type {
   BridgeEstimatePayload,
   BridgeTransferPayload,
   BridgeStatusPayload,
+  IdentityLinkWalletPayload,
 } from '@otsu/types'
 import { WalletController } from './controllers/wallet'
 import { ProviderController } from './controllers/provider'
+import { IdentityController } from './controllers/identity'
 
 const controller = new WalletController()
 const providerController = new ProviderController(controller)
+const identityController = new IdentityController()
 
-export { controller, providerController }
+export { controller, providerController, identityController }
 
 export async function handleMessage(message: ExtensionMessage): Promise<ExtensionResponse> {
   try {
@@ -481,6 +484,35 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
         const history = await controller.bridgeGetHistory()
         return { success: true, data: history }
       }
+
+      // --- Identity message types ---
+
+      case 'IDENTITY_LOGIN': {
+        await identityController.login()
+        return { success: true }
+      }
+
+      case 'IDENTITY_LOGOUT':
+        await identityController.logout()
+        return { success: true }
+
+      case 'IDENTITY_GET_STATE':
+        return { success: true, data: identityController.getState() }
+
+      case 'IDENTITY_REFRESH_PROFILE': {
+        const profile = await identityController.refreshProfile()
+        return { success: true, data: profile }
+      }
+
+      case 'IDENTITY_LINK_WALLET': {
+        const payload = message.payload as IdentityLinkWalletPayload
+        await identityController.linkWallet(payload.address)
+        return { success: true }
+      }
+
+      case 'IDENTITY_UNLINK_WALLET':
+        await identityController.unlinkWallet()
+        return { success: true }
 
       default:
         return { success: false, error: `Unknown message type: ${message.type}` }

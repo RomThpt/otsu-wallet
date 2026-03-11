@@ -38,7 +38,8 @@
   "permissions": [
     "storage",
     "alarms",
-    "tabs"
+    "tabs",
+    "identity"
   ],
   "web_accessible_resources": [
     {

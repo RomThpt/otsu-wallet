@@ -3,15 +3,18 @@ import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '../../stores/settings'
 import { useWalletStore } from '../../stores/wallet'
+import { useIdentityStore } from '../../stores/identity'
 import { useTheme } from '../../composables/useTheme'
 import Button from '../../components/common/Button.vue'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const wallet = useWalletStore()
+const identity = useIdentityStore()
 const { setTheme: applyThemeToDOM } = useTheme()
 const loading = ref(false)
 const error = ref('')
+const identityError = ref('')
 
 // Security / auth method state
 const changingAuth = ref(false)
@@ -43,7 +46,7 @@ const theme = computed(() => settingsStore.settings?.theme ?? 'system')
 onMounted(async () => {
   loading.value = true
   try {
-    await settingsStore.fetchSettings()
+    await Promise.all([settingsStore.fetchSettings(), identity.fetchState()])
     passkeySupported.value =
       typeof window !== 'undefined' && typeof window.PublicKeyCredential !== 'undefined'
   } catch (e) {
@@ -127,6 +130,43 @@ function cancelPasswordChange() {
   newPassword.value = ''
   confirmPassword.value = ''
   authError.value = ''
+}
+
+async function handleIdentityLogin() {
+  identityError.value = ''
+  try {
+    await identity.login()
+  } catch (e) {
+    identityError.value = (e as Error).message
+  }
+}
+
+async function handleIdentityLogout() {
+  identityError.value = ''
+  try {
+    await identity.logout()
+  } catch (e) {
+    identityError.value = (e as Error).message
+  }
+}
+
+async function handleLinkWallet() {
+  identityError.value = ''
+  if (!wallet.activeAccount) return
+  try {
+    await identity.linkWallet(wallet.activeAccount)
+  } catch (e) {
+    identityError.value = (e as Error).message
+  }
+}
+
+async function handleUnlinkWallet() {
+  identityError.value = ''
+  try {
+    await identity.unlinkWallet()
+  } catch (e) {
+    identityError.value = (e as Error).message
+  }
 }
 </script>
 
@@ -299,6 +339,92 @@ function cancelPasswordChange() {
         <p v-if="!passkeySupported" class="mt-1 text-xs text-gray-400">
           Passkeys are not supported in this browser.
         </p>
+      </div>
+
+      <!-- Identity -->
+      <div class="px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
+        <p class="text-sm font-medium mb-2">Identity</p>
+
+        <template v-if="!identity.loggedIn">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            Connect your xrp-identity account to link your wallet address to your profile.
+          </p>
+          <button
+            class="w-full px-3 py-2 text-xs rounded-md bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+            :disabled="identity.loading"
+            @click="handleIdentityLogin"
+          >
+            Connect Identity
+          </button>
+        </template>
+
+        <template v-else>
+          <div class="flex items-center gap-3 mb-3">
+            <img
+              v-if="identity.avatarUrl"
+              :src="identity.avatarUrl"
+              :alt="identity.displayName ?? ''"
+              class="h-8 w-8 rounded-full object-cover"
+            />
+            <div
+              v-else
+              class="h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 flex items-center justify-center text-xs font-medium"
+            >
+              {{ identity.initials }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium truncate">{{ identity.displayName }}</p>
+              <p
+                v-if="identity.profile?.email"
+                class="text-xs text-gray-500 dark:text-gray-400 truncate"
+              >
+                {{ identity.profile.email }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Wallet linking -->
+          <div v-if="identity.linkedAddress" class="mb-2">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Linked wallet</p>
+            <div class="flex items-center justify-between">
+              <code class="text-xs font-mono truncate flex-1 mr-2">{{
+                identity.linkedAddress
+              }}</code>
+              <button
+                class="text-xs text-red-500 hover:text-red-600 whitespace-nowrap"
+                :disabled="identity.loading"
+                @click="handleUnlinkWallet"
+              >
+                Unlink
+              </button>
+            </div>
+          </div>
+          <button
+            v-else
+            class="w-full px-3 py-1.5 text-xs rounded-md border border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors mb-2"
+            :disabled="identity.loading || !wallet.activeAccount"
+            @click="handleLinkWallet"
+          >
+            Link Current Wallet
+          </button>
+
+          <button
+            class="w-full px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
+            :disabled="identity.loading"
+            @click="handleIdentityLogout"
+          >
+            Disconnect
+          </button>
+        </template>
+
+        <div v-if="identity.loading" class="mt-2 flex items-center gap-2">
+          <div
+            class="animate-spin h-3 w-3 border-2 border-primary-500 border-t-transparent rounded-full"
+          />
+          <span class="text-xs text-gray-500">Loading...</span>
+        </div>
+
+        <p v-if="identityError" class="mt-2 text-xs text-red-500">{{ identityError }}</p>
       </div>
 
       <!-- Networks -->

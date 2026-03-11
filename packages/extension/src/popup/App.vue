@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useTheme } from '../composables/useTheme'
 import { useWalletStore } from '../stores/wallet'
+import { useIdentityStore } from '../stores/identity'
 import Unlock from './views/Unlock.vue'
 import AccountSelector from '../components/wallet/AccountSelector.vue'
 import NetworkSelector from '../components/wallet/NetworkSelector.vue'
@@ -13,13 +14,14 @@ import { useRouter } from 'vue-router'
 useTheme()
 const router = useRouter()
 const wallet = useWalletStore()
+const identity = useIdentityStore()
 const { isOnline } = useOnlineStatus()
 const initialized = ref(false)
 
 onMounted(async () => {
   try {
     await wallet.fetchState()
-    await wallet.fetchNetworks()
+    await Promise.all([wallet.fetchNetworks(), identity.fetchState()])
   } catch (error) {
     console.error('Failed to fetch wallet state:', error)
   } finally {
@@ -76,7 +78,20 @@ async function handleSwitchNetwork(networkId: string) {
             aria-label="Settings"
             class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
+            <img
+              v-if="identity.loggedIn && identity.avatarUrl"
+              :src="identity.avatarUrl"
+              alt="Profile"
+              class="h-5 w-5 rounded-full object-cover"
+            />
+            <div
+              v-else-if="identity.loggedIn && identity.initials"
+              class="h-5 w-5 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 flex items-center justify-center text-[9px] font-medium"
+            >
+              {{ identity.initials }}
+            </div>
             <svg
+              v-else
               class="h-5 w-5 text-gray-500 dark:text-gray-400"
               fill="none"
               stroke="currentColor"

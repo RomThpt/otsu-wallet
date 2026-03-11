@@ -73,6 +73,8 @@ export type {
   BridgeEstimatePayload,
   BridgeTransferPayload,
   BridgeStatusPayload,
+  IdentityCallbackPayload,
+  IdentityLinkWalletPayload,
 } from './messages'
 
 export type { TokenBalance, TokenMetadata, TrustlineParams } from './token'
@@ -159,3 +161,5 @@ export type { BridgeDirection, BridgeEstimate, BridgeStatus, BridgeTransaction }
 
 export type { WalletSettings } from './settings'
 export { DEFAULT_SETTINGS } from './settings'
+
+export type { IdentityProfile, IdentityState } from './identity'

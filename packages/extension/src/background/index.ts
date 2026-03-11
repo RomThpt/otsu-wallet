@@ -3,7 +3,12 @@ globalThis.Buffer = Buffer
 
 import browser from 'webextension-polyfill'
 import type { ExtensionMessage } from '@otsu/types'
-import { handleMessage, controller, providerController } from './message-handler'
+import {
+  handleMessage,
+  controller,
+  providerController,
+  identityController,
+} from './message-handler'
 import { setupAutoLock, resetAutoLock, clearAutoLock } from './alarm-manager'
 
 // Initialize controller state on worker wake.
@@ -12,6 +17,7 @@ import { setupAutoLock, resetAutoLock, clearAutoLock } from './alarm-manager'
 const initPromise = Promise.all([
   controller.initialize().catch((e) => console.error('Controller init failed:', e)),
   providerController.initialize().catch((e) => console.error('Provider init failed:', e)),
+  identityController.initialize().catch((e) => console.error('Identity init failed:', e)),
 ])
 
 browser.runtime.onInstalled.addListener((details) => {

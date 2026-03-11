@@ -8,6 +8,7 @@ export * from './nft/index'
 export * from './dex/index'
 export * from './contract/index'
 export * from './bridge/index'
+export * from './identity/index'
 export { xrplDropsToEvmWei, evmWeiToXrplDrops, formatEvmXrp } from './utils/decimals'
 export {
   parseEther as evmParseEther,

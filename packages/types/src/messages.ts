@@ -69,6 +69,13 @@ export type ExtensionMessageType =
   | 'BRIDGE_TRANSFER'
   | 'BRIDGE_STATUS'
   | 'BRIDGE_HISTORY'
+  | 'IDENTITY_LOGIN'
+  | 'IDENTITY_CALLBACK'
+  | 'IDENTITY_LOGOUT'
+  | 'IDENTITY_GET_STATE'
+  | 'IDENTITY_REFRESH_PROFILE'
+  | 'IDENTITY_LINK_WALLET'
+  | 'IDENTITY_UNLINK_WALLET'
 
 export interface ExtensionMessage<T = unknown> {
   type: ExtensionMessageType
@@ -352,3 +359,5 @@ export interface BridgeTransferPayload {
 export interface BridgeStatusPayload {
   txHash: string
 }
+
+export type { IdentityCallbackPayload, IdentityLinkWalletPayload } from './identity'

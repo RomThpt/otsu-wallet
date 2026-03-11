@@ -32,7 +32,8 @@
   "permissions": [
     "storage",
     "alarms",
-    "tabs"
+    "tabs",
+    "identity"
   ],
   "protocol_handlers": [
     {
