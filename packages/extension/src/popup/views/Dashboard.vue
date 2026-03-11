@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useWalletStore } from '../../stores/wallet'
 import ReserveBreakdown from '../../components/wallet/ReserveBreakdown.vue'
 import Skeleton from '../../components/common/Skeleton.vue'
 import Button from '../../components/common/Button.vue'
 import Card from '../../components/common/Card.vue'
 
+const router = useRouter()
 const wallet = useWalletStore()
 const loading = ref(true)
 
@@ -46,14 +48,10 @@ async function handleFaucet() {
     }
   }
 }
-
-async function handleLock() {
-  await wallet.lock()
-}
 </script>
 
 <template>
-  <div class="p-4 space-y-4">
+  <div class="p-5 space-y-5">
     <Card>
       <template v-if="loading">
         <div class="space-y-3">
@@ -68,7 +66,7 @@ async function handleLock() {
       <template v-else-if="wallet.isEvmNetwork">
         <div class="space-y-2">
           <p class="text-sm text-gray-500 dark:text-gray-400">Balance</p>
-          <p class="text-2xl font-bold">
+          <p class="text-xl font-bold">
             {{ wallet.evmBalance?.formatted ?? '0' }}
             <span class="text-base font-normal text-gray-500">XRP</span>
           </p>
@@ -102,6 +100,9 @@ async function handleLock() {
       </Button>
     </div>
 
-    <Button variant="ghost" size="sm" block @click="handleLock"> Lock Wallet </Button>
+    <div class="flex gap-3">
+      <Button variant="primary" block @click="router.push('/send')">Send</Button>
+      <Button variant="secondary" block @click="router.push('/receive')">Receive</Button>
+    </div>
   </div>
 </template>
