@@ -10,3 +10,5 @@ dist/
 coverage/
 .vite/
 web-ext-artifacts/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
