@@ -1,5 +1,5 @@
 {
-  "name": "@otsu/api",
+  "name": "@otsu-wallet/api",
   "version": "0.1.0",
   "description": "JavaScript SDK for interacting with the Otsu Wallet browser extension",
   "type": "module",
