@@ -151,6 +151,10 @@ export class WalletController {
     return { ...this.state, locked: !this.auth.isUnlocked }
   }
 
+  async hasWallet(): Promise<boolean> {
+    return this.auth.hasWallet()
+  }
+
   get currentChainType(): ChainType {
     const networkConfig = this.getNetworkConfig(this.state.network)
     return networkConfig?.chainType ?? 'xrpl'
