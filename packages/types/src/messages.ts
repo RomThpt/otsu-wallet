@@ -76,6 +76,7 @@ export type ExtensionMessageType =
   | 'IDENTITY_REFRESH_PROFILE'
   | 'IDENTITY_LINK_WALLET'
   | 'IDENTITY_UNLINK_WALLET'
+  | 'HAS_WALLET'
 
 export interface ExtensionMessage<T = unknown> {
   type: ExtensionMessageType

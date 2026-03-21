@@ -70,6 +70,9 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
       case 'GET_STATE':
         return { success: true, data: controller.getState() }
 
+      case 'HAS_WALLET':
+        return { success: true, data: await controller.hasWallet() }
+
       case 'CREATE_WALLET': {
         const payload = message.payload as CreateWalletPayload
         const result = await controller.createWallet(

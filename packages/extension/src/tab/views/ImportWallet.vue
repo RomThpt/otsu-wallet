@@ -59,7 +59,7 @@ async function handleImport() {
   error.value = ''
 
   try {
-    // First create the wallet with password
+    // Create the wallet with password
     const createResponse = await sendMessage({
       type: 'CREATE_WALLET',
       payload: {
@@ -68,6 +68,11 @@ async function handleImport() {
         password: password.value,
       },
     })
+
+    if (!createResponse.success) {
+      error.value = createResponse.error ?? 'Wallet creation failed'
+      return
+    }
 
     if (format.value !== 'mnemonic') {
       // Import the specific account
@@ -83,9 +88,6 @@ async function handleImport() {
         error.value = importResponse.error ?? 'Import failed'
         return
       }
-    } else if (!createResponse.success) {
-      error.value = createResponse.error ?? 'Wallet creation failed'
-      return
     }
 
     step.value = 'complete'
