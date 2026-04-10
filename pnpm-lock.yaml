@@ -76,6 +76,9 @@ importers:
       '@simplewebauthn/browser':
         specifier: ^13.2.2
         version: 13.2.2
+      '@xrpl-commons/xrpl':
+        specifier: ^4.6.0
+        version: 4.6.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       bip39:
         specifier: ^3.1.0
         version: 3.1.0
@@ -85,12 +88,6 @@ importers:
       idb-keyval:
         specifier: ^6.2.2
         version: 6.2.2
-      ripple-keypairs:
-        specifier: ^2.0.0
-        version: 2.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-      xrpl:
-        specifier: ^4.6.0
-        version: 4.6.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
     devDependencies:
       '@types/chrome':
         specifier: ^0.0.300
@@ -1168,8 +1165,14 @@ packages:
   '@scure/bip32@1.7.0':
     resolution: {integrity: sha512-E4FFX/N3f4B80AKWp5dP6ow+flD1LQZo/w8UnLGYZO674jS6YnYeepycOOksv+vLPSpgN35wgKgy+ybfTb2SMw==}
 
+  '@scure/bip32@2.0.1':
+    resolution: {integrity: sha512-4Md1NI5BzoVP+bhyJaY3K6yMesEFzNS1sE/cP+9nuvE7p/b0kx9XbpDHHFl8dHtufcbdHRUUQdRqLIPHN/s7yA==}
+
   '@scure/bip39@1.6.0':
     resolution: {integrity: sha512-+lF0BbLiJNwVlev4eKelw1WWLaiKXw7sSl8T6FvBlWkdX+94aGJ4o8XjUdlyhTCjd8c+B3KT3JfS8P0bLRNU6A==}
+
+  '@scure/bip39@2.0.1':
+    resolution: {integrity: sha512-PsxdFj/d2AcJcZDX1FXN3dDgitDDTmwf78rKZq1a6c1P1Nan1X/Sxc7667zU3U+AN60g7SxxP0YCVw2H/hBycg==}
 
   '@simplewebauthn/browser@13.2.2':
     resolution: {integrity: sha512-FNW1oLQpTJyqG5kkDg5ZsotvWgmBaC6jCHR7Ej0qUNep36Wl9tj2eZu7J5rP+uhXgHaLk+QQ3lqcw2vS5MX1IA==}
@@ -1463,15 +1466,35 @@ packages:
   '@vue/test-utils@2.4.6':
     resolution: {integrity: sha512-FMxEjOpYNYiFe0GkaHsnJPXFHxQ6m4t8vI/ElPGpMWxZKpmRvQ33OIrvRXemy6yha03RxhOlQuy+gZMC3CQSow==}
 
+  '@xrpl-commons/isomorphic@1.0.1':
+    resolution: {integrity: sha512-ax4SFus164W8PU/9HrXB8MLUOqhSwrOwAdx1g+U/UILpDO7sp8lr7O0BEb3fOmakhDQZo/9UcEYOVTzlHPvyDg==}
+    engines: {node: '>=18.0.0'}
+
+  '@xrpl-commons/ripple-address-codec@5.0.0':
+    resolution: {integrity: sha512-1JjaH5Iq+0wq0pOc+QUC5ifqWjDM34Sd0hGGkntpLxINulV2JnttIIjnFxLJfNLF5kCWzrf8P8bnoGoACvvNHQ==}
+    engines: {node: '>= 18'}
+
+  '@xrpl-commons/ripple-binary-codec@2.7.0':
+    resolution: {integrity: sha512-vxU+9+MovnWCOBwQCuVx8XTtJwiVBp4MbcpNqcbd7Cdz+JPVuFKaWlMhu0hciM+MDFbShjcAN4HcF5iZQZOi4Q==}
+    engines: {node: '>= 18'}
+
+  '@xrpl-commons/ripple-keypairs@2.0.0':
+    resolution: {integrity: sha512-pxixHNzUYBkyLgmXf8VJehVl2CsymVrbyxlzA1H0anLjOXda/x58MBZwWQgiK//lMucyCdtc8MZfkbjLR+Fw0w==}
+    engines: {node: '>= 18'}
+
+  '@xrpl-commons/secret-numbers@2.0.1':
+    resolution: {integrity: sha512-M5vyCXpf2ChElNrdESqFSKqyuvvn2IFqC8NzxY0wnfqwz69CELVld9sGFsXplLCCIGPOqpr0rT3ALSzx1DAVzA==}
+
+  '@xrpl-commons/xrpl@4.6.0':
+    resolution: {integrity: sha512-y77eAl3P3bMZHgkc06HHJ4nKDiyno9Y4dlBKu1kXmojfCA6QUClREn28wOArKvbfi55NFeoTExgY7tq2cFw7cg==}
+    engines: {node: '>=20.19.0'}
+
   '@xrplf/isomorphic@1.0.1':
     resolution: {integrity: sha512-0bIpgx8PDjYdrLFeC3csF305QQ1L7sxaWnL5y71mCvhenZzJgku9QsA+9QCXBC1eNYtxWO/xR91zrXJy2T/ixg==}
     engines: {node: '>=16.0.0'}
 
   '@xrplf/secret-numbers@1.0.0':
     resolution: {integrity: sha512-qsCLGyqe1zaq9j7PZJopK+iGTGRbk6akkg6iZXJJgxKwck0C5x5Gnwlb1HKYGOwPKyrXWpV6a2YmcpNpUFctGg==}
-
-  '@xrplf/secret-numbers@2.0.0':
-    resolution: {integrity: sha512-z3AOibRTE9E8MbjgzxqMpG1RNaBhQ1jnfhNCa1cGf2reZUJzPMYs4TggQTc7j8+0WyV3cr7y/U8Oz99SXIkN5Q==}
 
   abbrev@2.0.0:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
@@ -4340,10 +4363,6 @@ packages:
     resolution: {integrity: sha512-QIpsqvhaRiVvlq7px7lC+lhrxESDMN1vd8mW0SfTgY5WgzP9RLiDoVywOOvSZqDDjPs0EGfhxzYjREW1gGu0Ng==}
     engines: {node: '>=18.0.0'}
 
-  xrpl@4.6.0:
-    resolution: {integrity: sha512-0nXZfqDHRJ6bsDv1WtA9MdCYalMtXuxVa9mtLdqT3xypRKf2LwT5DbuGL/kHcVfuqk3B+ly+SFARlrnX+LHtRQ==}
-    engines: {node: '>=18.0.0'}
-
   xstream@11.14.0:
     resolution: {integrity: sha512-1bLb+kKKtKPbgTK6i/BaoAn03g47PpFstlbe1BA+y3pNS/LfvcaghS5BFf9+EE1J+KwSQsEpfJvFN5GqFtiNmw==}
 
@@ -5410,10 +5429,21 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
 
+  '@scure/bip32@2.0.1':
+    dependencies:
+      '@noble/curves': 2.0.1
+      '@noble/hashes': 2.0.1
+      '@scure/base': 2.0.0
+
   '@scure/bip39@1.6.0':
     dependencies:
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
+
+  '@scure/bip39@2.0.1':
+    dependencies:
+      '@noble/hashes': 2.0.1
+      '@scure/base': 2.0.0
 
   '@simplewebauthn/browser@13.2.2': {}
 
@@ -5845,6 +5875,65 @@ snapshots:
       js-beautify: 1.15.4
       vue-component-type-helpers: 2.2.12
 
+  '@xrpl-commons/isomorphic@1.0.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
+    dependencies:
+      '@noble/hashes': 2.0.1
+      eventemitter3: 5.0.1
+      ws: 8.19.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@xrpl-commons/ripple-address-codec@5.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
+    dependencies:
+      '@scure/base': 1.2.6
+      '@xrpl-commons/isomorphic': 1.0.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@xrpl-commons/ripple-binary-codec@2.7.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
+    dependencies:
+      '@xrpl-commons/isomorphic': 1.0.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      '@xrpl-commons/ripple-address-codec': 5.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      bignumber.js: 9.3.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@xrpl-commons/ripple-keypairs@2.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
+    dependencies:
+      '@noble/curves': 2.0.1
+      '@xrpl-commons/isomorphic': 1.0.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      '@xrpl-commons/ripple-address-codec': 5.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@xrpl-commons/secret-numbers@2.0.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
+    dependencies:
+      '@xrpl-commons/isomorphic': 1.0.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      '@xrpl-commons/ripple-keypairs': 2.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@xrpl-commons/xrpl@4.6.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
+    dependencies:
+      '@scure/bip32': 2.0.1
+      '@scure/bip39': 2.0.1
+      '@xrpl-commons/isomorphic': 1.0.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      '@xrpl-commons/ripple-address-codec': 5.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      '@xrpl-commons/ripple-binary-codec': 2.7.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      '@xrpl-commons/ripple-keypairs': 2.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      '@xrpl-commons/secret-numbers': 2.0.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      bignumber.js: 9.3.1
+      eventemitter3: 5.0.4
+      fast-json-stable-stringify: 2.1.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   '@xrplf/isomorphic@1.0.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
     dependencies:
       '@noble/hashes': 1.8.0
@@ -5855,14 +5944,6 @@ snapshots:
       - utf-8-validate
 
   '@xrplf/secret-numbers@1.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
-    dependencies:
-      '@xrplf/isomorphic': 1.0.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-      ripple-keypairs: 2.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
-  '@xrplf/secret-numbers@2.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
     dependencies:
       '@xrplf/isomorphic': 1.0.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       ripple-keypairs: 2.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
@@ -8989,22 +9070,6 @@ snapshots:
       '@xrplf/secret-numbers': 1.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       bignumber.js: 9.3.1
       eventemitter3: 5.0.4
-      ripple-address-codec: 5.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-      ripple-binary-codec: 2.7.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-      ripple-keypairs: 2.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
-  xrpl@4.6.0(bufferutil@4.1.0)(utf-8-validate@6.0.6):
-    dependencies:
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      '@xrplf/isomorphic': 1.0.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-      '@xrplf/secret-numbers': 2.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-      bignumber.js: 9.3.1
-      eventemitter3: 5.0.4
-      fast-json-stable-stringify: 2.1.0
       ripple-address-codec: 5.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       ripple-binary-codec: 2.7.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       ripple-keypairs: 2.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)

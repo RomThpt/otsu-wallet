@@ -1,5 +1,5 @@
-import { Wallet } from 'xrpl'
-import ECDSA from 'xrpl/dist/npm/ECDSA'
+import { Wallet } from '@xrpl-commons/xrpl'
+import ECDSA from '@xrpl-commons/xrpl/dist/npm/ECDSA'
 import { secp256k1 } from '@noble/curves/secp256k1.js'
 import { OtsuError, ErrorCodes } from '@otsu/constants'
 import type { VaultAccount } from '@otsu/types'

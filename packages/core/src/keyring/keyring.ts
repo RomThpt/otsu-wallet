@@ -1,5 +1,5 @@
-import { Wallet } from 'xrpl'
-import type { Transaction } from 'xrpl'
+import { Wallet } from '@xrpl-commons/xrpl'
+import type { Transaction } from '@xrpl-commons/xrpl'
 import { secp256k1 } from '@noble/curves/secp256k1.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'

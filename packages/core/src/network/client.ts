@@ -1,5 +1,5 @@
-import { Client } from 'xrpl'
-import type { SubmitResponse } from 'xrpl'
+import { Client } from '@xrpl-commons/xrpl'
+import type { SubmitResponse } from '@xrpl-commons/xrpl'
 import { NETWORKS, RESERVES, OtsuError, ErrorCodes } from '@otsu/constants'
 import type { AccountInfo, BalanceInfo, NetworkConfig } from '@otsu/types'
 import { RateLimiter } from './rate-limiter'
