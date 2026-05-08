@@ -49,6 +49,8 @@ export const useOnboardingStore = defineStore('onboarding', () => {
         return false
       }
 
+      mnemonic.value = []
+      password.value = ''
       return true
     } catch (e) {
       error.value = (e as Error).message
@@ -73,6 +75,8 @@ export const useOnboardingStore = defineStore('onboarding', () => {
         return false
       }
 
+      mnemonic.value = []
+      password.value = ''
       return true
     } catch (e) {
       error.value = (e as Error).message
