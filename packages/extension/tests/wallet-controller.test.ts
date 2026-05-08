@@ -38,6 +38,11 @@ vi.mock('@otsu/core', async (importOriginal) => {
       sessionStore.unlocked = true
     }
 
+    async updateVaultData(vaultData: VaultData): Promise<void> {
+      if (!sessionStore.unlocked) throw new Error('Wallet is locked')
+      vaultStore.data = vaultData
+    }
+
     async unlock(_method: AuthMethod, _password?: string): Promise<VaultData> {
       if (!vaultStore.data) throw new Error('No vault found')
       const key = await crypto.subtle.generateKey(

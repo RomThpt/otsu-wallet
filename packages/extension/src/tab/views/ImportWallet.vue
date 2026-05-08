@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { sendMessage } from '../../lib/messaging'
 import Button from '../../components/common/Button.vue'
@@ -17,13 +17,43 @@ type ImportFormat =
   | 'private_key_hex'
   | 'xumm_secret_numbers'
 
-const step = ref<'format' | 'input' | 'auth' | 'complete'>('format')
+const step = ref<'format' | 'input' | 'auth' | 'complete' | 'existing-wallet'>('format')
 const format = ref<ImportFormat>('mnemonic')
 const inputValue = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const loading = ref(false)
 const error = ref('')
+const hasExistingWallet = ref(false)
+const resetConfirmText = ref('')
+
+onMounted(async () => {
+  const response = await sendMessage<boolean>({ type: 'HAS_WALLET' })
+  if (response.success && response.data) {
+    hasExistingWallet.value = true
+    step.value = 'existing-wallet'
+  }
+})
+
+async function handleResetWallet() {
+  if (resetConfirmText.value !== 'RESET') return
+  loading.value = true
+  error.value = ''
+  try {
+    const response = await sendMessage({ type: 'RESET_WALLET' })
+    if (!response.success) {
+      error.value = response.error ?? 'Reset failed'
+      return
+    }
+    hasExistingWallet.value = false
+    resetConfirmText.value = ''
+    step.value = 'format'
+  } catch (e) {
+    error.value = (e as Error).message
+  } finally {
+    loading.value = false
+  }
+}
 
 const formats = [
   { id: 'mnemonic' as const, name: 'Recovery Phrase', desc: '12 or 24 word mnemonic' },
@@ -107,8 +137,42 @@ async function handleImport() {
         <p class="mt-2 text-gray-600 dark:text-gray-400">Restore an existing XRPL wallet</p>
       </div>
 
+      <!-- Step 0: Existing Wallet Warning -->
+      <template v-if="step === 'existing-wallet'">
+        <Card class="border-red-300 dark:border-red-700">
+          <p class="font-medium text-sm text-red-600 dark:text-red-400">
+            A wallet already exists in this extension
+          </p>
+          <p class="text-xs text-gray-600 dark:text-gray-400 mt-2">
+            Importing a new wallet will permanently delete the existing one. Make sure you have
+            backed up its recovery phrase first &mdash; this action cannot be undone.
+          </p>
+        </Card>
+
+        <div class="space-y-2">
+          <p class="text-xs text-gray-600 dark:text-gray-400">
+            Type <span class="font-mono font-bold">RESET</span> to confirm:
+          </p>
+          <Input v-model="resetConfirmText" placeholder="RESET" />
+        </div>
+
+        <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+
+        <div class="flex gap-3">
+          <Button variant="secondary" block @click="router.push('/')">Cancel</Button>
+          <Button
+            block
+            :disabled="resetConfirmText !== 'RESET'"
+            :loading="loading"
+            @click="handleResetWallet"
+          >
+            Reset and Import
+          </Button>
+        </div>
+      </template>
+
       <!-- Step 1: Format Selection -->
-      <template v-if="step === 'format'">
+      <template v-else-if="step === 'format'">
         <div class="space-y-3">
           <Card
             v-for="f in formats"

@@ -246,7 +246,7 @@ export class WalletController {
       }
       data.accounts.push(...evmVaultAccounts)
       evmAccounts = evmVaultAccounts
-      await this.auth.setup(data, method, password)
+      await this.auth.updateVaultData(data)
     }
 
     const xrplAccounts = data.accounts.filter((a) => (a.chainType ?? 'xrpl') === 'xrpl')
@@ -414,7 +414,7 @@ export class WalletController {
     if (!data) throw new Error('Wallet is locked')
 
     data.accounts.push(vaultAccount)
-    await this.auth.setup(data, 'password')
+    await this.auth.updateVaultData(data)
 
     this.keyring.addAccount(vaultAccount)
 
@@ -503,7 +503,7 @@ export class WalletController {
       result.push(account)
     }
 
-    await this.auth.setup(data, 'password')
+    await this.auth.updateVaultData(data)
     await this.persistState()
 
     return result

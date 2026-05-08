@@ -7,6 +7,10 @@ export async function setupPassword(vaultData: VaultData, password: string): Pro
   await vaultManager.create(vaultData, password)
 }
 
+export async function updatePasswordVault(vaultData: VaultData, password: string): Promise<void> {
+  await vaultManager.update(vaultData, password)
+}
+
 export async function unlockWithPassword(password: string): Promise<VaultData> {
   return vaultManager.unlock(password)
 }

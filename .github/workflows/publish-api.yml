@@ -1,4 +1,4 @@
-name: Publish @otsu/api
+name: Publish @otsu-wallet/api
 
 on:
   push:
@@ -28,12 +28,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: pnpm --filter @otsu/api typecheck
+        run: pnpm --filter @otsu-wallet/api typecheck
 
       - name: Build
-        run: pnpm --filter @otsu/api build
+        run: pnpm --filter @otsu-wallet/api build
 
       - name: Publish
-        run: pnpm --filter @otsu/api publish --no-git-checks --access public
+        run: pnpm --filter @otsu-wallet/api publish --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
