@@ -1,14 +1,25 @@
 import type { AuthMethod, VaultData } from '@otsu/types'
 import { OtsuError, ErrorCodes } from '@otsu/constants'
-import { setupPassword, unlockWithPassword, vaultExists, destroyVault } from './auth-password'
+import {
+  setupPassword,
+  unlockWithPassword,
+  updatePasswordVault,
+  vaultExists,
+  destroyVault,
+} from './auth-password'
 import { storePasskeyVault, decryptPasskeyVault, hasPasskey } from './auth-passkey'
 import { SessionManager } from '../storage/session'
 
 const LOCKOUT_STORAGE_KEY = 'otsu-lockout'
 
+type CachedSecret =
+  | { method: 'password'; password: string }
+  | { method: 'passkey'; credentialId: string; prfKey: string }
+
 export class AuthManager {
   private session = new SessionManager()
   private cachedVaultData: VaultData | null = null
+  private cachedSecret: CachedSecret | null = null
   private failedAttempts = 0
   private lockedUntil = 0
   private lockoutLoaded = false
@@ -42,6 +53,7 @@ export class AuthManager {
         throw new OtsuError(ErrorCodes.INVALID_PASSWORD, 'Password is required')
       }
       await setupPassword(vaultData, password)
+      this.cachedSecret = { method: 'password', password }
     } else {
       if (!passkeyCredential) {
         throw new OtsuError(
@@ -50,6 +62,11 @@ export class AuthManager {
         )
       }
       await storePasskeyVault(vaultData, passkeyCredential.credentialId, passkeyCredential.prfKey)
+      this.cachedSecret = {
+        method: 'passkey',
+        credentialId: passkeyCredential.credentialId,
+        prfKey: passkeyCredential.prfKey,
+      }
     }
 
     const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, [
@@ -78,11 +95,13 @@ export class AuthManager {
           throw new OtsuError(ErrorCodes.INVALID_PASSWORD, 'Password is required')
         }
         data = await unlockWithPassword(password)
+        this.cachedSecret = { method: 'password', password }
       } else {
         if (!passkeyKey) {
           throw new OtsuError(ErrorCodes.PASSKEY_NOT_SUPPORTED, 'Passkey decryption key required')
         }
         data = await decryptPasskeyVault(passkeyKey)
+        this.cachedSecret = { method: 'passkey', credentialId: '', prfKey: passkeyKey }
       }
 
       const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, [
@@ -108,9 +127,34 @@ export class AuthManager {
     }
   }
 
+  /**
+   * Persists updated vault data using the secret captured at unlock/setup time.
+   * Required after mutating accounts (derive, import) so changes survive lock+unlock.
+   */
+  async updateVaultData(vaultData: VaultData): Promise<void> {
+    if (!this.session.isUnlocked || !this.cachedSecret) {
+      throw new OtsuError(ErrorCodes.VAULT_LOCKED, 'Wallet is locked')
+    }
+
+    if (this.cachedSecret.method === 'password') {
+      await updatePasswordVault(vaultData, this.cachedSecret.password)
+    } else {
+      if (!this.cachedSecret.credentialId) {
+        throw new OtsuError(
+          ErrorCodes.PASSKEY_NOT_SUPPORTED,
+          'Cannot update passkey vault: credential id missing. Lock and unlock to refresh.',
+        )
+      }
+      await storePasskeyVault(vaultData, this.cachedSecret.credentialId, this.cachedSecret.prfKey)
+    }
+
+    this.cachedVaultData = vaultData
+  }
+
   lock(): void {
     this.session.lock()
     this.cachedVaultData = null
+    this.cachedSecret = null
   }
 
   async reset(): Promise<void> {
