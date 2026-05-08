@@ -26,7 +26,21 @@ function globalKey(suffix: string): string {
 }
 
 export class WalletCache {
+  private appendLocks = new Map<string, Promise<void>>()
+
   constructor(private storage: CacheStorage) {}
+
+  private async withAppendLock<T extends string>(key: T, fn: () => Promise<void>): Promise<void> {
+    const previous = this.appendLocks.get(key) ?? Promise.resolve()
+    const next = previous.then(fn, fn)
+    this.appendLocks.set(
+      key,
+      next.finally(() => {
+        if (this.appendLocks.get(key) === next) this.appendLocks.delete(key)
+      }),
+    )
+    await next
+  }
 
   async getCachedBalance(address: string): Promise<string | null> {
     return this.storage.get<string>(accountKey(address, 'balance'))
@@ -64,10 +78,12 @@ export class WalletCache {
   }
 
   async appendCachedTransactions(address: string, newTxs: TransactionRecord[]): Promise<void> {
-    const existing = (await this.getCachedTransactions(address)) ?? []
-    const existingHashes = new Set(existing.map((tx) => tx.hash))
-    const unique = newTxs.filter((tx) => !existingHashes.has(tx.hash))
-    await this.setCachedTransactions(address, [...existing, ...unique])
+    await this.withAppendLock(`tx:${address}`, async () => {
+      const existing = (await this.getCachedTransactions(address)) ?? []
+      const existingHashes = new Set(existing.map((tx) => tx.hash))
+      const unique = newTxs.filter((tx) => !existingHashes.has(tx.hash))
+      await this.setCachedTransactions(address, [...existing, ...unique])
+    })
   }
 
   async getCachedPrice(): Promise<{ xrpUsd: string; updatedAt: number } | null> {
@@ -138,9 +154,11 @@ export class WalletCache {
   }
 
   async addBridgeTransaction(transaction: BridgeTransaction): Promise<void> {
-    const existing = await this.getBridgeTransactions()
-    existing.unshift(transaction)
-    await this.setBridgeTransactions(existing)
+    await this.withAppendLock('bridge', async () => {
+      const existing = await this.getBridgeTransactions()
+      existing.unshift(transaction)
+      await this.setBridgeTransactions(existing)
+    })
   }
 
   async updateBridgeTransaction(id: string, updates: Partial<BridgeTransaction>): Promise<void> {

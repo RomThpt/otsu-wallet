@@ -319,13 +319,26 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
 
       case 'SIGNING_APPROVED': {
         const payload = message.payload as SigningApprovedPayload
-        await providerController.handleSigningApproved(payload.requestId)
+        const ok = await providerController.handleSigningApproved(payload.requestId)
+        if (!ok) {
+          return {
+            success: false,
+            error:
+              'Signing session expired. The wallet was unloaded while waiting. Please retry from the dApp.',
+          }
+        }
         return { success: true }
       }
 
       case 'SIGNING_REJECTED': {
         const payload = message.payload as SigningRejectedPayload
-        await providerController.handleSigningRejected(payload.requestId, payload.reason)
+        const ok = await providerController.handleSigningRejected(payload.requestId, payload.reason)
+        if (!ok) {
+          return {
+            success: false,
+            error: 'Signing session expired. Please retry from the dApp.',
+          }
+        }
         return { success: true }
       }
 

@@ -10,16 +10,21 @@ const router = useRouter()
 const store = useOnboardingStore()
 const words = ref<string[]>([])
 const copied = ref(false)
+const error = ref<string | null>(null)
 
-onMounted(() => {
+function generate(): void {
   try {
+    error.value = null
     const mnemonic = generateNewMnemonic()
     words.value = mnemonicToWordArray(mnemonic)
     store.setMnemonic(words.value)
   } catch (err) {
-    console.error('Failed to generate mnemonic:', err)
+    words.value = []
+    error.value = (err as Error).message || 'Failed to generate recovery phrase'
   }
-})
+}
+
+onMounted(generate)
 
 function copyToClipboard() {
   navigator.clipboard.writeText(words.value.join(' '))
@@ -40,7 +45,18 @@ function copyToClipboard() {
         </p>
       </div>
 
-      <Card>
+      <Card v-if="error">
+        <div class="space-y-3 py-4 text-center">
+          <p class="text-sm font-medium text-red-600 dark:text-red-400">
+            {{ error }}
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            We could not generate a recovery phrase. Try again, or import an existing wallet.
+          </p>
+        </div>
+      </Card>
+
+      <Card v-else>
         <div class="grid grid-cols-3 gap-2">
           <div
             v-for="(word, index) in words"
@@ -53,11 +69,18 @@ function copyToClipboard() {
         </div>
       </Card>
 
-      <div class="flex gap-3">
+      <div v-if="error" class="flex gap-3">
+        <Button variant="secondary" block @click="router.push('/')"> Back </Button>
+        <Button block @click="generate"> Retry </Button>
+      </div>
+
+      <div v-else class="flex gap-3">
         <Button variant="secondary" block @click="copyToClipboard">
           {{ copied ? 'Copied' : 'Copy' }}
         </Button>
-        <Button block @click="router.push('/verify')"> Continue </Button>
+        <Button block :disabled="words.length === 0" @click="router.push('/verify')">
+          Continue
+        </Button>
       </div>
 
       <p class="text-xs text-red-500 dark:text-red-400 text-center">

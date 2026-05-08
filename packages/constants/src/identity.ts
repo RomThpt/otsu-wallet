@@ -5,3 +5,5 @@ export const IDENTITY_TOKEN_REFRESH_BUFFER_MS = 60_000
 export const IDENTITY_PROFILE_CACHE_TTL_MS = 300_000
 export const IDENTITY_STORAGE_KEY = 'otsu-identity'
 export const IDENTITY_PROFILE_KEY = 'otsu-identity-profile'
+export const IDENTITY_PKCE_KEY = 'otsu-identity-pkce'
+export const IDENTITY_CALLBACK_PATH = 'identity-callback.html'

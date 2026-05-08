@@ -52,6 +52,13 @@ const currencyOptions = computed(() => {
 
 const isToken = computed(() => selectedCurrency.value !== 'XRP')
 
+function isValidTag(raw: unknown): raw is string {
+  if (typeof raw !== 'string' && typeof raw !== 'number') return false
+  const s = String(raw).trim()
+  if (s === '') return false
+  return /^\d+$/.test(s) && Number(s) <= 4294967295
+}
+
 const isValidAddress = computed(() => {
   if (isEvm.value) {
     return /^0x[0-9a-fA-F]{40}$/.test(destination.value)
@@ -104,8 +111,13 @@ onMounted(async () => {
       if (parsed) {
         destination.value = parsed.address
         if (parsed.amount) amount.value = parsed.amount
-        if (parsed.destinationTag !== undefined)
-          destinationTag.value = String(parsed.destinationTag)
+        if (parsed.destinationTag !== undefined) {
+          if (isValidTag(parsed.destinationTag)) {
+            destinationTag.value = String(parsed.destinationTag).trim()
+          } else {
+            error.value = 'Invalid destination tag in link (must be an integer)'
+          }
+        }
         if (parsed.currency && parsed.issuer) {
           selectedCurrency.value = `${parsed.currency}:${parsed.issuer}`
         }
@@ -155,6 +167,13 @@ async function confirmSend() {
 }
 
 async function executeSend() {
+  if (destinationTag.value && !isValidTag(destinationTag.value)) {
+    error.value = 'Destination tag must be an integer between 0 and 4294967295'
+    toast.error(error.value)
+    step.value = 'form'
+    return
+  }
+
   loading.value = true
   error.value = ''
 
@@ -252,7 +271,10 @@ async function executeSend() {
         :error="addressError"
         @select-contact="
           (c) => {
-            if (c.tag) destinationTag = c.tag
+            if (c.tag) {
+              if (isValidTag(c.tag)) destinationTag = String(c.tag).trim()
+              else error = 'Address book entry has an invalid destination tag'
+            }
           }
         "
       />

@@ -3,6 +3,8 @@ import type { IdentityProfile, IdentityState } from '@otsu/types'
 import {
   IDENTITY_STORAGE_KEY,
   IDENTITY_PROFILE_KEY,
+  IDENTITY_PKCE_KEY,
+  IDENTITY_CALLBACK_PATH,
   IDENTITY_TOKEN_REFRESH_BUFFER_MS,
   IDENTITY_PROFILE_CACHE_TTL_MS,
 } from '@otsu/constants'
@@ -50,6 +52,50 @@ export class IdentityController {
     }
 
     this.initialized = true
+  }
+
+  async startLogin(): Promise<string> {
+    const verifier = generateCodeVerifier()
+    const challenge = await deriveCodeChallenge(verifier)
+    const state = generateCodeVerifier(32)
+    const redirectUri = browser.runtime.getURL(IDENTITY_CALLBACK_PATH)
+
+    await browser.storage.session.set({
+      [IDENTITY_PKCE_KEY]: { verifier, state },
+    })
+
+    return buildAuthorizationUrl(redirectUri, state, challenge)
+  }
+
+  async handleCallback(code: string, returnedState: string): Promise<void> {
+    const stored = await browser.storage.session.get(IDENTITY_PKCE_KEY)
+    const pkce = stored[IDENTITY_PKCE_KEY] as { verifier: string; state: string } | undefined
+
+    if (!pkce) {
+      throw new Error('No pending login found')
+    }
+
+    if (pkce.state !== returnedState) {
+      throw new Error('Invalid state parameter')
+    }
+
+    const redirectUri = browser.runtime.getURL(IDENTITY_CALLBACK_PATH)
+    const tokenResponse = await exchangeCode(code, redirectUri, pkce.verifier)
+
+    this.tokens = {
+      accessToken: tokenResponse.access_token,
+      refreshToken: tokenResponse.refresh_token ?? '',
+      expiresAt: Date.now() + tokenResponse.expires_in * 1000,
+    }
+    await browser.storage.local.set({ [IDENTITY_STORAGE_KEY]: this.tokens })
+
+    this.profile = await getProfile(this.tokens.accessToken)
+    this.profileFetchedAt = Date.now()
+    await browser.storage.local.set({
+      [IDENTITY_PROFILE_KEY]: { profile: this.profile, fetchedAt: this.profileFetchedAt },
+    })
+
+    await browser.storage.session.remove(IDENTITY_PKCE_KEY)
   }
 
   async login(): Promise<void> {
