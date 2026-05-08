@@ -42,7 +42,7 @@ import type {
   BridgeEstimate,
   BridgeTransaction,
 } from '@otsu/types'
-import { NETWORKS } from '@otsu/constants'
+import { NETWORKS, OtsuError, ErrorCodes } from '@otsu/constants'
 import {
   AuthManager,
   Keyring,
@@ -1065,6 +1065,17 @@ export class WalletController {
     destinationAddress: string
   }): Promise<BridgeTransaction> {
     if (!this.bridgeService) throw new Error('Bridge service not initialized')
+
+    const expectedSourceChain: 'xrpl' | 'evm' = params.direction === 'xrpl-to-evm' ? 'xrpl' : 'evm'
+    const activeAccountAddress = this.state.activeAccount
+    const activeAccount = this.state.accounts.find((a) => a.address === activeAccountAddress)
+    const activeChain = activeAccount?.chainType ?? 'xrpl'
+    if (activeChain !== expectedSourceChain) {
+      throw new OtsuError(
+        ErrorCodes.SIGNING_ERROR,
+        `Active account is on ${activeChain}; switch to a ${expectedSourceChain} account before bridging`,
+      )
+    }
 
     const estimate = await this.bridgeService.estimateBridgeFee(params.direction, params.amount)
 

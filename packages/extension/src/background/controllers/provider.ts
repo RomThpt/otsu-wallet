@@ -113,9 +113,15 @@ export class ProviderController {
     }
   }
 
-  async handleSigningApproved(requestId: string): Promise<void> {
+  async handleSigningApproved(requestId: string): Promise<boolean> {
     const pending = this.pendingRequests.get(requestId)
-    if (!pending) return
+    if (!pending) {
+      // Service worker likely restarted between window open and approval —
+      // the in-memory pending Promise resolver is gone. Surface this clearly
+      // instead of silently dropping the click.
+      await this.clearSigningRequest(requestId)
+      return false
+    }
 
     clearTimeout(pending.timeoutId)
 
@@ -124,7 +130,7 @@ export class ProviderController {
 
       if (request.method === 'connect') {
         pending.resolve({ id: request.id })
-        return
+        return true
       }
 
       const sender = this.wallet.getState().activeAccount
@@ -137,7 +143,7 @@ export class ProviderController {
         if (!message) throw new OtsuError(ErrorCodes.SIGNING_ERROR, 'Missing message')
         const { signature } = keyring.signMessage(sender, message)
         pending.resolve({ id: request.id, result: { signature } })
-        return
+        return true
       }
 
       const tx = request.params as Record<string, unknown>
@@ -171,11 +177,15 @@ export class ProviderController {
       this.pendingRequests.delete(requestId)
       await this.clearSigningRequest(requestId)
     }
+    return true
   }
 
-  async handleSigningRejected(requestId: string, reason?: string): Promise<void> {
+  async handleSigningRejected(requestId: string, reason?: string): Promise<boolean> {
     const pending = this.pendingRequests.get(requestId)
-    if (!pending) return
+    if (!pending) {
+      await this.clearSigningRequest(requestId)
+      return false
+    }
 
     clearTimeout(pending.timeoutId)
     pending.resolve({
@@ -184,6 +194,7 @@ export class ProviderController {
     })
     this.pendingRequests.delete(requestId)
     await this.clearSigningRequest(requestId)
+    return true
   }
 
   async getSigningRequest(requestId: string): Promise<{
@@ -394,7 +405,7 @@ export class ProviderController {
   }
 
   private async handleContractCall(request: OtsuProviderRequest): Promise<OtsuProviderResponse> {
-    const permission = this.requirePermission(request, 'sign')
+    const permission = this.requirePermission(request, 'contractCall')
     if (!('address' in permission)) return permission as OtsuProviderResponse
     return this.initiateSigningFlow(request)
   }

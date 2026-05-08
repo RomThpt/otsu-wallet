@@ -1,4 +1,4 @@
-export type PermissionScope = 'read' | 'sign' | 'submit' | 'switchNetwork'
+export type PermissionScope = 'read' | 'sign' | 'submit' | 'switchNetwork' | 'contractCall'
 
 export interface DAppPermission {
   origin: string
