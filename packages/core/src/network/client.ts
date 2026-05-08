@@ -38,6 +38,12 @@ export class XrplClient {
     this.reconnectAttempts = 0
   }
 
+  async forceReconnect(): Promise<void> {
+    this.reconnectAttempts = 0
+    await this.disconnect()
+    await this.connect()
+  }
+
   async disconnect(): Promise<void> {
     if (this.client?.isConnected()) {
       await this.client.disconnect()
@@ -297,6 +303,9 @@ export class XrplClient {
 
   private async ensureConnected(): Promise<void> {
     if (!this.client?.isConnected()) {
+      // Reset the counter so an explicit operation always triggers a fresh
+      // reconnect attempt cycle even after the auto-reconnect loop gave up.
+      this.reconnectAttempts = 0
       await this.connect()
     }
   }
