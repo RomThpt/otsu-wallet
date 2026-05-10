@@ -5,6 +5,18 @@ export default {
   theme: {
     extend: {
       colors: {
+        bg: 'var(--bg)',
+        'bg-subtle': 'var(--bg-subtle)',
+        'bg-hover': 'var(--bg-hover)',
+        text: 'var(--text)',
+        'text-muted': 'var(--text-muted)',
+        border: 'var(--border)',
+        accent: 'var(--accent)',
+        'accent-fg': 'var(--accent-fg)',
+        link: 'var(--link)',
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        danger: 'var(--danger)',
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
