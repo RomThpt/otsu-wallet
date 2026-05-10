@@ -66,7 +66,7 @@ async function handleConfirm() {
         hint="Maximum amount you can hold"
       />
 
-      <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+      <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
       <div class="flex gap-3">
         <Button variant="secondary" block @click="router.push('/explore/tokens')">Cancel</Button>
@@ -79,22 +79,22 @@ async function handleConfirm() {
 
       <TrustlineWarning :issuer="issuer" />
 
-      <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2 text-sm">
+      <div class="rounded-lg border border-border p-3 space-y-2 text-sm">
         <div class="flex justify-between">
-          <span class="text-gray-500">Currency</span>
+          <span class="text-text-muted">Currency</span>
           <span class="font-medium">{{ currency.toUpperCase() }}</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-gray-500">Issuer</span>
+          <span class="text-text-muted">Issuer</span>
           <span class="font-mono text-xs">{{ issuer.slice(0, 10) }}...{{ issuer.slice(-6) }}</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-gray-500">Limit</span>
+          <span class="text-text-muted">Limit</span>
           <span>{{ limit }}</span>
         </div>
       </div>
 
-      <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+      <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
       <div class="flex gap-3">
         <Button variant="secondary" block @click="step = 'form'">Back</Button>

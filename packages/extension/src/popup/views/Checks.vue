@@ -143,11 +143,8 @@ function cashFromList(id: string) {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-      <button
-        class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-        @click="router.push('/explore')"
-      >
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
+      <button class="p-1 rounded hover:bg-bg-hover" @click="router.push('/explore')">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -166,48 +163,44 @@ function cashFromList(id: string) {
         <h3 class="text-sm font-bold mb-2">Pending Checks</h3>
 
         <div v-if="listLoading" class="space-y-2">
-          <div
-            v-for="i in 2"
-            :key="i"
-            class="rounded-lg border border-gray-200 dark:border-gray-700 p-3"
-          >
+          <div v-for="i in 2" :key="i" class="rounded-lg border border-border p-3">
             <Skeleton variant="text" width="60%" />
             <Skeleton variant="text" width="40%" height="12px" class="mt-1" />
           </div>
         </div>
 
         <div v-else-if="wallet.checks.length === 0" class="py-3">
-          <p class="text-xs text-gray-500 text-center">No pending checks</p>
+          <p class="text-xs text-text-muted text-center">No pending checks</p>
         </div>
 
         <div v-else class="space-y-2">
           <div
             v-for="check in wallet.checks"
             :key="check.index"
-            class="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2"
+            class="rounded-lg border border-border p-3 space-y-2"
           >
             <div class="flex justify-between text-xs">
-              <span class="text-gray-500">To</span>
+              <span class="text-text-muted">To</span>
               <span class="font-mono">{{ check.destination.slice(0, 8) }}...</span>
             </div>
             <div class="flex justify-between text-xs">
-              <span class="text-gray-500">Max Amount</span>
+              <span class="text-text-muted">Max Amount</span>
               <span class="font-medium">{{ formatSendMax(check.sendMax) }}</span>
             </div>
             <div v-if="check.expiration" class="flex justify-between text-xs">
-              <span class="text-gray-500">Expires</span>
+              <span class="text-text-muted">Expires</span>
               <span>{{ formatRippleTime(check.expiration) }}</span>
             </div>
             <div class="flex gap-2 pt-1">
               <button
-                class="flex-1 text-xs px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                class="flex-1 text-xs px-2 py-1 rounded bg-bg-subtle text-success hover:bg-bg-hover transition-colors"
                 :disabled="loading"
                 @click="cashFromList(check.index)"
               >
                 Cash
               </button>
               <button
-                class="flex-1 text-xs px-2 py-1 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                class="flex-1 text-xs px-2 py-1 rounded bg-bg-subtle text-danger hover:bg-bg-hover transition-colors"
                 :disabled="loading"
                 @click="cancelCheck(check.index)"
               >
@@ -218,15 +211,15 @@ function cashFromList(id: string) {
         </div>
       </div>
 
-      <hr class="border-gray-200 dark:border-gray-700" />
+      <hr class="border-border" />
 
       <template v-if="step === 'create' || step === 'cash'">
         <!-- Tab toggle -->
-        <div class="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+        <div class="flex rounded-lg overflow-hidden border border-border">
           <button
             :class="[
               'flex-1 py-1.5 text-xs font-medium',
-              step === 'create' ? 'bg-primary-500 text-white' : 'bg-gray-50 dark:bg-gray-800',
+              step === 'create' ? 'bg-accent text-accent-fg' : 'bg-bg-subtle',
             ]"
             @click="step = 'create'"
           >
@@ -235,7 +228,7 @@ function cashFromList(id: string) {
           <button
             :class="[
               'flex-1 py-1.5 text-xs font-medium',
-              step === 'cash' ? 'bg-primary-500 text-white' : 'bg-gray-50 dark:bg-gray-800',
+              step === 'cash' ? 'bg-accent text-accent-fg' : 'bg-bg-subtle',
             ]"
             @click="step = 'cash'"
           >
@@ -247,7 +240,7 @@ function cashFromList(id: string) {
         <template v-if="step === 'create'">
           <Input v-model="destination" label="Destination" placeholder="rAddress..." />
           <Input v-model="sendMaxAmount" label="Max Amount (XRP)" placeholder="0.000000" />
-          <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+          <p v-if="error" class="text-xs text-danger">{{ error }}</p>
           <Button
             block
             :loading="loading"
@@ -267,7 +260,7 @@ function cashFromList(id: string) {
             placeholder="Exact amount to cash"
             hint="Leave empty to cash full amount"
           />
-          <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+          <p v-if="error" class="text-xs text-danger">{{ error }}</p>
           <Button block :loading="loading" :disabled="!checkID" @click="cashCheck">
             Cash Check
           </Button>
@@ -278,14 +271,9 @@ function cashFromList(id: string) {
       <template v-if="step === 'result'">
         <div class="text-center py-8">
           <div
-            class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-4"
+            class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-bg-subtle mb-4"
           >
-            <svg
-              class="h-6 w-6 text-green-600 dark:text-green-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -295,7 +283,7 @@ function cashFromList(id: string) {
             </svg>
           </div>
           <h3 class="text-lg font-bold">Success</h3>
-          <p class="mt-2 text-xs text-gray-500 font-mono break-all">{{ txHash }}</p>
+          <p class="mt-2 text-xs text-text-muted font-mono break-all">{{ txHash }}</p>
         </div>
         <Button block @click="step = 'create'">Back</Button>
       </template>
