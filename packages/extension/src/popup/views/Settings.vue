@@ -214,7 +214,7 @@ async function handleUnlinkWallet() {
           >
             <span
               :class="[
-                'pointer-events-none inline-block h-4 w-4 rounded-full bg-bg shadow transform transition-transform',
+                'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform',
                 blindSigning ? 'translate-x-4' : 'translate-x-0',
               ]"
             />

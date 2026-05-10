@@ -10,40 +10,40 @@
 
 @layer base {
   :root {
-    --bg: #ffffff;
-    --bg-subtle: #f8fafc;
-    --bg-hover: #f1f5f9;
-    --text: #0f172a;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --accent: #0f172a;
-    --accent-fg: #ffffff;
-    --link: #2563eb;
-    --success: #16a34a;
-    --warning: #d97706;
-    --danger: #dc2626;
+    --bg: 255 255 255;
+    --bg-subtle: 248 250 252;
+    --bg-hover: 241 245 249;
+    --text: 15 23 42;
+    --text-muted: 100 116 139;
+    --border: 226 232 240;
+    --accent: 15 23 42;
+    --accent-fg: 255 255 255;
+    --link: 37 99 235;
+    --success: 22 163 74;
+    --warning: 217 119 6;
+    --danger: 220 38 38;
   }
 
   .dark {
-    --bg: #0a0a0a;
-    --bg-subtle: #111111;
-    --bg-hover: #1a1a1a;
-    --text: #f8fafc;
-    --text-muted: #94a3b8;
-    --border: #1f1f1f;
-    --accent: #f8fafc;
-    --accent-fg: #0a0a0a;
-    --link: #60a5fa;
-    --success: #22c55e;
-    --warning: #f59e0b;
-    --danger: #ef4444;
+    --bg: 10 10 10;
+    --bg-subtle: 17 17 17;
+    --bg-hover: 26 26 26;
+    --text: 248 250 252;
+    --text-muted: 148 163 184;
+    --border: 31 31 31;
+    --accent: 248 250 252;
+    --accent-fg: 10 10 10;
+    --link: 96 165 250;
+    --success: 34 197 94;
+    --warning: 245 158 11;
+    --danger: 239 68 68;
   }
 
   body {
     @apply m-0 p-0 antialiased;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background-color: var(--bg);
-    color: var(--text);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background-color: rgb(var(--bg));
+    color: rgb(var(--text));
   }
 }
 
@@ -63,18 +63,18 @@
    ============================================================ */
 
 .evangelion {
-  --bg: #1a0a2e;
-  --bg-subtle: #2d1547;
-  --bg-hover: #3d1f5c;
-  --text: #e8d5f5;
-  --text-muted: #a976c3;
-  --border: #5f2a62;
-  --accent: #a0de59;
-  --accent-fg: #1a0a2e;
-  --link: #a0de59;
-  --success: #a0de59;
-  --warning: #f5c024;
-  --danger: #e81900;
+  --bg: 26 10 46;
+  --bg-subtle: 45 21 71;
+  --bg-hover: 61 31 92;
+  --text: 232 213 245;
+  --text-muted: 169 118 195;
+  --border: 95 42 98;
+  --accent: 160 222 89;
+  --accent-fg: 26 10 46;
+  --link: 160 222 89;
+  --success: 160 222 89;
+  --warning: 245 192 36;
+  --danger: 232 25 0;
 
   font-family: 'Barlow Condensed', sans-serif;
 }

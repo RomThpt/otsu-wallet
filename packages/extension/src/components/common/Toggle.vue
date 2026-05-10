@@ -22,7 +22,7 @@ const model = defineModel<boolean>()
     >
       <span
         :class="[
-          'pointer-events-none inline-block h-5 w-5 rounded-full bg-bg shadow transform transition-transform',
+          'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
           model ? 'translate-x-5' : 'translate-x-0',
         ]"
       />

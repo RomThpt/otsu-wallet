@@ -15,9 +15,9 @@ const badgeClasses = computed(() => {
     case 'medium':
       return 'bg-bg-subtle text-warning'
     case 'high':
-      return 'bg-bg-subtle text-warning'
-    case 'critical':
       return 'bg-bg-subtle text-danger'
+    case 'critical':
+      return 'bg-danger text-white'
     default:
       return 'bg-bg-subtle text-text-muted'
   }
