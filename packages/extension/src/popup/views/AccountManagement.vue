@@ -65,11 +65,8 @@ function openImport() {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-      <button
-        class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-        @click="router.back()"
-      >
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
+      <button class="p-1 rounded hover:bg-bg-hover transition-colors" @click="router.back()">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -82,13 +79,13 @@ function openImport() {
       <h2 class="text-sm font-bold">Accounts</h2>
     </div>
 
-    <div class="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+    <div class="flex-1 overflow-y-auto divide-y divide-border">
       <div
         v-for="account in wallet.accounts"
         :key="account.address"
-        class="group flex items-center gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+        class="group flex items-center gap-2 px-4 py-2 hover:bg-bg-hover transition-colors cursor-pointer"
         :class="{
-          'bg-primary-50 dark:bg-primary-900/10': account.address === wallet.activeAccount,
+          'bg-bg-subtle': account.address === wallet.activeAccount,
         }"
         @click="handleSelect(account.address)"
       >
@@ -99,7 +96,7 @@ function openImport() {
             <template v-if="editingAddress === account.address">
               <input
                 v-model="editLabel"
-                class="text-sm font-medium bg-transparent border-b border-primary-500 focus:outline-none w-full"
+                class="text-sm font-medium bg-transparent border-b border-accent focus:outline-none w-full"
                 @click.stop
                 @keyup.enter="saveLabel(account.address)"
                 @blur="saveLabel(account.address)"
@@ -114,9 +111,9 @@ function openImport() {
             </template>
           </div>
           <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-xs text-gray-500 font-mono">{{ truncate(account.address) }}</span>
+            <span class="text-xs text-text-muted font-mono">{{ truncate(account.address) }}</span>
             <button
-              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
+              class="text-text-muted hover:text-text shrink-0"
               @click.stop="copyAddress(account.address, $event)"
             >
               <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,19 +128,19 @@ function openImport() {
           </div>
           <p
             v-if="account.derivationPath"
-            class="text-[10px] text-gray-400 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+            class="text-[10px] text-text-muted mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
           >
             {{ account.derivationPath }}
           </p>
         </div>
 
         <div v-if="account.address === wallet.activeAccount" class="shrink-0">
-          <span class="text-xs text-primary-600 dark:text-primary-400 font-medium">Active</span>
+          <span class="text-xs text-accent font-medium">Active</span>
         </div>
       </div>
     </div>
 
-    <div class="p-4 space-y-2 border-t border-gray-200 dark:border-gray-700">
+    <div class="p-4 space-y-2 border-t border-border">
       <Button block :loading="loading" @click="handleDerive"> Derive New Account </Button>
       <Button variant="secondary" block @click="openImport"> Import Account </Button>
     </div>

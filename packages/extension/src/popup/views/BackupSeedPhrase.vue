@@ -112,9 +112,9 @@ onUnmounted(() => {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
       <button
-        class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        class="p-1 rounded hover:bg-bg-hover transition-colors"
         @click="router.push('/settings')"
       >
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,10 +132,8 @@ onUnmounted(() => {
     <div class="flex-1 overflow-y-auto p-4 space-y-4">
       <!-- Verification Step -->
       <template v-if="step === 'verify'">
-        <div
-          class="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3"
-        >
-          <p class="text-xs text-red-700 dark:text-red-400">
+        <div class="rounded-lg bg-bg-subtle border border-danger/30 p-3">
+          <p class="text-xs text-danger">
             Anyone with your seed phrase can access your funds. Never share it with anyone.
           </p>
         </div>
@@ -143,19 +141,17 @@ onUnmounted(() => {
         <!-- Password verification -->
         <template v-if="wallet.authMethod === 'password'">
           <div>
-            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Enter Password
-            </label>
+            <label class="text-sm font-medium text-text"> Enter Password </label>
             <input
               v-model="password"
               type="password"
               placeholder="Your wallet password"
-              class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg text-text focus:outline-none focus:ring-2 focus:ring-link"
               @keyup.enter="revealWithPassword"
             />
           </div>
 
-          <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+          <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
           <Button block :loading="loading" :disabled="!password" @click="revealWithPassword">
             Reveal Seed Phrase
@@ -164,7 +160,7 @@ onUnmounted(() => {
 
         <!-- Passkey verification -->
         <template v-else>
-          <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+          <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
           <Button block :loading="loading" @click="revealWithPasskey">
             <span class="flex items-center justify-center gap-2">
@@ -184,10 +180,8 @@ onUnmounted(() => {
 
       <!-- Reveal Step -->
       <template v-else>
-        <div
-          class="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3"
-        >
-          <p class="text-xs text-red-700 dark:text-red-400">
+        <div class="rounded-lg bg-bg-subtle border border-danger/30 p-3">
+          <p class="text-xs text-danger">
             This will auto-clear in 60 seconds. Write down the words and store them safely.
           </p>
         </div>
@@ -197,9 +191,9 @@ onUnmounted(() => {
             <div
               v-for="(word, index) in words"
               :key="index"
-              class="flex items-center gap-2 rounded-lg bg-gray-50 dark:bg-gray-700 px-3 py-2"
+              class="flex items-center gap-2 rounded-lg bg-bg-subtle px-3 py-2"
             >
-              <span class="text-xs text-gray-400 w-5 text-right">{{ index + 1 }}</span>
+              <span class="text-xs text-text-muted w-5 text-right">{{ index + 1 }}</span>
               <span class="text-sm font-mono">{{ word }}</span>
             </div>
           </div>

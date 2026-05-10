@@ -38,11 +38,8 @@ async function handleRevoke(origin: string) {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-      <button
-        class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-        @click="router.back()"
-      >
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
+      <button class="p-1 rounded hover:bg-bg-hover transition-colors" @click="router.back()">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -65,10 +62,10 @@ async function handleRevoke(origin: string) {
       v-else-if="settingsStore.permissions.length === 0"
       class="flex-1 flex items-center justify-center p-4"
     >
-      <p class="text-sm text-gray-500">No connected dApps</p>
+      <p class="text-sm text-text-muted">No connected dApps</p>
     </div>
 
-    <div v-else class="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+    <div v-else class="flex-1 overflow-y-auto divide-y divide-border">
       <div
         v-for="permission in settingsStore.permissions"
         :key="permission.origin"
@@ -78,14 +75,19 @@ async function handleRevoke(origin: string) {
           v-if="permission.favicon"
           :src="permission.favicon"
           :alt="permission.title || permission.origin"
-          class="h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800 object-cover flex-shrink-0"
+          class="h-8 w-8 rounded-full bg-bg-subtle object-cover flex-shrink-0"
           @error="($event.target as HTMLImageElement).style.display = 'none'"
         />
         <div
           v-else
-          class="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0"
+          class="h-8 w-8 rounded-full bg-bg-hover flex items-center justify-center flex-shrink-0"
         >
-          <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            class="h-4 w-4 text-text-muted"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -97,13 +99,13 @@ async function handleRevoke(origin: string) {
 
         <div class="flex-1 min-w-0">
           <p class="text-sm font-medium truncate">{{ permission.title || permission.origin }}</p>
-          <p class="text-xs text-gray-500 truncate">{{ permission.origin }}</p>
-          <p class="text-xs text-gray-400">Connected {{ formatDate(permission.connectedAt) }}</p>
+          <p class="text-xs text-text-muted truncate">{{ permission.origin }}</p>
+          <p class="text-xs text-text-muted">Connected {{ formatDate(permission.connectedAt) }}</p>
           <div v-if="permission.scopes?.length" class="flex flex-wrap gap-1 mt-1">
             <span
               v-for="scope in permission.scopes"
               :key="scope"
-              class="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+              class="text-[10px] px-1.5 py-0.5 rounded-full bg-bg-subtle text-text-muted"
             >
               {{ scope }}
             </span>
@@ -111,7 +113,7 @@ async function handleRevoke(origin: string) {
         </div>
 
         <button
-          class="text-xs text-red-500 hover:text-red-700 font-medium flex-shrink-0"
+          class="text-xs text-danger hover:opacity-80 font-medium flex-shrink-0"
           @click="handleRevoke(permission.origin)"
         >
           Revoke
@@ -119,6 +121,6 @@ async function handleRevoke(origin: string) {
       </div>
     </div>
 
-    <p v-if="error" class="px-4 py-2 text-xs text-red-500">{{ error }}</p>
+    <p v-if="error" class="px-4 py-2 text-xs text-danger">{{ error }}</p>
   </div>
 </template>

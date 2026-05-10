@@ -107,11 +107,8 @@ async function setDomain() {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-      <button
-        class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-        @click="router.push('/explore')"
-      >
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
+      <button class="p-1 rounded hover:bg-bg-hover" @click="router.push('/explore')">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -125,30 +122,26 @@ async function setDomain() {
     </div>
 
     <div class="flex-1 overflow-y-auto">
-      <p v-if="error" class="px-4 py-2 text-xs text-red-500">{{ error }}</p>
-      <p v-if="success" class="px-4 py-2 text-xs text-green-600">{{ success }}</p>
+      <p v-if="error" class="px-4 py-2 text-xs text-danger">{{ error }}</p>
+      <p v-if="success" class="px-4 py-2 text-xs text-success">{{ success }}</p>
 
       <!-- Flags -->
-      <div
-        v-for="item in flags"
-        :key="item.key"
-        class="px-4 py-3 border-b border-gray-100 dark:border-gray-800"
-      >
+      <div v-for="item in flags" :key="item.key" class="px-4 py-3 border-b border-border">
         <div class="flex items-center justify-between">
           <div class="flex-1 mr-3">
             <p class="text-sm font-medium">{{ item.label }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">{{ item.description }}</p>
+            <p class="text-xs text-text-muted mt-0.5">{{ item.description }}</p>
           </div>
           <div class="flex gap-1">
             <button
-              class="px-2 py-0.5 text-xs rounded border border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-900/20"
+              class="px-2 py-0.5 text-xs rounded border border-success/30 text-success hover:bg-bg-subtle dark:border-success/30 dark:text-success dark:hover:bg-bg-subtle"
               :disabled="loading"
               @click="setFlag(item.flag)"
             >
               On
             </button>
             <button
-              class="px-2 py-0.5 text-xs rounded border border-red-300 text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+              class="px-2 py-0.5 text-xs rounded border border-danger/30 text-danger hover:bg-bg-subtle dark:border-danger/30 dark:text-danger dark:hover:bg-bg-subtle"
               :disabled="loading"
               @click="clearFlag(item.flag)"
             >

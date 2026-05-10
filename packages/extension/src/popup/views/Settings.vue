@@ -172,11 +172,8 @@ async function handleUnlinkWallet() {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-      <button
-        class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-        @click="router.back()"
-      >
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
+      <button class="p-1 rounded hover:bg-bg-hover transition-colors" @click="router.back()">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -197,11 +194,11 @@ async function handleUnlinkWallet() {
 
     <div v-else class="flex-1 overflow-y-auto">
       <!-- Blind Signing -->
-      <div class="px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
+      <div class="px-4 py-3.5 border-b border-border">
         <div class="flex items-center justify-between">
           <div class="flex-1 mr-3">
             <p class="text-sm font-medium">Blind Signing</p>
-            <p class="text-xs text-red-500 mt-0.5">
+            <p class="text-xs text-danger mt-0.5">
               Allows signing transactions without full details. This is dangerous and may result in
               loss of funds.
             </p>
@@ -226,7 +223,7 @@ async function handleUnlinkWallet() {
       </div>
 
       <!-- Auto-Lock Duration -->
-      <div class="px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
+      <div class="px-4 py-3.5 border-b border-border">
         <p class="text-sm font-medium mb-2">Auto-Lock</p>
         <div class="flex flex-wrap gap-2">
           <button
@@ -235,8 +232,8 @@ async function handleUnlinkWallet() {
             :class="[
               'px-3 py-1.5 text-xs rounded-md border transition-colors',
               autoLockMinutes === option.value
-                ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-                : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800',
+                ? 'border-accent bg-bg-subtle text-accent'
+                : 'border-border hover:bg-bg-hover',
             ]"
             @click="setAutoLock(option.value)"
           >
@@ -246,7 +243,7 @@ async function handleUnlinkWallet() {
       </div>
 
       <!-- Theme -->
-      <div class="px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
+      <div class="px-4 py-3.5 border-b border-border">
         <p class="text-sm font-medium mb-2">Theme</p>
         <div class="flex gap-2">
           <button
@@ -255,8 +252,8 @@ async function handleUnlinkWallet() {
             :class="[
               'flex-1 px-3 py-2 text-xs rounded-md border transition-colors text-center',
               theme === option.value
-                ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-                : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800',
+                ? 'border-accent bg-bg-subtle text-accent'
+                : 'border-border hover:bg-bg-hover',
             ]"
             @click="setTheme(option.value)"
           >
@@ -266,16 +263,16 @@ async function handleUnlinkWallet() {
       </div>
 
       <!-- Security: Auth Method -->
-      <div class="px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
+      <div class="px-4 py-3.5 border-b border-border">
         <p class="text-sm font-medium mb-2">Security</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Authentication method</p>
+        <p class="text-xs text-text-muted mb-2">Authentication method</p>
         <div class="flex gap-2">
           <button
             :class="[
               'flex-1 px-3 py-2 text-xs rounded-md border transition-colors text-center',
               wallet.authMethod === 'password'
-                ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-                : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800',
+                ? 'border-accent bg-bg-subtle text-accent'
+                : 'border-border hover:bg-bg-hover',
             ]"
             :disabled="changingAuth"
             @click="switchToPassword"
@@ -286,8 +283,8 @@ async function handleUnlinkWallet() {
             :class="[
               'flex-1 px-3 py-2 text-xs rounded-md border transition-colors text-center',
               wallet.authMethod === 'passkey'
-                ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-                : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800',
+                ? 'border-accent bg-bg-subtle text-accent'
+                : 'border-border hover:bg-bg-hover',
             ]"
             :disabled="changingAuth || !passkeySupported"
             @click="switchToPasskey"
@@ -302,23 +299,23 @@ async function handleUnlinkWallet() {
             v-model="newPassword"
             type="password"
             placeholder="New password (min 8 chars)"
-            class="w-full px-3 py-2 text-xs rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            class="w-full px-3 py-2 text-xs rounded-md border border-border bg-bg focus:outline-none focus:ring-1 focus:ring-link"
           />
           <input
             v-model="confirmPassword"
             type="password"
             placeholder="Confirm password"
-            class="w-full px-3 py-2 text-xs rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            class="w-full px-3 py-2 text-xs rounded-md border border-border bg-bg focus:outline-none focus:ring-1 focus:ring-link"
           />
           <div class="flex gap-2">
             <button
-              class="flex-1 px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              class="flex-1 px-3 py-1.5 text-xs rounded-md border border-border hover:bg-bg-hover transition-colors"
               @click="cancelPasswordChange"
             >
               Cancel
             </button>
             <button
-              class="flex-1 px-3 py-1.5 text-xs rounded-md bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+              class="flex-1 px-3 py-1.5 text-xs rounded-md bg-accent text-accent-fg hover:opacity-90 transition-colors"
               :disabled="changingAuth"
               @click="switchToPassword"
             >
@@ -331,26 +328,26 @@ async function handleUnlinkWallet() {
           <div
             class="animate-spin h-3 w-3 border-2 border-primary-500 border-t-transparent rounded-full"
           />
-          <span class="text-xs text-gray-500">Switching...</span>
+          <span class="text-xs text-text-muted">Switching...</span>
         </div>
 
-        <p v-if="authError" class="mt-2 text-xs text-red-500">{{ authError }}</p>
+        <p v-if="authError" class="mt-2 text-xs text-danger">{{ authError }}</p>
 
-        <p v-if="!passkeySupported" class="mt-1 text-xs text-gray-400">
+        <p v-if="!passkeySupported" class="mt-1 text-xs text-text-muted">
           Passkeys are not supported in this browser.
         </p>
       </div>
 
       <!-- Identity -->
-      <div class="px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
+      <div class="px-4 py-3.5 border-b border-border">
         <p class="text-sm font-medium mb-2">Identity</p>
 
         <template v-if="!identity.loggedIn">
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+          <p class="text-xs text-text-muted mb-2">
             Connect your xrp-identity account to link your wallet address to your profile.
           </p>
           <button
-            class="w-full px-3 py-2 text-xs rounded-md bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+            class="w-full px-3 py-2 text-xs rounded-md bg-accent text-accent-fg hover:opacity-90 transition-colors"
             :disabled="identity.loading"
             @click="handleIdentityLogin"
           >
@@ -368,16 +365,13 @@ async function handleUnlinkWallet() {
             />
             <div
               v-else
-              class="h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 flex items-center justify-center text-xs font-medium"
+              class="h-8 w-8 rounded-full bg-bg-subtle text-accent flex items-center justify-center text-xs font-medium"
             >
               {{ identity.initials }}
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium truncate">{{ identity.displayName }}</p>
-              <p
-                v-if="identity.profile?.email"
-                class="text-xs text-gray-500 dark:text-gray-400 truncate"
-              >
+              <p v-if="identity.profile?.email" class="text-xs text-text-muted truncate">
                 {{ identity.profile.email }}
               </p>
             </div>
@@ -385,13 +379,13 @@ async function handleUnlinkWallet() {
 
           <!-- Wallet linking -->
           <div v-if="identity.linkedAddress" class="mb-2">
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Linked wallet</p>
+            <p class="text-xs text-text-muted mb-1">Linked wallet</p>
             <div class="flex items-center justify-between">
               <code class="text-xs font-mono truncate flex-1 mr-2">{{
                 identity.linkedAddress
               }}</code>
               <button
-                class="text-xs text-red-500 hover:text-red-600 whitespace-nowrap"
+                class="text-xs text-danger hover:opacity-80 whitespace-nowrap"
                 :disabled="identity.loading"
                 @click="handleUnlinkWallet"
               >
@@ -401,7 +395,7 @@ async function handleUnlinkWallet() {
           </div>
           <button
             v-else
-            class="w-full px-3 py-1.5 text-xs rounded-md border border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors mb-2"
+            class="w-full px-3 py-1.5 text-xs rounded-md border border-accent text-accent hover:bg-bg-subtle transition-colors mb-2"
             :disabled="identity.loading || !wallet.activeAccount"
             @click="handleLinkWallet"
           >
@@ -409,7 +403,7 @@ async function handleUnlinkWallet() {
           </button>
 
           <button
-            class="w-full px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
+            class="w-full px-3 py-1.5 text-xs rounded-md border border-border hover:bg-bg-hover transition-colors text-text-muted"
             :disabled="identity.loading"
             @click="handleIdentityLogout"
           >
@@ -421,52 +415,52 @@ async function handleUnlinkWallet() {
           <div
             class="animate-spin h-3 w-3 border-2 border-primary-500 border-t-transparent rounded-full"
           />
-          <span class="text-xs text-gray-500">Loading...</span>
+          <span class="text-xs text-text-muted">Loading...</span>
         </div>
 
-        <p v-if="identityError" class="mt-2 text-xs text-red-500">{{ identityError }}</p>
+        <p v-if="identityError" class="mt-2 text-xs text-danger">{{ identityError }}</p>
       </div>
 
       <!-- Networks -->
       <button
-        class="w-full flex items-center justify-between px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        class="w-full flex items-center justify-between px-4 py-3.5 border-b border-border hover:bg-bg-hover transition-colors"
         @click="router.push('/settings/networks')"
       >
         <span class="text-sm font-medium">Networks</span>
-        <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="h-4 w-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
       </button>
 
       <!-- Address Book -->
       <button
-        class="w-full flex items-center justify-between px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        class="w-full flex items-center justify-between px-4 py-3.5 border-b border-border hover:bg-bg-hover transition-colors"
         @click="router.push('/address-book')"
       >
         <span class="text-sm font-medium">Address Book</span>
-        <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="h-4 w-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
       </button>
 
       <!-- Backup Seed Phrase -->
       <button
-        class="w-full flex items-center justify-between px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        class="w-full flex items-center justify-between px-4 py-3.5 border-b border-border hover:bg-bg-hover transition-colors"
         @click="router.push('/settings/backup')"
       >
         <span class="text-sm font-medium">Backup Seed Phrase</span>
-        <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="h-4 w-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
       </button>
 
       <!-- Connected dApps -->
       <button
-        class="w-full flex items-center justify-between px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        class="w-full flex items-center justify-between px-4 py-3.5 border-b border-border hover:bg-bg-hover transition-colors"
         @click="router.push('/settings/dapps')"
       >
         <span class="text-sm font-medium">Connected dApps</span>
-        <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="h-4 w-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
       </button>
@@ -477,6 +471,6 @@ async function handleUnlinkWallet() {
       </div>
     </div>
 
-    <p v-if="error" class="px-4 py-2 text-xs text-red-500">{{ error }}</p>
+    <p v-if="error" class="px-4 py-2 text-xs text-danger">{{ error }}</p>
   </div>
 </template>
