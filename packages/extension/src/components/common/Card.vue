@@ -1,15 +1,13 @@
 <script setup lang="ts">
 defineProps<{
   padding?: boolean
+  variant?: 'default' | 'plain'
 }>()
 </script>
 
 <template>
   <div
-    :class="[
-      'rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800',
-      { 'p-4': padding !== false },
-    ]"
+    :class="[variant === 'plain' ? '' : 'border-b border-border', { 'py-4': padding !== false }]"
   >
     <slot />
   </div>
