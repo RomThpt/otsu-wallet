@@ -8,6 +8,11 @@ import AccountSelector from '../components/wallet/AccountSelector.vue'
 import NetworkSelector from '../components/wallet/NetworkSelector.vue'
 import OfflineBanner from '../components/common/OfflineBanner.vue'
 import ToastContainer from '../components/common/ToastContainer.vue'
+import IconHome from '../components/common/icons/IconHome.vue'
+import IconArrowUp from '../components/common/icons/IconArrowUp.vue'
+import IconArrowDown from '../components/common/icons/IconArrowDown.vue'
+import IconClock from '../components/common/icons/IconClock.vue'
+import IconCompass from '../components/common/icons/IconCompass.vue'
 import { useOnlineStatus } from '../composables/useOnlineStatus'
 import { useRouter } from 'vue-router'
 
@@ -17,6 +22,14 @@ const wallet = useWalletStore()
 const identity = useIdentityStore()
 const { isOnline } = useOnlineStatus()
 const initialized = ref(false)
+
+const navItems = [
+  { to: '/', label: 'Home', exact: true, icon: IconHome },
+  { to: '/send', label: 'Send', exact: true, icon: IconArrowUp },
+  { to: '/receive', label: 'Receive', exact: true, icon: IconArrowDown },
+  { to: '/history', label: 'History', exact: true, icon: IconClock },
+  { to: '/explore', label: 'Explore', exact: false, icon: IconCompass },
+] as const
 
 onMounted(async () => {
   try {
@@ -45,13 +58,11 @@ async function handleSwitchNetwork(networkId: string) {
 </script>
 
 <template>
-  <div
-    class="w-[360px] h-[600px] bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col overflow-hidden"
-  >
+  <div class="w-[360px] h-[600px] bg-bg text-text flex flex-col overflow-hidden">
     <template v-if="!initialized">
       <div class="flex-1 flex items-center justify-center">
         <div
-          class="animate-spin h-6 w-6 border-2 border-primary-500 border-t-transparent rounded-full"
+          class="animate-spin h-6 w-6 border-2 border-accent border-t-transparent rounded-full"
         />
       </div>
     </template>
@@ -61,11 +72,17 @@ async function handleSwitchNetwork(networkId: string) {
     </template>
 
     <template v-else>
-      <header
-        class="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-gray-700"
-      >
-        <div class="flex items-center gap-2">
-          <span class="text-sm font-bold">Otsu</span>
+      <header class="flex items-center justify-between px-4 h-11 border-b border-border">
+        <AccountSelector
+          :accounts="wallet.accounts"
+          :active-account="wallet.activeAccount"
+          :loading="wallet.loading"
+          :chain-type="wallet.currentChainType"
+          @select="handleSelectAccount"
+          @add-account="$router.push('/accounts')"
+          @load-more="handleDeriveMore"
+        />
+        <div class="flex items-center gap-1">
           <NetworkSelector
             :active-network="wallet.network"
             :predefined-networks="wallet.predefinedNetworks"
@@ -76,7 +93,7 @@ async function handleSwitchNetwork(networkId: string) {
           <router-link
             to="/settings"
             aria-label="Settings"
-            class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            class="p-1.5 rounded hover:bg-bg-hover transition-colors"
           >
             <img
               v-if="identity.loggedIn && identity.avatarUrl"
@@ -86,13 +103,13 @@ async function handleSwitchNetwork(networkId: string) {
             />
             <div
               v-else-if="identity.loggedIn && identity.initials"
-              class="h-5 w-5 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 flex items-center justify-center text-[9px] font-medium"
+              class="h-5 w-5 rounded-full bg-bg-subtle text-text flex items-center justify-center text-[9px] font-medium"
             >
               {{ identity.initials }}
             </div>
             <svg
               v-else
-              class="h-5 w-5 text-gray-500 dark:text-gray-400"
+              class="h-5 w-5 text-text-muted"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -112,15 +129,6 @@ async function handleSwitchNetwork(networkId: string) {
             </svg>
           </router-link>
         </div>
-        <AccountSelector
-          :accounts="wallet.accounts"
-          :active-account="wallet.activeAccount"
-          :loading="wallet.loading"
-          :chain-type="wallet.currentChainType"
-          @select="handleSelectAccount"
-          @add-account="$router.push('/accounts')"
-          @load-more="handleDeriveMore"
-        />
       </header>
 
       <ToastContainer />
@@ -134,25 +142,24 @@ async function handleSwitchNetwork(networkId: string) {
         </router-view>
       </main>
 
-      <nav class="flex border-t border-gray-200 dark:border-gray-700">
+      <nav class="grid grid-cols-5 border-t border-border">
         <router-link
-          v-for="item in [
-            { to: '/', label: 'Dashboard', exact: true },
-            { to: '/send', label: 'Send', exact: true },
-            { to: '/receive', label: 'Receive', exact: true },
-            { to: '/history', label: 'History', exact: true },
-            { to: '/explore', label: 'Explore', exact: false },
-          ]"
+          v-for="item in navItems"
           :key="item.to"
           :to="item.to"
-          class="flex-1 py-3 text-center text-[13px] font-medium transition-colors"
-          :class="{
-            'text-primary-600 dark:text-primary-400': item.exact
-              ? $route.path === item.to
-              : $route.path.startsWith(item.to),
-          }"
+          class="relative flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] transition-colors"
+          :class="
+            (item.exact ? $route.path === item.to : $route.path.startsWith(item.to))
+              ? 'text-text'
+              : 'text-text-muted hover:text-text'
+          "
         >
-          {{ item.label }}
+          <span
+            v-if="item.exact ? $route.path === item.to : $route.path.startsWith(item.to)"
+            class="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-accent"
+          />
+          <component :is="item.icon" />
+          <span>{{ item.label }}</span>
         </router-link>
       </nav>
     </template>
