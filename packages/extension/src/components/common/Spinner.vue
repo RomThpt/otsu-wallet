@@ -7,7 +7,7 @@ defineProps<{
 <template>
   <svg
     :class="[
-      'animate-spin text-primary-600 dark:text-primary-400',
+      'animate-spin text-accent',
       {
         'h-4 w-4': size === 'sm',
         'h-6 w-6': size === 'md' || !size,

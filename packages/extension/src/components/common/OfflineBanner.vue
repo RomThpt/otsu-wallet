@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="bg-yellow-50 dark:bg-yellow-900/30 px-4 py-2 text-xs text-yellow-800 dark:text-yellow-200 flex items-center gap-2"
-  >
+  <div class="bg-bg-subtle px-4 py-2 text-xs text-warning flex items-center gap-2">
     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
         stroke-linecap="round"
