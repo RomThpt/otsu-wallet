@@ -37,14 +37,11 @@ async function loadMore() {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+    <div class="px-4 py-3 border-b border-border">
       <h2 class="text-sm font-bold">Transaction History</h2>
     </div>
 
-    <div
-      v-if="loading && wallet.transactions.length === 0"
-      class="flex-1 divide-y divide-gray-100 dark:divide-gray-800"
-    >
+    <div v-if="loading && wallet.transactions.length === 0" class="flex-1 divide-y divide-border">
       <div v-for="i in 4" :key="i" class="px-4 py-3 flex items-center gap-3">
         <Skeleton variant="circle" width="28px" height="28px" />
         <div class="flex-1 space-y-2">
@@ -59,7 +56,7 @@ async function loadMore() {
       v-else-if="wallet.transactions.length === 0"
       class="flex-1 flex items-center justify-center p-4"
     >
-      <p class="text-sm text-gray-500">No transactions yet</p>
+      <p class="text-sm text-text-muted">No transactions yet</p>
     </div>
 
     <div v-else class="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">

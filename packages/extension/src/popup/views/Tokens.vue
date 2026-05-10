@@ -34,14 +34,12 @@ async function handleRemoveTrustline(currency: string, issuer: string) {
 
 <template>
   <div class="flex flex-col h-full">
-    <div
-      class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700"
-    >
+    <div class="flex items-center justify-between px-4 py-3 border-b border-border">
       <h2 class="text-sm font-bold">Tokens</h2>
       <Button size="sm" @click="router.push('/explore/tokens/add')">Add Trustline</Button>
     </div>
 
-    <div v-if="loading" class="flex-1 divide-y divide-gray-100 dark:divide-gray-800">
+    <div v-if="loading" class="flex-1 divide-y divide-border">
       <div v-for="i in 3" :key="i" class="px-4 py-3 flex items-center gap-3">
         <Skeleton variant="circle" width="32px" height="32px" />
         <div class="flex-1 space-y-2">
@@ -54,12 +52,12 @@ async function handleRemoveTrustline(currency: string, issuer: string) {
 
     <div v-else-if="wallet.tokens.length === 0" class="flex-1 flex items-center justify-center p-4">
       <div class="text-center">
-        <p class="text-sm text-gray-500">No trustlines set</p>
-        <p class="text-xs text-gray-400 mt-1">Add a trustline to hold tokens</p>
+        <p class="text-sm text-text-muted">No trustlines set</p>
+        <p class="text-xs text-text-muted mt-1">Add a trustline to hold tokens</p>
       </div>
     </div>
 
-    <div v-else class="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+    <div v-else class="flex-1 overflow-y-auto divide-y divide-border">
       <div v-for="token in wallet.tokens" :key="`${token.currency}:${token.issuer}`">
         <TokenItem
           :token="token"

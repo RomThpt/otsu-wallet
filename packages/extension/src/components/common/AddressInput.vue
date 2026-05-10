@@ -74,17 +74,15 @@ onMounted(async () => {
 
 <template>
   <div class="relative">
-    <label v-if="label" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+    <label v-if="label" class="block text-sm font-medium text-text mb-1">
       {{ label }}
     </label>
     <input
       :value="modelValue"
       type="text"
       :placeholder="placeholder"
-      class="block w-full rounded-lg border px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-      :class="[
-        error ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600',
-      ]"
+      class="block w-full rounded-md border px-3 py-2 text-sm bg-bg-subtle text-text focus:outline-none focus:ring-2 focus:ring-link"
+      :class="[error ? 'border-red-300 dark:border-red-600' : 'border-border']"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       @focus="handleFocus"
       @blur="handleBlur"
@@ -93,17 +91,17 @@ onMounted(async () => {
     <!-- Suggestions dropdown -->
     <div
       v-if="shouldShowSuggestions"
-      class="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg max-h-40 overflow-y-auto"
+      class="absolute z-10 mt-1 w-full rounded-md border border-border bg-bg-subtle shadow-lg max-h-40 overflow-y-auto"
     >
       <button
         v-for="contact in filteredContacts"
         :key="contact.address"
         type="button"
-        class="w-full px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        class="w-full px-3 py-2 text-left hover:bg-bg-hover transition-colors"
         @mousedown.prevent="selectContact(contact)"
       >
         <p class="text-sm font-medium">{{ contact.name }}</p>
-        <p class="text-xs text-gray-500 font-mono truncate">{{ contact.address }}</p>
+        <p class="text-xs text-text-muted font-mono truncate">{{ contact.address }}</p>
       </button>
     </div>
 

@@ -12,7 +12,7 @@ defineProps<{
     :class="{
       'h-4 rounded': variant === 'text' || !variant,
       'rounded-full': variant === 'circle',
-      'rounded-lg': variant === 'rect',
+      'rounded-md': variant === 'rect',
     }"
     :style="{
       width: width ?? (variant === 'circle' ? '40px' : '100%'),

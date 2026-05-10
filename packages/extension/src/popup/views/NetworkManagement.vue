@@ -41,14 +41,9 @@ function networkDotColor(type: string, isCustom: boolean): string {
 
 <template>
   <div class="flex flex-col h-full">
-    <div
-      class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700"
-    >
+    <div class="flex items-center justify-between px-4 py-3 border-b border-border">
       <div class="flex items-center gap-2">
-        <button
-          class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          @click="router.back()"
-        >
+        <button class="p-1 rounded hover:bg-bg-hover transition-colors" @click="router.back()">
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -61,7 +56,7 @@ function networkDotColor(type: string, isCustom: boolean): string {
         <h2 class="text-sm font-bold">Networks</h2>
       </div>
       <button
-        class="text-xs text-primary-600 dark:text-primary-400 font-medium px-2 py-1 rounded hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+        class="text-xs text-accent font-medium px-2 py-1 rounded hover:bg-bg-subtle transition-colors"
         @click="router.push('/settings/networks/add')"
       >
         + Add
@@ -71,14 +66,14 @@ function networkDotColor(type: string, isCustom: boolean): string {
     <div class="flex-1 overflow-y-auto">
       <!-- Predefined networks -->
       <div class="px-4 py-2">
-        <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-1">
+        <p class="text-[11px] font-medium text-text-muted uppercase tracking-wide mb-1">
           Built-in Networks
         </p>
       </div>
       <button
         v-for="config in Object.values(wallet.predefinedNetworks)"
         :key="config.id"
-        class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        class="w-full flex items-center gap-3 px-4 py-3 hover:bg-bg-hover transition-colors"
         @click="handleSwitch(config.id)"
       >
         <span
@@ -87,11 +82,11 @@ function networkDotColor(type: string, isCustom: boolean): string {
         />
         <div class="flex-1 min-w-0 text-left">
           <p class="text-sm font-medium">{{ config.name }}</p>
-          <p class="text-xs text-gray-500 truncate">{{ config.url }}</p>
+          <p class="text-xs text-text-muted truncate">{{ config.url }}</p>
         </div>
         <svg
           v-if="config.id === wallet.network"
-          class="w-4 h-4 text-primary-500 shrink-0"
+          class="w-4 h-4 text-accent shrink-0"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -106,14 +101,14 @@ function networkDotColor(type: string, isCustom: boolean): string {
       <!-- Custom networks -->
       <template v-if="wallet.customNetworks.length > 0">
         <div class="px-4 py-2 mt-2">
-          <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-1">
+          <p class="text-[11px] font-medium text-text-muted uppercase tracking-wide mb-1">
             Custom Networks
           </p>
         </div>
         <div
           v-for="config in wallet.customNetworks"
           :key="config.id"
-          class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+          class="flex items-center gap-3 px-4 py-3 hover:bg-bg-hover transition-colors"
         >
           <button
             class="flex items-center gap-3 flex-1 min-w-0 text-left"
@@ -122,11 +117,11 @@ function networkDotColor(type: string, isCustom: boolean): string {
             <span class="w-2.5 h-2.5 rounded-full bg-gray-400 shrink-0" />
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium">{{ config.name }}</p>
-              <p class="text-xs text-gray-500 truncate">{{ config.url }}</p>
+              <p class="text-xs text-text-muted truncate">{{ config.url }}</p>
             </div>
             <svg
               v-if="config.id === wallet.network"
-              class="w-4 h-4 text-primary-500 shrink-0"
+              class="w-4 h-4 text-accent shrink-0"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -138,7 +133,7 @@ function networkDotColor(type: string, isCustom: boolean): string {
             </svg>
           </button>
           <button
-            class="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shrink-0"
+            class="p-1 rounded text-text-muted hover:text-danger hover:bg-bg-subtle transition-colors shrink-0"
             title="Remove network"
             @click="handleRemove(config.id)"
           >

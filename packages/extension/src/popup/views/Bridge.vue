@@ -101,18 +101,18 @@ onMounted(async () => {
     <!-- Form Step -->
     <template v-if="step === 'form'">
       <h2 class="text-lg font-bold">Bridge XRP</h2>
-      <p class="text-xs text-gray-500">Transfer XRP between XRPL and EVM Sidechain via Axelar</p>
+      <p class="text-xs text-text-muted">Transfer XRP between XRPL and EVM Sidechain via Axelar</p>
 
       <Card>
         <div class="space-y-4">
           <!-- Source -->
           <div>
-            <p class="text-xs font-medium text-gray-500 mb-1">From</p>
+            <p class="text-xs font-medium text-text-muted mb-1">From</p>
             <div class="flex items-center justify-between">
               <span class="text-sm font-medium">
                 {{ direction === 'xrpl-to-evm' ? 'XRPL' : 'EVM Sidechain' }}
               </span>
-              <span class="text-[10px] font-mono text-gray-500">
+              <span class="text-[10px] font-mono text-text-muted">
                 {{ truncateAddr(sourceAddress) }}
               </span>
             </div>
@@ -121,11 +121,11 @@ onMounted(async () => {
           <!-- Flip button -->
           <div class="flex justify-center">
             <button
-              class="p-1.5 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              class="p-1.5 rounded-full bg-bg-subtle hover:bg-bg-hover transition-colors"
               @click="flipDirection"
             >
               <svg
-                class="w-4 h-4 text-gray-600 dark:text-gray-400"
+                class="w-4 h-4 text-text-muted"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -142,12 +142,12 @@ onMounted(async () => {
 
           <!-- Destination -->
           <div>
-            <p class="text-xs font-medium text-gray-500 mb-1">To</p>
+            <p class="text-xs font-medium text-text-muted mb-1">To</p>
             <div class="flex items-center justify-between">
               <span class="text-sm font-medium">
                 {{ direction === 'xrpl-to-evm' ? 'EVM Sidechain' : 'XRPL' }}
               </span>
-              <span class="text-[10px] font-mono text-gray-500">
+              <span class="text-[10px] font-mono text-text-muted">
                 {{ truncateAddr(destinationAddress) }}
               </span>
             </div>
@@ -157,18 +157,18 @@ onMounted(async () => {
 
       <!-- Amount -->
       <div>
-        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Amount (XRP)</label>
+        <label class="text-sm font-medium text-text">Amount (XRP)</label>
         <input
           v-model="amount"
           type="number"
           step="0.000001"
           min="0"
           placeholder="0.000000"
-          class="mt-1.5 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          class="mt-1.5 block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg-subtle text-text focus:outline-none focus:ring-2 focus:ring-link"
         />
       </div>
 
-      <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+      <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
       <Button block :disabled="!canBridge" :loading="estimating" @click="fetchEstimate">
         Get Estimate
@@ -182,25 +182,25 @@ onMounted(async () => {
       <Card>
         <div class="space-y-3 text-sm">
           <div class="flex justify-between">
-            <span class="text-gray-500">Direction</span>
+            <span class="text-text-muted">Direction</span>
             <span>{{ direction === 'xrpl-to-evm' ? 'XRPL -> EVM' : 'EVM -> XRPL' }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-500">Send</span>
+            <span class="text-text-muted">Send</span>
             <span class="font-medium">{{ estimate?.sourceAmount ?? amount }} XRP</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-500">Bridge Fee</span>
+            <span class="text-text-muted">Bridge Fee</span>
             <span>{{ estimate?.fee ?? '--' }} XRP</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-500">Receive (est.)</span>
-            <span class="font-medium text-green-600 dark:text-green-400">
+            <span class="text-text-muted">Receive (est.)</span>
+            <span class="font-medium text-success">
               {{ estimate?.destinationAmount ?? '--' }} XRP
             </span>
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-500">Est. Time</span>
+            <span class="text-text-muted">Est. Time</span>
             <span>{{
               estimate?.estimatedTime ? `~${Math.ceil(estimate.estimatedTime / 60)} min` : '--'
             }}</span>
@@ -208,7 +208,7 @@ onMounted(async () => {
         </div>
       </Card>
 
-      <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+      <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
       <div class="flex gap-3">
         <Button variant="secondary" block @click="step = 'form'">Back</Button>
@@ -219,7 +219,7 @@ onMounted(async () => {
     <!-- Result Step -->
     <template v-else>
       <h2 class="text-lg font-bold">Bridge Initiated</h2>
-      <p class="text-xs text-gray-500">Your transfer is being processed by Axelar.</p>
+      <p class="text-xs text-text-muted">Your transfer is being processed by Axelar.</p>
 
       <Card v-if="wallet.bridgeTransactions.length > 0">
         <BridgeStatusTracker :transaction="wallet.bridgeTransactions[0]" />
@@ -230,7 +230,7 @@ onMounted(async () => {
 
     <!-- Recent bridge transactions -->
     <div v-if="wallet.bridgeTransactions.length > 0 && step === 'form'" class="space-y-3">
-      <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Recent Bridges</h3>
+      <h3 class="text-sm font-medium text-text">Recent Bridges</h3>
       <Card v-for="tx in wallet.bridgeTransactions.slice(0, 5)" :key="tx.id">
         <BridgeStatusTracker :transaction="tx" />
       </Card>

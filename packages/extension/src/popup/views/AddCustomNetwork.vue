@@ -88,11 +88,8 @@ async function handleSave() {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-      <button
-        class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-        @click="router.back()"
-      >
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
+      <button class="p-1 rounded hover:bg-bg-hover transition-colors" @click="router.back()">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -130,10 +127,8 @@ async function handleSave() {
         >
           Test Connection
         </Button>
-        <span v-if="testResult === 'success'" class="text-xs text-green-600 dark:text-green-400">
-          Connected
-        </span>
-        <span v-else-if="testResult === 'error'" class="text-xs text-red-500"> Failed </span>
+        <span v-if="testResult === 'success'" class="text-xs text-success"> Connected </span>
+        <span v-else-if="testResult === 'error'" class="text-xs text-danger"> Failed </span>
       </div>
 
       <Button block :disabled="!canSave" :loading="saving" @click="handleSave">

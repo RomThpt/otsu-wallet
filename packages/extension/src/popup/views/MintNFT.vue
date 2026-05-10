@@ -52,11 +52,8 @@ async function executeMint() {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-      <button
-        class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-        @click="router.push('/explore/nfts')"
-      >
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
+      <button class="p-1 rounded hover:bg-bg-hover" @click="router.push('/explore/nfts')">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -82,9 +79,7 @@ async function executeMint() {
         />
 
         <div>
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300"
-            >Transfer Fee (%)</label
-          >
+          <label class="text-sm font-medium text-text">Transfer Fee (%)</label>
           <input
             v-model="transferFee"
             type="range"
@@ -93,7 +88,7 @@ async function executeMint() {
             step="0.1"
             class="mt-1 block w-full"
           />
-          <p class="text-xs text-gray-500 mt-1">{{ transferFee }}%</p>
+          <p class="text-xs text-text-muted mt-1">{{ transferFee }}%</p>
         </div>
 
         <div class="space-y-2">
@@ -107,7 +102,7 @@ async function executeMint() {
           </label>
         </div>
 
-        <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
         <Button block :disabled="!uri" @click="confirmMint">Review</Button>
       </template>
@@ -115,26 +110,26 @@ async function executeMint() {
       <!-- Confirm Step -->
       <template v-else-if="step === 'confirm'">
         <h3 class="text-sm font-bold">Confirm Mint</h3>
-        <div class="space-y-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm">
+        <div class="space-y-2 p-3 rounded-lg bg-bg-subtle text-sm">
           <div class="flex justify-between">
-            <span class="text-gray-500">URI</span>
+            <span class="text-text-muted">URI</span>
             <span class="font-mono text-xs truncate ml-2 max-w-[200px]">{{ uri }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-500">Taxon</span>
+            <span class="text-text-muted">Taxon</span>
             <span>{{ taxon }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-500">Transfer Fee</span>
+            <span class="text-text-muted">Transfer Fee</span>
             <span>{{ transferFee }}%</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-500">Flags</span>
+            <span class="text-text-muted">Flags</span>
             <span>{{ transferable ? 'Transferable' : '' }} {{ burnable ? 'Burnable' : '' }}</span>
           </div>
         </div>
 
-        <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
         <div class="flex gap-3">
           <Button variant="secondary" block @click="step = 'form'">Back</Button>
@@ -146,14 +141,9 @@ async function executeMint() {
       <template v-else>
         <div class="text-center py-8">
           <div
-            class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-4"
+            class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-bg-subtle mb-4"
           >
-            <svg
-              class="h-6 w-6 text-green-600 dark:text-green-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -163,7 +153,7 @@ async function executeMint() {
             </svg>
           </div>
           <h3 class="text-lg font-bold">NFT Minted</h3>
-          <p class="mt-2 text-xs text-gray-500 font-mono break-all">{{ txHash }}</p>
+          <p class="mt-2 text-xs text-text-muted font-mono break-all">{{ txHash }}</p>
         </div>
         <Button block @click="router.push('/explore/nfts')">Back to Gallery</Button>
       </template>

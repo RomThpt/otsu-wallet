@@ -48,8 +48,8 @@ function selectPair(index: number) {
       :class="[
         'px-2 py-1 text-xs rounded-md border transition-colors',
         selectedIndex === i
-          ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-          : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800',
+          ? 'border-accent bg-bg-subtle text-accent'
+          : 'border-border hover:bg-bg-hover',
       ]"
       @click="selectPair(i)"
     >

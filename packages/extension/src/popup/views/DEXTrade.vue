@@ -72,14 +72,9 @@ async function placeOrder() {
 
 <template>
   <div class="flex flex-col h-full">
-    <div
-      class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700"
-    >
+    <div class="flex items-center justify-between px-4 py-3 border-b border-border">
       <div class="flex items-center gap-2">
-        <button
-          class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-          @click="router.push('/explore')"
-        >
+        <button class="p-1 rounded hover:bg-bg-hover" @click="router.push('/explore')">
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -108,7 +103,7 @@ async function placeOrder() {
       <!-- Order Book -->
       <div v-if="dexStore.loading" class="flex items-center justify-center py-4">
         <div
-          class="animate-spin h-5 w-5 border-2 border-primary-500 border-t-transparent rounded-full"
+          class="animate-spin h-5 w-5 border-2 border-accent border-t-transparent rounded-full"
         />
       </div>
       <OrderBookTable
@@ -118,12 +113,12 @@ async function placeOrder() {
       />
 
       <!-- Place Order -->
-      <div class="p-3 border-t border-gray-200 dark:border-gray-700 space-y-3">
-        <div class="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div class="p-3 border-t border-border space-y-3">
+        <div class="flex rounded-lg overflow-hidden border border-border">
           <button
             :class="[
               'flex-1 py-1.5 text-xs font-medium transition-colors',
-              tab === 'buy' ? 'bg-green-500 text-white' : 'bg-gray-50 dark:bg-gray-800',
+              tab === 'buy' ? 'bg-green-500 text-white' : 'bg-bg-subtle',
             ]"
             @click="tab = 'buy'"
           >
@@ -132,7 +127,7 @@ async function placeOrder() {
           <button
             :class="[
               'flex-1 py-1.5 text-xs font-medium transition-colors',
-              tab === 'sell' ? 'bg-red-500 text-white' : 'bg-gray-50 dark:bg-gray-800',
+              tab === 'sell' ? 'bg-red-500 text-white' : 'bg-bg-subtle',
             ]"
             @click="tab = 'sell'"
           >
@@ -146,21 +141,19 @@ async function placeOrder() {
             type="number"
             step="0.000001"
             placeholder="Price"
-            class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            class="block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg-subtle text-text focus:outline-none focus:ring-2 focus:ring-link"
           />
           <input
             v-model="amount"
             type="number"
             step="0.000001"
             placeholder="Amount"
-            class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            class="block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg-subtle text-text focus:outline-none focus:ring-2 focus:ring-link"
           />
         </div>
 
-        <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
-        <p v-if="txHash" class="text-xs text-green-600">
-          Order placed: {{ txHash.slice(0, 12) }}...
-        </p>
+        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
+        <p v-if="txHash" class="text-xs text-success">Order placed: {{ txHash.slice(0, 12) }}...</p>
 
         <Button
           block

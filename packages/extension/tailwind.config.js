@@ -5,6 +5,18 @@ export default {
   theme: {
     extend: {
       colors: {
+        bg: 'rgb(var(--bg) / <alpha-value>)',
+        'bg-subtle': 'rgb(var(--bg-subtle) / <alpha-value>)',
+        'bg-hover': 'rgb(var(--bg-hover) / <alpha-value>)',
+        text: 'rgb(var(--text) / <alpha-value>)',
+        'text-muted': 'rgb(var(--text-muted) / <alpha-value>)',
+        border: 'rgb(var(--border) / <alpha-value>)',
+        accent: 'rgb(var(--accent) / <alpha-value>)',
+        'accent-fg': 'rgb(var(--accent-fg) / <alpha-value>)',
+        link: 'rgb(var(--link) / <alpha-value>)',
+        success: 'rgb(var(--success) / <alpha-value>)',
+        warning: 'rgb(var(--warning) / <alpha-value>)',
+        danger: 'rgb(var(--danger) / <alpha-value>)',
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

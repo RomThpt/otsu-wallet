@@ -145,11 +145,8 @@ async function cancelEscrow(owner: string, seq: number) {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-      <button
-        class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-        @click="router.push('/explore')"
-      >
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
+      <button class="p-1 rounded hover:bg-bg-hover" @click="router.push('/explore')">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -168,48 +165,44 @@ async function cancelEscrow(owner: string, seq: number) {
         <h3 class="text-sm font-bold mb-2">Pending Escrows</h3>
 
         <div v-if="listLoading" class="space-y-2">
-          <div
-            v-for="i in 2"
-            :key="i"
-            class="rounded-lg border border-gray-200 dark:border-gray-700 p-3"
-          >
+          <div v-for="i in 2" :key="i" class="rounded-lg border border-border p-3">
             <Skeleton variant="text" width="60%" />
             <Skeleton variant="text" width="40%" height="12px" class="mt-1" />
           </div>
         </div>
 
         <div v-else-if="wallet.escrows.length === 0" class="py-3">
-          <p class="text-xs text-gray-500 text-center">No pending escrows</p>
+          <p class="text-xs text-text-muted text-center">No pending escrows</p>
         </div>
 
         <div v-else class="space-y-2">
           <div
             v-for="escrow in wallet.escrows"
             :key="escrow.seq"
-            class="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2"
+            class="rounded-lg border border-border p-3 space-y-2"
           >
             <div class="flex justify-between text-xs">
-              <span class="text-gray-500">To</span>
+              <span class="text-text-muted">To</span>
               <span class="font-mono">{{ escrow.destination.slice(0, 8) }}...</span>
             </div>
             <div class="flex justify-between text-xs">
-              <span class="text-gray-500">Amount</span>
+              <span class="text-text-muted">Amount</span>
               <span class="font-medium"
                 >{{ (Number(escrow.amount) / DROPS_PER_XRP).toFixed(6) }} XRP</span
               >
             </div>
             <div v-if="escrow.finishAfter" class="flex justify-between text-xs">
-              <span class="text-gray-500">Finish After</span>
+              <span class="text-text-muted">Finish After</span>
               <span>{{ formatRippleTime(escrow.finishAfter) }}</span>
             </div>
             <div v-if="escrow.cancelAfter" class="flex justify-between text-xs">
-              <span class="text-gray-500">Cancel After</span>
+              <span class="text-text-muted">Cancel After</span>
               <span>{{ formatRippleTime(escrow.cancelAfter) }}</span>
             </div>
             <div class="flex gap-2 pt-1">
               <button
                 v-if="canFinish(escrow)"
-                class="flex-1 text-xs px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                class="flex-1 text-xs px-2 py-1 rounded bg-bg-subtle text-success hover:bg-bg-hover transition-colors"
                 :disabled="loading"
                 @click="finishEscrow(escrow.account, escrow.seq)"
               >
@@ -217,7 +210,7 @@ async function cancelEscrow(owner: string, seq: number) {
               </button>
               <button
                 v-if="canCancel(escrow)"
-                class="flex-1 text-xs px-2 py-1 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                class="flex-1 text-xs px-2 py-1 rounded bg-bg-subtle text-danger hover:bg-bg-hover transition-colors"
                 :disabled="loading"
                 @click="cancelEscrow(escrow.account, escrow.seq)"
               >
@@ -228,7 +221,7 @@ async function cancelEscrow(owner: string, seq: number) {
         </div>
       </div>
 
-      <hr class="border-gray-200 dark:border-gray-700" />
+      <hr class="border-border" />
 
       <!-- Create Escrow Form -->
       <template v-if="step === 'form'">
@@ -252,7 +245,7 @@ async function cancelEscrow(owner: string, seq: number) {
           hint="Time after which the escrow can be cancelled"
         />
 
-        <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
         <Button block :loading="loading" :disabled="!destination || !amount" @click="createEscrow">
           Create Escrow
@@ -262,14 +255,9 @@ async function cancelEscrow(owner: string, seq: number) {
       <template v-else>
         <div class="text-center py-8">
           <div
-            class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-4"
+            class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-bg-subtle mb-4"
           >
-            <svg
-              class="h-6 w-6 text-green-600 dark:text-green-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -279,7 +267,7 @@ async function cancelEscrow(owner: string, seq: number) {
             </svg>
           </div>
           <h3 class="text-lg font-bold">Escrow Created</h3>
-          <p class="mt-2 text-xs text-gray-500 font-mono break-all">{{ txHash }}</p>
+          <p class="mt-2 text-xs text-text-muted font-mono break-all">{{ txHash }}</p>
         </div>
         <Button block @click="step = 'form'">Create Another</Button>
       </template>

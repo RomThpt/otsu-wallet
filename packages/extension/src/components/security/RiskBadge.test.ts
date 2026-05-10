@@ -18,15 +18,15 @@ describe('RiskBadge', () => {
     }
   })
 
-  it('applies green classes for safe level', () => {
+  it('applies success token for safe level', () => {
     const wrapper = mount(RiskBadge, { props: { level: 'safe' as RiskLevel } })
     const span = wrapper.find('span')
-    expect(span.classes()).toContain('bg-green-100')
+    expect(span.classes()).toContain('text-success')
   })
 
-  it('applies red classes for critical level', () => {
+  it('applies danger background for critical level', () => {
     const wrapper = mount(RiskBadge, { props: { level: 'critical' as RiskLevel } })
     const span = wrapper.find('span')
-    expect(span.classes()).toContain('bg-red-100')
+    expect(span.classes()).toContain('bg-danger')
   })
 })

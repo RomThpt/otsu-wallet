@@ -34,9 +34,9 @@ function truncateId(id: string): string {
 
 <template>
   <div
-    class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-primary-500 transition-colors cursor-pointer"
+    class="rounded-lg border border-border overflow-hidden hover:border-accent transition-colors cursor-pointer"
   >
-    <div class="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+    <div class="aspect-square bg-bg-subtle flex items-center justify-center">
       <img
         v-if="imageUrl && !imgError"
         :src="imageUrl"
@@ -47,7 +47,7 @@ function truncateId(id: string): string {
       />
       <svg
         v-else
-        class="h-8 w-8 text-gray-400"
+        class="h-8 w-8 text-text-muted"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -62,7 +62,7 @@ function truncateId(id: string): string {
     </div>
     <div class="p-2">
       <p class="text-xs font-medium truncate">{{ displayName }}</p>
-      <p v-if="nft.transferFee > 0" class="text-[10px] text-gray-400 mt-0.5">
+      <p v-if="nft.transferFee > 0" class="text-[10px] text-text-muted mt-0.5">
         Fee: {{ (nft.transferFee / 1000).toFixed(1) }}%
       </p>
     </div>
