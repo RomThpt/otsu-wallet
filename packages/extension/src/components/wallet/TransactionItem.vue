@@ -35,11 +35,11 @@ const directionLabel = computed(() => {
 const directionColor = computed(() => {
   switch (props.tx.direction) {
     case 'sent':
-      return 'text-red-600 dark:text-red-400'
+      return 'text-danger'
     case 'received':
-      return 'text-green-600 dark:text-green-400'
+      return 'text-success'
     default:
-      return 'text-gray-600 dark:text-gray-400'
+      return 'text-text-muted'
   }
 })
 
@@ -69,23 +69,12 @@ function truncate(addr: string): string {
 </script>
 
 <template>
-  <div
-    class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-  >
+  <div class="flex items-center gap-3 px-4 py-3 hover:bg-bg-hover transition-colors">
     <!-- Direction Arrow -->
-    <div
-      class="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
-      :class="{
-        'bg-red-100 dark:bg-red-900/30': tx.direction === 'sent',
-        'bg-green-100 dark:bg-green-900/30': tx.direction === 'received',
-        'bg-blue-100 dark:bg-blue-900/30': isContractCall,
-        'bg-gray-100 dark:bg-gray-800':
-          !isContractCall && tx.direction !== 'sent' && tx.direction !== 'received',
-      }"
-    >
+    <div class="flex items-center justify-center w-8 h-8 rounded-full shrink-0 bg-bg-subtle">
       <svg
         v-if="tx.direction === 'sent'"
-        class="w-4 h-4 text-red-600 dark:text-red-400"
+        class="w-4 h-4 text-danger"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -99,7 +88,7 @@ function truncate(addr: string): string {
       </svg>
       <svg
         v-else-if="tx.direction === 'received'"
-        class="w-4 h-4 text-green-600 dark:text-green-400"
+        class="w-4 h-4 text-success"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -113,7 +102,7 @@ function truncate(addr: string): string {
       </svg>
       <svg
         v-else-if="isContractCall"
-        class="w-4 h-4 text-blue-600 dark:text-blue-400"
+        class="w-4 h-4 text-link"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -127,7 +116,7 @@ function truncate(addr: string): string {
       </svg>
       <svg
         v-else
-        class="w-4 h-4 text-gray-500"
+        class="w-4 h-4 text-text-muted"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -150,17 +139,17 @@ function truncate(addr: string): string {
         </span>
       </div>
       <div class="flex justify-between items-center mt-0.5">
-        <span class="text-xs text-gray-500 font-mono">
+        <span class="text-xs text-text-muted font-mono">
           {{ tx.direction === 'sent' ? truncate(tx.destination ?? '') : truncate(tx.account) }}
         </span>
-        <span class="text-xs text-gray-500">{{ timeAgo }}</span>
+        <span class="text-xs text-text-muted">{{ timeAgo }}</span>
       </div>
     </div>
 
     <!-- Status -->
     <span
       v-if="!tx.successful"
-      class="text-xs px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 shrink-0"
+      class="text-xs px-1.5 py-0.5 rounded bg-bg-subtle text-danger shrink-0"
     >
       Failed
     </span>

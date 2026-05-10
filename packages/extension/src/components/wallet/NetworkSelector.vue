@@ -131,11 +131,10 @@ function flatIndex(groupIdx: number, itemIdx: number): number {
       :aria-expanded="isOpen"
       class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-colors"
       :class="{
-        'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300':
+        'bg-bg-subtle text-success':
           activeConfig?.chainType === 'xrpl' && activeConfig?.type === 'mainnet',
-        'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300':
-          activeConfig?.chainType === 'evm',
-        'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300':
+        'bg-bg-subtle text-warning': activeConfig?.chainType === 'evm',
+        'bg-bg-subtle text-accent':
           activeConfig?.chainType === 'xrpl' && activeConfig?.type !== 'mainnet',
       }"
       @click="isOpen = !isOpen"
@@ -165,16 +164,16 @@ function flatIndex(groupIdx: number, itemIdx: number): number {
       role="listbox"
       aria-label="Networks"
       tabindex="-1"
-      class="absolute top-full left-0 mt-1 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-80 overflow-y-auto outline-none"
+      class="absolute top-full left-0 mt-1 w-56 bg-bg-subtle rounded-lg shadow-lg border border-border z-50 max-h-80 overflow-y-auto outline-none"
       @keydown="handleKeydown"
     >
       <div
         v-for="(group, gIdx) in networkGroups"
         :key="group.chainType"
-        :class="{ 'border-t border-gray-200 dark:border-gray-700': gIdx > 0 }"
+        :class="{ 'border-t border-border': gIdx > 0 }"
         class="p-1"
       >
-        <p class="px-3 py-1.5 text-[11px] font-medium text-gray-400 uppercase tracking-wide">
+        <p class="px-3 py-1.5 text-[11px] font-medium text-text-muted uppercase tracking-wide">
           {{ group.label }}
         </p>
         <button
@@ -184,9 +183,9 @@ function flatIndex(groupIdx: number, itemIdx: number): number {
           :aria-selected="config.id === activeNetwork"
           class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left text-sm transition-colors"
           :class="{
-            'bg-primary-50 dark:bg-primary-900/20': config.id === activeNetwork,
-            'hover:bg-gray-50 dark:hover:bg-gray-700': config.id !== activeNetwork,
-            'ring-2 ring-primary-500': flatIndex(gIdx, nIdx) === focusedIndex,
+            'bg-bg-hover': config.id === activeNetwork,
+            'hover:bg-bg-hover': config.id !== activeNetwork,
+            'ring-2 ring-link': flatIndex(gIdx, nIdx) === focusedIndex,
           }"
           @click="selectNetwork(config.id)"
         >
@@ -200,7 +199,7 @@ function flatIndex(groupIdx: number, itemIdx: number): number {
           </span>
           <svg
             v-if="config.id === activeNetwork"
-            class="w-4 h-4 text-primary-500 shrink-0"
+            class="w-4 h-4 text-accent shrink-0"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -214,9 +213,9 @@ function flatIndex(groupIdx: number, itemIdx: number): number {
       </div>
 
       <!-- Manage Networks link -->
-      <div class="border-t border-gray-200 dark:border-gray-700 p-1">
+      <div class="border-t border-border p-1">
         <button
-          class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left text-xs text-primary-600 dark:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+          class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left text-xs text-accent hover:bg-bg-hover"
           @click="handleManage"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

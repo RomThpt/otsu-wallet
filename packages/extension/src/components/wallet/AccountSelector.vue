@@ -105,14 +105,14 @@ function chainIcon(account: Account): string | null {
       aria-label="Select account"
       aria-haspopup="listbox"
       :aria-expanded="isOpen"
-      class="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left"
+      class="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-bg-hover transition-colors text-left"
       @click="isOpen = !isOpen"
     >
       <template v-if="active">
         <AccountTypeIcon :type="active.type" />
         <div class="min-w-0">
           <p class="text-xs font-medium truncate max-w-[140px]">{{ active.label }}</p>
-          <p class="text-[11px] text-gray-500 font-mono">{{ truncate(active.address) }}</p>
+          <p class="text-[11px] text-text-muted font-mono">{{ truncate(active.address) }}</p>
         </div>
         <span
           v-if="active.chainType === 'evm'"
@@ -122,10 +122,10 @@ function chainIcon(account: Account): string | null {
         </span>
       </template>
       <template v-else>
-        <span class="text-xs text-gray-500">No account</span>
+        <span class="text-xs text-text-muted">No account</span>
       </template>
       <svg
-        class="w-3 h-3 text-gray-400 shrink-0"
+        class="w-3 h-3 text-text-muted shrink-0"
         :class="{ 'rotate-180': isOpen }"
         fill="none"
         stroke="currentColor"
@@ -141,7 +141,7 @@ function chainIcon(account: Account): string | null {
       role="listbox"
       aria-label="Accounts"
       tabindex="-1"
-      class="absolute top-full right-0 mt-1 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-80 overflow-y-auto outline-none"
+      class="absolute top-full right-0 mt-1 w-72 bg-bg-subtle rounded-lg shadow-lg border border-border z-50 max-h-80 overflow-y-auto outline-none"
       @keydown="handleKeydown"
     >
       <div class="p-1">
@@ -152,9 +152,9 @@ function chainIcon(account: Account): string | null {
           :aria-selected="account.address === activeAccount"
           class="w-full flex items-center gap-2 px-3 py-2.5 rounded-md text-left transition-colors"
           :class="{
-            'bg-primary-50 dark:bg-primary-900/20': account.address === activeAccount,
-            'hover:bg-gray-50 dark:hover:bg-gray-700': account.address !== activeAccount,
-            'ring-2 ring-primary-500': index === focusedIndex,
+            'bg-bg-hover': account.address === activeAccount,
+            'hover:bg-bg-hover': account.address !== activeAccount,
+            'ring-2 ring-link': index === focusedIndex,
           }"
           @click="selectAccount(account.address)"
         >
@@ -170,11 +170,11 @@ function chainIcon(account: Account): string | null {
               </span>
             </div>
             <div class="flex items-center gap-1">
-              <span class="text-[10px] text-gray-500 font-mono">{{
+              <span class="text-[10px] text-text-muted font-mono">{{
                 truncate(account.address)
               }}</span>
               <button
-                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
+                class="text-text-muted hover:text-text shrink-0"
                 @click.stop="copyAddress(account.address)"
               >
                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,7 +190,7 @@ function chainIcon(account: Account): string | null {
           </div>
           <svg
             v-if="account.address === activeAccount"
-            class="w-4 h-4 text-primary-500 shrink-0"
+            class="w-4 h-4 text-accent shrink-0"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -203,9 +203,9 @@ function chainIcon(account: Account): string | null {
         </button>
       </div>
 
-      <div class="border-t border-gray-200 dark:border-gray-700 p-1">
+      <div class="border-t border-border p-1">
         <button
-          class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left text-xs text-primary-600 dark:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+          class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left text-xs text-accent hover:bg-bg-hover"
           @click="handleAddAccount"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,7 +220,7 @@ function chainIcon(account: Account): string | null {
         </button>
         <button
           v-if="filteredAccounts.length >= 50"
-          class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+          class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left text-xs text-text-muted hover:bg-bg-hover"
           :disabled="loading"
           @click="handleLoadMore"
         >

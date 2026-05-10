@@ -19,34 +19,34 @@ function toggleExpand(index: number) {
 function iconClasses(level: string): string {
   switch (level) {
     case 'safe':
-      return 'text-green-500 dark:text-green-400'
+      return 'text-success'
     case 'low':
-      return 'text-blue-500 dark:text-blue-400'
+      return 'text-link'
     case 'medium':
-      return 'text-yellow-500 dark:text-yellow-400'
+      return 'text-warning'
     case 'high':
-      return 'text-orange-500 dark:text-orange-400'
+      return 'text-warning'
     case 'critical':
-      return 'text-red-500 dark:text-red-400'
+      return 'text-danger'
     default:
-      return 'text-gray-500 dark:text-gray-400'
+      return 'text-text-muted'
   }
 }
 
 function borderClasses(level: string): string {
   switch (level) {
     case 'safe':
-      return 'border-green-200 dark:border-green-800'
+      return 'border-success/30'
     case 'low':
-      return 'border-blue-200 dark:border-blue-800'
+      return 'border-link/30'
     case 'medium':
-      return 'border-yellow-200 dark:border-yellow-800'
+      return 'border-warning/30'
     case 'high':
-      return 'border-orange-200 dark:border-orange-800'
+      return 'border-warning/30'
     case 'critical':
-      return 'border-red-200 dark:border-red-800'
+      return 'border-danger/30'
     default:
-      return 'border-gray-200 dark:border-gray-700'
+      return 'border-border'
   }
 }
 </script>
@@ -91,7 +91,7 @@ function borderClasses(level: string): string {
 
         <!-- Message -->
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+          <p class="text-sm font-medium text-text">
             {{ warning.message }}
           </p>
         </div>
@@ -99,7 +99,7 @@ function borderClasses(level: string): string {
         <!-- Expand Arrow -->
         <svg
           v-if="warning.details"
-          class="w-4 h-4 shrink-0 text-gray-400 transition-transform mt-0.5"
+          class="w-4 h-4 shrink-0 text-text-muted transition-transform mt-0.5"
           :class="{ 'rotate-180': expandedItems.has(index) }"
           fill="none"
           stroke="currentColor"
@@ -117,9 +117,9 @@ function borderClasses(level: string): string {
       <!-- Expandable Details -->
       <div
         v-if="warning.details && expandedItems.has(index)"
-        class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800"
+        class="mt-2 pt-2 border-t border-border"
       >
-        <p class="text-xs text-gray-600 dark:text-gray-400">{{ warning.details }}</p>
+        <p class="text-xs text-text-muted">{{ warning.details }}</p>
       </div>
     </div>
   </div>

@@ -16,13 +16,11 @@ function hasSendAmount(flags: number): boolean {
 </script>
 
 <template>
-  <div
-    class="rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:border-primary-400 transition-colors"
-  >
+  <div class="rounded-lg border border-border p-3 hover:border-accent transition-colors">
     <div class="flex items-center justify-between">
       <h4 class="text-sm font-medium font-mono">{{ fn.name }}</h4>
       <button
-        class="px-3 py-1 text-xs font-medium rounded-md bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 transition-colors"
+        class="px-3 py-1 text-xs font-medium rounded-md bg-accent text-accent-fg hover:opacity-90 transition-colors"
         @click="emit('call', fn)"
       >
         Call
@@ -31,23 +29,21 @@ function hasSendAmount(flags: number): boolean {
 
     <div v-if="fn.parameters.length > 0" class="mt-2 space-y-1.5">
       <div v-for="(param, idx) in fn.parameters" :key="idx" class="flex items-center gap-2 text-xs">
-        <span
-          class="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-mono"
-        >
+        <span class="px-1.5 py-0.5 rounded bg-bg-subtle text-link font-mono">
           {{ param.sType }}
         </span>
-        <span v-if="param.label" class="text-gray-600 dark:text-gray-400">
+        <span v-if="param.label" class="text-text-muted">
           {{ param.label }}
         </span>
         <span
           v-if="hasSendAmount(param.flags)"
-          class="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
+          class="px-1.5 py-0.5 rounded bg-bg-subtle text-warning"
         >
           sends tokens
         </span>
       </div>
     </div>
 
-    <p v-else class="mt-1.5 text-xs text-gray-500">No parameters</p>
+    <p v-else class="mt-1.5 text-xs text-text-muted">No parameters</p>
   </div>
 </template>
