@@ -208,13 +208,13 @@ async function handleUnlinkWallet() {
             :aria-checked="blindSigning"
             :class="[
               'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-              blindSigning ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600',
+              blindSigning ? 'bg-accent' : 'bg-bg-hover',
             ]"
             @click="toggleBlindSigning"
           >
             <span
               :class="[
-                'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform',
+                'pointer-events-none inline-block h-4 w-4 rounded-full bg-bg shadow transform transition-transform',
                 blindSigning ? 'translate-x-4' : 'translate-x-0',
               ]"
             />
