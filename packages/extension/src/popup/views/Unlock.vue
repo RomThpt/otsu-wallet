@@ -102,7 +102,7 @@ onUnmounted(() => {
 <template>
   <div class="flex-1 flex flex-col items-center justify-center p-6">
     <h1 class="text-2xl font-bold mb-2">Otsu</h1>
-    <p class="text-sm text-gray-500 dark:text-gray-400 mb-8">Unlock your wallet</p>
+    <p class="text-sm text-text-muted mb-8">Unlock your wallet</p>
 
     <template v-if="!showResetConfirm">
       <div class="w-full space-y-4">
@@ -116,9 +116,9 @@ onUnmounted(() => {
 
         <!-- Divider -->
         <div v-if="passkeySupported" class="flex items-center gap-3">
-          <div class="flex-1 border-t border-gray-200 dark:border-gray-700" />
-          <span class="text-xs text-gray-400">or</span>
-          <div class="flex-1 border-t border-gray-200 dark:border-gray-700" />
+          <div class="flex-1 border-t border-border" />
+          <span class="text-xs text-text-muted">or</span>
+          <div class="flex-1 border-t border-border" />
         </div>
 
         <!-- Passkey unlock -->
@@ -151,7 +151,7 @@ onUnmounted(() => {
       </div>
 
       <button
-        class="mt-6 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+        class="mt-6 text-xs text-text-muted hover:text-danger transition-colors"
         @click="showResetConfirm = true"
       >
         Forgot password? Reset wallet
@@ -160,20 +160,18 @@ onUnmounted(() => {
 
     <template v-else>
       <div class="w-full space-y-4">
-        <div
-          class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
-        >
-          <p class="text-sm font-medium text-red-700 dark:text-red-400 mb-2">
+        <div class="p-3 bg-bg-subtle border border-danger/30 rounded-lg">
+          <p class="text-sm font-medium text-danger mb-2">
             This will permanently delete all wallet data.
           </p>
-          <p class="text-xs text-red-600 dark:text-red-400/80">
+          <p class="text-xs text-danger">
             You will need your recovery phrase to restore your accounts. Without it, your funds will
             be lost forever.
           </p>
         </div>
 
         <div>
-          <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+          <label class="block text-xs text-text-muted mb-1">
             Type <span class="font-mono font-bold">{{ RESET_CONFIRM_PHRASE }}</span> to confirm
           </label>
           <Input v-model="resetConfirmText" type="text" placeholder="Type RESET to confirm" />

@@ -28,7 +28,7 @@ const items = [
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+    <div class="px-4 py-3 border-b border-border">
       <h2 class="text-sm font-bold">Explore</h2>
     </div>
 
@@ -37,11 +37,11 @@ const items = [
         <button
           v-for="item in items"
           :key="item.path"
-          class="flex flex-col items-start p-3.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-colors text-left"
+          class="flex flex-col items-start p-3.5 rounded-lg border border-border hover:border-accent hover:bg-bg-subtle transition-colors text-left"
           @click="router.push(item.path)"
         >
           <p class="text-sm font-medium">{{ item.label }}</p>
-          <p class="text-xs text-gray-500 mt-1 leading-tight">{{ item.description }}</p>
+          <p class="text-xs text-text-muted mt-1 leading-tight">{{ item.description }}</p>
         </button>
       </div>
     </div>

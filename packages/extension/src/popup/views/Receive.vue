@@ -58,14 +58,14 @@ onMounted(async () => {
         </div>
         <div
           v-else
-          class="w-40 h-40 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm text-gray-500"
+          class="w-40 h-40 rounded-lg bg-bg-hover flex items-center justify-center text-sm text-text-muted"
         >
           Loading QR...
         </div>
 
         <div class="w-full">
           <div class="flex items-center gap-2 mb-1">
-            <p class="text-xs text-gray-500 dark:text-gray-400">Your address</p>
+            <p class="text-xs text-text-muted">Your address</p>
             <span
               v-if="isEvm"
               class="px-1 py-0.5 rounded text-[9px] font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400"
@@ -73,7 +73,7 @@ onMounted(async () => {
               EVM
             </span>
           </div>
-          <p class="text-xs font-mono break-all bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+          <p class="text-xs font-mono break-all bg-bg-hover rounded-lg p-3">
             {{ address }}
           </p>
         </div>
@@ -84,10 +84,7 @@ onMounted(async () => {
       </div>
     </Card>
 
-    <div
-      v-if="isTestnet"
-      class="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-3 text-xs text-yellow-700 dark:text-yellow-300"
-    >
+    <div v-if="isTestnet" class="rounded-lg bg-bg-subtle p-3 text-xs text-warning">
       You are on {{ wallet.network }}. Funds sent here have no real value.
     </div>
   </div>

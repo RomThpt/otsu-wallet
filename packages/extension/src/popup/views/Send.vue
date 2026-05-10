@@ -253,10 +253,10 @@ async function executeSend() {
 
       <!-- Currency selector -->
       <div v-if="currencyOptions.length > 1">
-        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Currency</label>
+        <label class="text-sm font-medium text-text">Currency</label>
         <select
           v-model="selectedCurrency"
-          class="mt-1.5 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          class="mt-1.5 block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg-subtle text-text focus:outline-none focus:ring-2 focus:ring-link"
         >
           <option v-for="opt in currencyOptions" :key="opt.value" :value="opt.value">
             {{ opt.label }}
@@ -281,12 +281,8 @@ async function executeSend() {
 
       <div>
         <div class="flex items-center justify-between mb-1">
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Amount {{ isToken ? '' : '(XRP)' }}
-          </label>
-          <button class="text-xs text-primary-600 dark:text-primary-400" @click="setMax">
-            Max
-          </button>
+          <label class="text-sm font-medium text-text"> Amount {{ isToken ? '' : '(XRP)' }} </label>
+          <button class="text-xs text-accent" @click="setMax">Max</button>
         </div>
         <input
           v-model="amount"
@@ -294,7 +290,7 @@ async function executeSend() {
           :step="isEvm ? '0.000000000000000001' : '0.000001'"
           min="0"
           :placeholder="isEvm ? '0.000000000000000000' : '0.000000'"
-          class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          class="block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg-subtle text-text focus:outline-none focus:ring-2 focus:ring-link"
         />
       </div>
 
@@ -327,31 +323,31 @@ async function executeSend() {
       <Card>
         <div class="space-y-4 text-sm">
           <div class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">To</span>
+            <span class="text-text-muted">To</span>
             <span class="font-mono text-xs"
               >{{ destination.slice(0, 10) }}...{{ destination.slice(-6) }}</span
             >
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">Amount</span>
+            <span class="text-text-muted">Amount</span>
             <span class="font-medium">
               {{ amount }} {{ isToken ? selectedCurrency.split(':')[0] : 'XRP' }}
             </span>
           </div>
           <div v-if="!isEvm && destinationTag" class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">Tag</span>
+            <span class="text-text-muted">Tag</span>
             <span>{{ destinationTag }}</span>
           </div>
           <div v-if="!isEvm && memo" class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">Memo</span>
+            <span class="text-text-muted">Memo</span>
             <span class="text-xs text-right break-all ml-4">{{ memo }}</span>
           </div>
           <div v-if="isEvm && estimatedGas" class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">Est. Gas</span>
+            <span class="text-text-muted">Est. Gas</span>
             <span class="text-xs">{{ estimatedGas }}</span>
           </div>
           <div v-if="isEvm" class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">Network</span>
+            <span class="text-text-muted">Network</span>
             <span class="text-xs">EVM Sidechain</span>
           </div>
         </div>
@@ -369,14 +365,9 @@ async function executeSend() {
     <template v-else>
       <div class="text-center py-8">
         <div
-          class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-4"
+          class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-bg-subtle mb-4"
         >
-          <svg
-            class="h-6 w-6 text-green-600 dark:text-green-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg class="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -386,7 +377,7 @@ async function executeSend() {
           </svg>
         </div>
         <h2 class="text-lg font-bold">Transaction Sent</h2>
-        <p class="mt-2 text-xs text-gray-500 font-mono break-all">{{ txHash }}</p>
+        <p class="mt-2 text-xs text-text-muted font-mono break-all">{{ txHash }}</p>
       </div>
 
       <Button block @click="router.push('/')">Back to Dashboard</Button>
