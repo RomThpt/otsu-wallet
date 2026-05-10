@@ -5,7 +5,6 @@ import { useWalletStore } from '../../stores/wallet'
 import ReserveBreakdown from '../../components/wallet/ReserveBreakdown.vue'
 import Skeleton from '../../components/common/Skeleton.vue'
 import Button from '../../components/common/Button.vue'
-import Card from '../../components/common/Card.vue'
 
 const router = useRouter()
 const wallet = useWalletStore()
@@ -51,58 +50,49 @@ async function handleFaucet() {
 </script>
 
 <template>
-  <div class="p-5 space-y-5">
-    <Card>
+  <div class="px-5 py-6 space-y-6">
+    <section>
+      <p class="text-xs uppercase tracking-wider text-text-muted">Total Balance</p>
+
       <template v-if="loading">
-        <div class="space-y-3">
-          <Skeleton variant="rect" height="24px" width="60%" />
-          <Skeleton variant="text" />
-          <Skeleton variant="text" width="80%" />
-          <Skeleton variant="text" width="70%" />
+        <div class="mt-2 space-y-2">
+          <Skeleton variant="rect" height="32px" width="60%" />
+          <Skeleton variant="text" width="40%" />
         </div>
       </template>
 
-      <!-- EVM balance display -->
       <template v-else-if="wallet.isEvmNetwork">
-        <div class="space-y-2">
-          <p class="text-sm text-gray-500 dark:text-gray-400">Balance</p>
-          <p class="text-xl font-bold">
-            {{ wallet.evmBalance?.formatted ?? '0' }}
-            <span class="text-base font-normal text-gray-500">XRP</span>
-          </p>
-        </div>
+        <p class="mt-1 text-3xl font-semibold tracking-tight">
+          {{ wallet.evmBalance?.formatted ?? '0' }}
+          <span class="text-base font-normal text-text-muted">XRP</span>
+        </p>
       </template>
 
-      <!-- XRPL balance display -->
       <ReserveBreakdown v-else :balance="wallet.balance" :xrp-price="wallet.xrpPrice" />
-    </Card>
+    </section>
 
-    <div v-if="!isActivated" class="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-4 text-sm">
-      <p class="font-medium text-yellow-800 dark:text-yellow-200">Account Not Activated</p>
-      <p class="mt-1 text-yellow-700 dark:text-yellow-300 text-xs">
-        Send at least 1 XRP to activate this account.
-      </p>
-      <Button
-        v-if="hasFaucet"
-        variant="secondary"
-        size="sm"
-        class="mt-2"
-        :loading="wallet.loading"
-        @click="handleFaucet"
-      >
-        Request Test XRP
-      </Button>
-    </div>
-
-    <div v-else-if="hasFaucet">
-      <Button variant="secondary" size="sm" block :loading="wallet.loading" @click="handleFaucet">
-        Request Test XRP
-      </Button>
-    </div>
-
-    <div class="flex gap-3">
+    <div class="grid grid-cols-2 gap-3">
       <Button variant="primary" block @click="router.push('/send')">Send</Button>
       <Button variant="secondary" block @click="router.push('/receive')">Receive</Button>
     </div>
+
+    <p v-if="!isActivated" class="flex items-start gap-2 text-sm text-warning">
+      <span aria-hidden="true">●</span>
+      <span>
+        <span class="font-medium">Account not activated.</span>
+        <span class="text-text-muted"> Send at least 1 XRP to activate this account.</span>
+      </span>
+    </p>
+
+    <Button
+      v-if="hasFaucet"
+      variant="secondary"
+      size="sm"
+      block
+      :loading="wallet.loading"
+      @click="handleFaucet"
+    >
+      Request Test XRP
+    </Button>
   </div>
 </template>
