@@ -77,11 +77,8 @@ async function handleBurn() {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-      <button
-        class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-        @click="router.push('/explore/nfts')"
-      >
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
+      <button class="p-1 rounded hover:bg-bg-hover" @click="router.push('/explore/nfts')">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -95,18 +92,16 @@ async function handleBurn() {
     </div>
 
     <div v-if="loading" class="flex-1 flex items-center justify-center">
-      <div
-        class="animate-spin h-6 w-6 border-2 border-primary-500 border-t-transparent rounded-full"
-      />
+      <div class="animate-spin h-6 w-6 border-2 border-accent border-t-transparent rounded-full" />
     </div>
 
     <div v-else-if="!nft" class="flex-1 flex items-center justify-center p-4">
-      <p class="text-sm text-gray-500">NFT not found</p>
+      <p class="text-sm text-text-muted">NFT not found</p>
     </div>
 
     <div v-else class="flex-1 overflow-y-auto">
       <!-- Image -->
-      <div class="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+      <div class="aspect-square bg-bg-subtle flex items-center justify-center">
         <img
           v-if="nft.uri"
           :src="nft.uri"
@@ -116,7 +111,7 @@ async function handleBurn() {
         />
         <svg
           v-else
-          class="h-12 w-12 text-gray-400"
+          class="h-12 w-12 text-text-muted"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -133,14 +128,14 @@ async function handleBurn() {
       <!-- Info -->
       <div class="p-4 space-y-3">
         <div class="space-y-1">
-          <p class="text-xs text-gray-500">Token ID</p>
+          <p class="text-xs text-text-muted">Token ID</p>
           <p class="text-xs font-mono break-all">{{ nft.nftId }}</p>
         </div>
 
         <div class="flex gap-4 text-xs">
-          <div><span class="text-gray-500">Taxon:</span> {{ nft.taxon }}</div>
+          <div><span class="text-text-muted">Taxon:</span> {{ nft.taxon }}</div>
           <div v-if="nft.transferFee > 0">
-            <span class="text-gray-500">Fee:</span> {{ (nft.transferFee / 1000).toFixed(1) }}%
+            <span class="text-text-muted">Fee:</span> {{ (nft.transferFee / 1000).toFixed(1) }}%
           </div>
         </div>
 
@@ -151,26 +146,26 @@ async function handleBurn() {
         </div>
 
         <!-- Sell form -->
-        <div v-if="showSellForm" class="space-y-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+        <div v-if="showSellForm" class="space-y-2 p-3 rounded-lg bg-bg-subtle">
           <input
             v-model="sellAmount"
             type="number"
             step="0.000001"
             min="0"
             placeholder="Price in XRP"
-            class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            class="block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg text-text focus:outline-none focus:ring-2 focus:ring-link"
           />
           <Button size="sm" block :loading="nftStore.loading" @click="handleSell">
             Create Sell Offer
           </Button>
         </div>
 
-        <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
         <!-- Sell Offers -->
         <div v-if="nftStore.sellOffers.length > 0">
-          <p class="text-xs font-medium text-gray-500 mb-1">Sell Offers</p>
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+          <p class="text-xs font-medium text-text-muted mb-1">Sell Offers</p>
+          <div class="border border-border rounded-lg overflow-hidden">
             <NFTOfferItem
               v-for="offer in nftStore.sellOffers"
               :key="offer.offerId"
@@ -183,8 +178,8 @@ async function handleBurn() {
 
         <!-- Buy Offers -->
         <div v-if="nftStore.buyOffers.length > 0">
-          <p class="text-xs font-medium text-gray-500 mb-1">Buy Offers</p>
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+          <p class="text-xs font-medium text-text-muted mb-1">Buy Offers</p>
+          <div class="border border-border rounded-lg overflow-hidden">
             <NFTOfferItem
               v-for="offer in nftStore.buyOffers"
               :key="offer.offerId"

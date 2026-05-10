@@ -61,9 +61,9 @@ function truncate(addr: string): string {
 <template>
   <div class="flex flex-col h-full">
     <!-- Header -->
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
       <button
-        class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        class="p-1 rounded hover:bg-bg-hover transition-colors"
         @click="router.push('/explore')"
       >
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,11 +86,11 @@ function truncate(addr: string): string {
           v-model="addressInput"
           type="text"
           placeholder="Enter contract address (r...)"
-          class="flex-1 px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono"
+          class="flex-1 px-3 py-2 text-sm rounded-md border border-border bg-bg-subtle focus:ring-2 focus:ring-link focus:border-transparent font-mono"
           @keyup.enter="handleLookup"
         />
         <button
-          class="px-4 py-2 text-sm font-medium rounded-md bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 transition-colors disabled:opacity-50"
+          class="px-4 py-2 text-sm font-medium rounded-md bg-accent text-accent-fg hover:opacity-90 transition-colors disabled:opacity-50"
           :disabled="contractStore.loading || !addressInput.trim()"
           @click="handleLookup"
         >
@@ -108,9 +108,9 @@ function truncate(addr: string): string {
       <!-- Error -->
       <div
         v-else-if="contractStore.error"
-        class="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4"
+        class="rounded-lg bg-bg-subtle border border-danger/30 p-4"
       >
-        <p class="text-sm font-medium text-red-800 dark:text-red-200">
+        <p class="text-sm font-medium text-danger">
           {{
             contractStore.error.includes('not enabled') ||
             contractStore.error.includes('CONTRACT_NOT_SUPPORTED')
@@ -118,7 +118,7 @@ function truncate(addr: string): string {
               : 'Error'
           }}
         </p>
-        <p class="text-xs text-red-700 dark:text-red-300 mt-1">
+        <p class="text-xs text-danger mt-1">
           {{ contractStore.error }}
         </p>
       </div>
@@ -126,11 +126,9 @@ function truncate(addr: string): string {
       <!-- Contract Info -->
       <template v-else-if="hasContract">
         <!-- Info Card -->
-        <div
-          class="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 space-y-2"
-        >
+        <div class="rounded-lg bg-bg-subtle border border-link/30 p-3 space-y-2">
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-500 dark:text-gray-400">Address</span>
+            <span class="text-text-muted">Address</span>
             <span class="font-mono text-xs">{{
               truncate(contractStore.contractInfo!.address)
             }}</span>
@@ -139,13 +137,13 @@ function truncate(addr: string): string {
             v-if="contractStore.contractInfo!.owner"
             class="flex justify-between items-center text-sm"
           >
-            <span class="text-gray-500 dark:text-gray-400">Owner</span>
+            <span class="text-text-muted">Owner</span>
             <span class="font-mono text-xs">{{
               truncate(contractStore.contractInfo!.owner!)
             }}</span>
           </div>
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-500 dark:text-gray-400">Functions</span>
+            <span class="text-text-muted">Functions</span>
             <span>{{ contractStore.contractInfo!.functions.length }}</span>
           </div>
         </div>
@@ -162,11 +160,7 @@ function truncate(addr: string): string {
 
         <!-- Function List -->
         <div v-else class="space-y-2">
-          <h3
-            class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
-          >
-            Functions
-          </h3>
+          <h3 class="text-xs font-semibold text-text-muted uppercase tracking-wide">Functions</h3>
           <ContractFunctionCard
             v-for="fn in contractStore.contractInfo!.functions"
             :key="fn.name"
@@ -175,7 +169,7 @@ function truncate(addr: string): string {
           />
           <p
             v-if="contractStore.contractInfo!.functions.length === 0"
-            class="text-sm text-gray-500 text-center py-4"
+            class="text-sm text-text-muted text-center py-4"
           >
             No callable functions found in this contract's ABI.
           </p>
@@ -187,13 +181,13 @@ function truncate(addr: string): string {
         v-else-if="contractStore.recentContracts.length > 0 && !contractStore.loading"
         class="space-y-2"
       >
-        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <h3 class="text-xs font-semibold text-text-muted uppercase tracking-wide">
           Recent Contracts
         </h3>
         <button
           v-for="addr in contractStore.recentContracts"
           :key="addr"
-          class="w-full text-left px-3 py-2 text-sm font-mono rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          class="w-full text-left px-3 py-2 text-sm font-mono rounded-md border border-border hover:bg-bg-hover transition-colors"
           @click="handleRecentClick(addr)"
         >
           {{ truncate(addr) }}
@@ -206,7 +200,7 @@ function truncate(addr: string): string {
         class="flex flex-col items-center justify-center py-8 text-center"
       >
         <svg
-          class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3"
+          class="w-12 h-12 text-text-muted mb-3"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -218,8 +212,8 @@ function truncate(addr: string): string {
             d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
           />
         </svg>
-        <p class="text-sm text-gray-500">Enter a contract address to explore its functions</p>
-        <p class="text-xs text-gray-400 mt-1">XLS-101 smart contracts (AlphaNet)</p>
+        <p class="text-sm text-text-muted">Enter a contract address to explore its functions</p>
+        <p class="text-xs text-text-muted mt-1">XLS-101 smart contracts (AlphaNet)</p>
       </div>
     </div>
   </div>

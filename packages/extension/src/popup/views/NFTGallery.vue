@@ -24,14 +24,9 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col h-full">
-    <div
-      class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700"
-    >
+    <div class="flex items-center justify-between px-4 py-3 border-b border-border">
       <div class="flex items-center gap-2">
-        <button
-          class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-          @click="router.push('/explore')"
-        >
+        <button class="p-1 rounded hover:bg-bg-hover" @click="router.push('/explore')">
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -48,11 +43,7 @@ onMounted(async () => {
 
     <div v-if="loading" class="flex-1 p-3">
       <div class="grid grid-cols-2 gap-3">
-        <div
-          v-for="i in 4"
-          :key="i"
-          class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
-        >
+        <div v-for="i in 4" :key="i" class="rounded-lg border border-border overflow-hidden">
           <Skeleton variant="rect" height="140px" />
           <div class="p-2 space-y-1">
             <Skeleton variant="text" width="70%" height="12px" />
@@ -64,8 +55,8 @@ onMounted(async () => {
 
     <div v-else-if="nftStore.nfts.length === 0" class="flex-1 flex items-center justify-center p-4">
       <div class="text-center">
-        <p class="text-sm text-gray-500">No NFTs found</p>
-        <p class="text-xs text-gray-400 mt-1">Mint or receive NFTs to see them here</p>
+        <p class="text-sm text-text-muted">No NFTs found</p>
+        <p class="text-xs text-text-muted mt-1">Mint or receive NFTs to see them here</p>
       </div>
     </div>
 
