@@ -12,10 +12,10 @@ describe('Button', () => {
 
   it('applies variant classes', () => {
     const primary = mount(Button, { props: { variant: 'primary' } })
-    expect(primary.classes()).toContain('bg-primary-600')
+    expect(primary.classes()).toContain('bg-accent')
 
     const secondary = mount(Button, { props: { variant: 'secondary' } })
-    expect(secondary.classes()).toContain('bg-gray-200')
+    expect(secondary.classes()).toContain('border-border')
   })
 
   it('shows loading spinner when loading prop is true', () => {
