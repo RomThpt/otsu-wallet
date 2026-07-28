@@ -192,8 +192,7 @@ export class AuthManager {
     try {
       const result = await chrome.storage.session.get(LOCKOUT_STORAGE_KEY)
       const stored = result[LOCKOUT_STORAGE_KEY] as
-        | { failedAttempts: number; lockedUntil: number }
-        | undefined
+        { failedAttempts: number; lockedUntil: number } | undefined
       if (stored) {
         this.failedAttempts = stored.failedAttempts
         this.lockedUntil = stored.lockedUntil

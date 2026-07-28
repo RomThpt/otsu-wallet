@@ -11,11 +11,7 @@ import XummNumbersInput from '../../components/wallet/XummNumbersInput.vue'
 const router = useRouter()
 
 type ImportFormat =
-  | 'mnemonic'
-  | 'secret_key'
-  | 'family_seed'
-  | 'private_key_hex'
-  | 'xumm_secret_numbers'
+  'mnemonic' | 'secret_key' | 'family_seed' | 'private_key_hex' | 'xumm_secret_numbers'
 
 const step = ref<'format' | 'input' | 'auth' | 'complete' | 'existing-wallet'>('format')
 const format = ref<ImportFormat>('mnemonic')

@@ -1,12 +1,7 @@
 export type BridgeDirection = 'xrpl-to-evm' | 'evm-to-xrpl'
 
 export type BridgeStatus =
-  | 'pending'
-  | 'source_confirmed'
-  | 'bridging'
-  | 'destination_confirmed'
-  | 'completed'
-  | 'failed'
+  'pending' | 'source_confirmed' | 'bridging' | 'destination_confirmed' | 'completed' | 'failed'
 
 export interface BridgeTransaction {
   id: string

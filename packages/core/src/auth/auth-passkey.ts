@@ -67,8 +67,7 @@ export async function performPasskeyRegistration(): Promise<PasskeyRegistrationR
     })
 
     const prfResult = (registration.clientExtensionResults as Record<string, unknown>)?.prf as
-      | { enabled?: boolean; results?: { first: ArrayBuffer } }
-      | undefined
+      { enabled?: boolean; results?: { first: ArrayBuffer } } | undefined
 
     if (!prfResult?.results?.first) {
       throw new OtsuError(
@@ -145,8 +144,7 @@ export async function getPasskeyDecryptionKey(): Promise<string> {
     })
 
     const prfResult = (authentication.clientExtensionResults as Record<string, unknown>)?.prf as
-      | { results?: { first: ArrayBuffer } }
-      | undefined
+      { results?: { first: ArrayBuffer } } | undefined
 
     if (!prfResult?.results?.first) {
       throw new OtsuError(
