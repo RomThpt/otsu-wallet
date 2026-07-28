@@ -37,7 +37,6 @@ const formattedJson = computed(() => JSON.stringify(props.tx, null, 2))
     <!-- Raw TX JSON -->
     <pre
       class="text-xs font-mono bg-gray-900 dark:bg-gray-950 text-gray-100 rounded-lg p-3 overflow-auto max-h-[200px] whitespace-pre-wrap break-all"
-      >{{ formattedJson }}</pre
-    >
+      >{{ formattedJson }}</pre>
   </div>
 </template>
