@@ -130,29 +130,27 @@ async function handleImport() {
     <div class="w-full max-w-md space-y-6 p-8">
       <div class="text-center">
         <h1 class="text-3xl font-bold">Import Wallet</h1>
-        <p class="mt-2 text-gray-600 dark:text-gray-400">Restore an existing XRPL wallet</p>
+        <p class="mt-2 text-text-muted">Restore an existing XRPL wallet</p>
       </div>
 
       <!-- Step 0: Existing Wallet Warning -->
       <template v-if="step === 'existing-wallet'">
-        <Card class="border-red-300 dark:border-red-700">
-          <p class="font-medium text-sm text-red-600 dark:text-red-400">
-            A wallet already exists in this extension
-          </p>
-          <p class="text-xs text-gray-600 dark:text-gray-400 mt-2">
+        <Card class="border-danger/30">
+          <p class="font-medium text-sm text-danger">A wallet already exists in this extension</p>
+          <p class="text-xs text-text-muted mt-2">
             Importing a new wallet will permanently delete the existing one. Make sure you have
             backed up its recovery phrase first &mdash; this action cannot be undone.
           </p>
         </Card>
 
         <div class="space-y-2">
-          <p class="text-xs text-gray-600 dark:text-gray-400">
+          <p class="text-xs text-text-muted">
             Type <span class="font-mono font-bold">RESET</span> to confirm:
           </p>
           <Input v-model="resetConfirmText" placeholder="RESET" />
         </div>
 
-        <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
         <div class="flex gap-3">
           <Button variant="secondary" block @click="router.push('/')">Cancel</Button>
@@ -173,11 +171,11 @@ async function handleImport() {
           <Card
             v-for="f in formats"
             :key="f.id"
-            class="cursor-pointer hover:border-primary-500 transition-colors"
+            class="cursor-pointer hover:border-accent transition-colors"
             @click="selectFormat(f.id)"
           >
             <p class="font-medium text-sm">{{ f.name }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">{{ f.desc }}</p>
+            <p class="text-xs text-text-muted mt-0.5">{{ f.desc }}</p>
           </Card>
         </div>
         <Button variant="secondary" block @click="router.push('/')">Back</Button>
@@ -208,7 +206,7 @@ async function handleImport() {
           />
         </template>
 
-        <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
         <div class="flex gap-3">
           <Button variant="secondary" block @click="step = 'format'">Back</Button>
@@ -233,7 +231,7 @@ async function handleImport() {
           :error="confirmPassword && password !== confirmPassword ? 'Passwords do not match' : ''"
         />
 
-        <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
         <div class="flex gap-3">
           <Button variant="secondary" block @click="step = 'input'">Back</Button>
@@ -247,14 +245,9 @@ async function handleImport() {
       <template v-else>
         <div class="text-center py-8">
           <div
-            class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 mb-4"
+            class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10 mb-4"
           >
-            <svg
-              class="h-8 w-8 text-green-600 dark:text-green-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="h-8 w-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -264,9 +257,7 @@ async function handleImport() {
             </svg>
           </div>
           <h2 class="text-xl font-bold">Wallet Imported</h2>
-          <p class="mt-2 text-gray-600 dark:text-gray-400">
-            You can close this tab and use the extension popup.
-          </p>
+          <p class="mt-2 text-text-muted">You can close this tab and use the extension popup.</p>
         </div>
       </template>
     </div>

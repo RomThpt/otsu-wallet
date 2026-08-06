@@ -40,17 +40,17 @@ function copyToClipboard() {
     <div class="w-full max-w-lg space-y-6 p-8">
       <div>
         <h2 class="text-2xl font-bold">Recovery Phrase</h2>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        <p class="mt-2 text-sm text-text-muted">
           Write down these 24 words in order. You will need them to recover your wallet.
         </p>
       </div>
 
       <Card v-if="error">
         <div class="space-y-3 py-4 text-center">
-          <p class="text-sm font-medium text-red-600 dark:text-red-400">
+          <p class="text-sm font-medium text-danger">
             {{ error }}
           </p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">
+          <p class="text-xs text-text-muted">
             We could not generate a recovery phrase. Try again, or import an existing wallet.
           </p>
         </div>
@@ -61,9 +61,9 @@ function copyToClipboard() {
           <div
             v-for="(word, index) in words"
             :key="index"
-            class="flex items-center gap-2 rounded-lg bg-gray-50 dark:bg-gray-700 px-3 py-2"
+            class="flex items-center gap-2 rounded-lg bg-bg-subtle px-3 py-2"
           >
-            <span class="text-xs text-gray-400 w-5 text-right">{{ index + 1 }}</span>
+            <span class="text-xs text-text-muted w-5 text-right">{{ index + 1 }}</span>
             <span class="text-sm font-mono">{{ word }}</span>
           </div>
         </div>
@@ -83,7 +83,7 @@ function copyToClipboard() {
         </Button>
       </div>
 
-      <p class="text-xs text-red-500 dark:text-red-400 text-center">
+      <p class="text-xs text-danger text-center">
         Never share your recovery phrase. Anyone with these words can access your funds.
       </p>
     </div>

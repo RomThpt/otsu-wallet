@@ -82,7 +82,7 @@ onMounted(async () => {
       type="text"
       :placeholder="placeholder"
       class="block w-full rounded-md border px-3 py-2 text-sm bg-bg-subtle text-text focus:outline-none focus:ring-2 focus:ring-link"
-      :class="[error ? 'border-red-300 dark:border-red-600' : 'border-border']"
+      :class="[error ? 'border-danger' : 'border-border']"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       @focus="handleFocus"
       @blur="handleBlur"
@@ -105,6 +105,6 @@ onMounted(async () => {
       </button>
     </div>
 
-    <p v-if="error" class="mt-1 text-xs text-red-500">{{ error }}</p>
+    <p v-if="error" class="mt-1 text-xs text-danger">{{ error }}</p>
   </div>
 </template>

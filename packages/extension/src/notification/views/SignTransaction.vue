@@ -112,21 +112,19 @@ async function handleConfirm() {
     class="flex flex-col h-full min-h-[400px]"
   >
     <!-- Header -->
-    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+    <div class="p-4 border-b border-border">
       <div class="flex items-center justify-between">
         <DAppInfo :origin="request.origin" :favicon="request.favicon" :title="request.title" />
         <span
           class="text-xs font-mono tabular-nums px-2 py-1 rounded-md"
           :class="
-            remainingSeconds <= 10
-              ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-              : 'text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800'
+            remainingSeconds <= 10 ? 'text-danger bg-danger/10' : 'text-text-muted bg-bg-subtle'
           "
         >
           {{ remainingSeconds }}s
         </span>
       </div>
-      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+      <p class="mt-2 text-sm text-text-muted">
         requests
         {{ request.method === 'signAndSubmit' ? 'signing and submission' : 'transaction signing' }}
       </p>
@@ -135,12 +133,9 @@ async function handleConfirm() {
     <!-- Content -->
     <div class="flex-1 p-4 space-y-4 overflow-auto">
       <!-- Expired -->
-      <div
-        v-if="isExpired"
-        class="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 text-center"
-      >
-        <p class="text-sm font-medium text-red-800 dark:text-red-200">Request Expired</p>
-        <p class="text-xs text-red-700 dark:text-red-300 mt-1">
+      <div v-if="isExpired" class="rounded-lg bg-danger/10 border border-danger p-4 text-center">
+        <p class="text-sm font-medium text-danger">Request Expired</p>
+        <p class="text-xs text-danger mt-1">
           This signing request has timed out. Please close and try again.
         </p>
       </div>
@@ -148,13 +143,11 @@ async function handleConfirm() {
       <!-- ContractCall info -->
       <div
         v-if="contractCallInfo && !isExpired"
-        class="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 space-y-2"
+        class="rounded-lg bg-link/10 border border-link p-3 space-y-2"
       >
-        <p class="text-xs font-semibold text-blue-800 dark:text-blue-200 uppercase tracking-wide">
-          Contract Call
-        </p>
+        <p class="text-xs font-semibold text-link uppercase tracking-wide">Contract Call</p>
         <div class="flex justify-between items-center text-sm">
-          <span class="text-gray-500 dark:text-gray-400">Contract</span>
+          <span class="text-text-muted">Contract</span>
           <span class="font-mono text-xs">
             {{ contractCallInfo.contractAddress.slice(0, 8) }}...{{
               contractCallInfo.contractAddress.slice(-4)
@@ -162,7 +155,7 @@ async function handleConfirm() {
           </span>
         </div>
         <div class="flex justify-between items-center text-sm">
-          <span class="text-gray-500 dark:text-gray-400">Function</span>
+          <span class="text-text-muted">Function</span>
           <span class="font-mono text-xs font-medium">{{ contractCallInfo.functionName }}</span>
         </div>
         <div v-if="contractCallInfo.parameters.length > 0" class="space-y-1">
@@ -171,32 +164,26 @@ async function handleConfirm() {
             :key="idx"
             class="flex items-center gap-2 text-xs"
           >
-            <span
-              class="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-800/50 text-blue-700 dark:text-blue-300 font-mono"
-            >
+            <span class="px-1.5 py-0.5 rounded bg-link/10 text-link font-mono">
               {{ param.sType }}
             </span>
-            <span class="text-gray-600 dark:text-gray-400 font-mono truncate">{{
-              param.value
-            }}</span>
+            <span class="text-text-muted font-mono truncate">{{ param.value }}</span>
           </div>
         </div>
         <div class="flex justify-between items-center text-sm">
-          <span class="text-gray-500 dark:text-gray-400">Gas limit</span>
+          <span class="text-text-muted">Gas limit</span>
           <span>{{ contractCallInfo.gasLimit }} XRP</span>
         </div>
       </div>
 
       <!-- Simulation failed + blind signing disabled -->
       <template v-else-if="simulationFailed && !blindSigningAllowed">
-        <div
-          class="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4"
-        >
-          <p class="text-sm font-medium text-red-800 dark:text-red-200">Simulation Failed</p>
-          <p class="text-xs text-red-700 dark:text-red-300 mt-1">
+        <div class="rounded-lg bg-danger/10 border border-danger p-4">
+          <p class="text-sm font-medium text-danger">Simulation Failed</p>
+          <p class="text-xs text-danger mt-1">
             {{ simulation?.error ?? 'Transaction could not be simulated.' }}
           </p>
-          <p class="text-xs text-red-700 dark:text-red-300 mt-2">
+          <p class="text-xs text-danger mt-2">
             Blind signing is disabled. Enable it in settings to sign unverified transactions.
           </p>
         </div>
@@ -213,12 +200,9 @@ async function handleConfirm() {
       </template>
 
       <!-- No simulation data -->
-      <div
-        v-else
-        class="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4"
-      >
-        <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200">No simulation data</p>
-        <p class="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+      <div v-else class="rounded-lg bg-warning/10 border border-warning p-4">
+        <p class="text-sm font-medium text-warning">No simulation data</p>
+        <p class="text-xs text-warning mt-1">
           Unable to simulate this transaction. Proceed with caution.
         </p>
       </div>
@@ -228,10 +212,10 @@ async function handleConfirm() {
     </div>
 
     <!-- Actions -->
-    <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+    <div class="p-4 border-t border-border flex gap-3">
       <button
         aria-label="Reject transaction"
-        class="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+        class="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg bg-bg-hover text-text hover:bg-bg-subtle transition-colors disabled:opacity-50"
         :disabled="submitting"
         @click="handleReject"
       >
@@ -240,7 +224,7 @@ async function handleConfirm() {
       <button
         v-if="canConfirm"
         aria-label="Confirm transaction"
-        class="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 transition-colors disabled:opacity-50"
+        class="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg bg-accent text-accent-fg hover:opacity-90 transition-colors disabled:opacity-50"
         :disabled="submitting"
         @click="handleConfirm"
       >

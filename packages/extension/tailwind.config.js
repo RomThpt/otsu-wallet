@@ -17,35 +17,6 @@ export default {
         success: 'rgb(var(--success) / <alpha-value>)',
         warning: 'rgb(var(--warning) / <alpha-value>)',
         danger: 'rgb(var(--danger) / <alpha-value>)',
-        primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
-        },
-        eva: {
-          deepest: '#1a0a2e',
-          surface: '#2d1547',
-          elevated: '#3d1f5c',
-          higher: '#4a2670',
-          border: '#5f2a62',
-          text: '#e8d5f5',
-          muted: '#a976c3',
-          accent: '#a0de59',
-          warning: '#f5c024',
-          danger: '#e81900',
-        },
-      },
-      fontFamily: {
-        'eva-body': ['"Barlow Condensed"', 'sans-serif'],
-        'eva-mono': ['"JetBrains Mono"', 'monospace'],
       },
       keyframes: {
         'fade-in': {
@@ -68,6 +39,9 @@ export default {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+      },
+      boxShadow: {
+        card: 'var(--card-shadow)',
       },
       animation: {
         'fade-in': 'fade-in 150ms ease-out',

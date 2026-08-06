@@ -53,9 +53,7 @@ async function handleRevoke(origin: string) {
     </div>
 
     <div v-if="loading" class="flex-1 flex items-center justify-center">
-      <div
-        class="animate-spin h-6 w-6 border-2 border-primary-500 border-t-transparent rounded-full"
-      />
+      <div class="animate-spin h-6 w-6 border-2 border-accent border-t-transparent rounded-full" />
     </div>
 
     <div

@@ -1,42 +1,40 @@
-@import '@fontsource/barlow-condensed/400.css';
-@import '@fontsource/barlow-condensed/600.css';
-@import '@fontsource/barlow-condensed/700.css';
-@import '@fontsource/jetbrains-mono/400.css';
-@import '@fontsource/jetbrains-mono/700.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --bg: 255 255 255;
-    --bg-subtle: 248 250 252;
-    --bg-hover: 241 245 249;
-    --text: 15 23 42;
-    --text-muted: 100 116 139;
-    --border: 226 232 240;
-    --accent: 15 23 42;
-    --accent-fg: 255 255 255;
-    --link: 37 99 235;
-    --success: 22 163 74;
-    --warning: 217 119 6;
-    --danger: 220 38 38;
+    /* Light -- cool navy shadows, warm ivory/peach highlights */
+    --bg: 247 236 214;
+    --bg-subtle: 243 210 165;
+    --bg-hover: 234 201 144;
+    --text: 30 46 111;
+    --text-muted: 93 115 168;
+    --border: 217 192 158;
+    --accent: 240 112 50;
+    --accent-fg: 30 46 111;
+    --link: 69 105 183;
+    --success: 46 139 132;
+    --warning: 210 157 68;
+    --danger: 180 69 43;
+    --card-shadow: 0 1px 2px rgba(30,46,111,0.06), 0 4px 12px rgba(30,46,111,0.08);
   }
 
   .dark {
-    --bg: 10 10 10;
-    --bg-subtle: 17 17 17;
-    --bg-hover: 26 26 26;
-    --text: 248 250 252;
-    --text-muted: 148 163 184;
-    --border: 31 31 31;
-    --accent: 248 250 252;
-    --accent-fg: 10 10 10;
-    --link: 96 165 250;
-    --success: 34 197 94;
-    --warning: 245 158 11;
-    --danger: 239 68 68;
+    /* Dark -- deep ultramarine/navy shadows, warm burnt-orange highlights */
+    --bg: 12 18 38;
+    --bg-subtle: 26 39 82;
+    --bg-hover: 35 66 122;
+    --text: 246 224 188;
+    --text-muted: 157 170 214;
+    --border: 56 74 143;
+    --accent: 240 112 50;
+    --accent-fg: 15 24 48;
+    --link: 141 165 232;
+    --success: 79 176 166;
+    --warning: 232 169 79;
+    --danger: 224 106 75;
+    --card-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 16px rgba(0,0,0,0.35);
   }
 
   body {
@@ -44,6 +42,23 @@
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     background-color: rgb(var(--bg));
     color: rgb(var(--text));
+  }
+
+  /* Film grain / screenprint texture -- subtle noise over the whole UI */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .dark body::after {
+    opacity: 0.07;
+    mix-blend-mode: overlay;
   }
 }
 
@@ -55,79 +70,4 @@
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-/* ============================================================
-   EVANGELION (EVA-01) THEME
-   Pilots the CSS tokens — components inherit automatically.
-   ============================================================ */
-
-.evangelion {
-  --bg: 26 10 46;
-  --bg-subtle: 45 21 71;
-  --bg-hover: 61 31 92;
-  --text: 232 213 245;
-  --text-muted: 169 118 195;
-  --border: 95 42 98;
-  --accent: 160 222 89;
-  --accent-fg: 26 10 46;
-  --link: 160 222 89;
-  --success: 160 222 89;
-  --warning: 245 192 36;
-  --danger: 232 25 0;
-
-  font-family: 'Barlow Condensed', sans-serif;
-}
-
-.evangelion code,
-.evangelion pre,
-.evangelion .font-mono,
-.evangelion [class*='font-mono'] {
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.evangelion .font-bold,
-.evangelion .font-semibold,
-.evangelion h1,
-.evangelion h2,
-.evangelion h3 {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.evangelion *,
-.evangelion *::before,
-.evangelion *::after {
-  border-radius: 0 !important;
-}
-
-.evangelion .animate-spin,
-.evangelion [role='switch'] span {
-  border-radius: 9999px !important;
-}
-
-.evangelion ::selection {
-  background-color: rgba(160, 222, 89, 0.3);
-  color: #e8d5f5;
-}
-
-.evangelion ::-webkit-scrollbar {
-  width: 6px;
-}
-.evangelion ::-webkit-scrollbar-track {
-  background: #1a0a2e;
-}
-.evangelion ::-webkit-scrollbar-thumb {
-  background: #5f2a62;
-}
-.evangelion ::-webkit-scrollbar-thumb:hover {
-  background: #4a2670;
-}
-
-.evangelion .text-accent {
-  text-shadow: 0 0 8px rgba(160, 222, 89, 0.3);
-}
-
-.evangelion ::placeholder {
-  color: #6b4580 !important;
 }

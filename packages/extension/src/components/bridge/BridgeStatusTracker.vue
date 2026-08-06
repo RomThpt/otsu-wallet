@@ -54,7 +54,7 @@ function getStepIndex(status: string): number {
         <div
           class="flex-1 h-1.5 rounded-full"
           :class="{
-            'bg-green-500': i <= getStepIndex(transaction.status),
+            'bg-success': i <= getStepIndex(transaction.status),
             'bg-bg-hover': i > getStepIndex(transaction.status),
           }"
         />

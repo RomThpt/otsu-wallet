@@ -76,9 +76,7 @@ async function handleSubmit() {
     <div class="w-full max-w-md space-y-6 p-8">
       <div>
         <h2 class="text-2xl font-bold">Secure Your Wallet</h2>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          Choose how to protect your wallet.
-        </p>
+        <p class="mt-2 text-sm text-text-muted">Choose how to protect your wallet.</p>
       </div>
 
       <!-- Method selection -->
@@ -87,8 +85,8 @@ async function handleSubmit() {
           class="rounded-lg border-2 p-4 text-left transition-colors"
           :class="
             selectedMethod === 'password'
-              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              ? 'border-accent bg-accent/10'
+              : 'border-border hover:border-accent'
           "
           @click="selectedMethod = 'password'"
         >
@@ -103,15 +101,15 @@ async function handleSubmit() {
             </svg>
             <span class="text-sm font-semibold">Password</span>
           </div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Classic password protection</p>
+          <p class="text-xs text-text-muted">Classic password protection</p>
         </button>
 
         <button
           class="rounded-lg border-2 p-4 text-left transition-colors"
           :class="[
             selectedMethod === 'passkey'
-              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
+              ? 'border-accent bg-accent/10'
+              : 'border-border hover:border-accent',
             !passkeySupported && 'opacity-50 cursor-not-allowed',
           ]"
           :disabled="!passkeySupported"
@@ -128,7 +126,7 @@ async function handleSubmit() {
             </svg>
             <span class="text-sm font-semibold">Passkey</span>
           </div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">
+          <p class="text-xs text-text-muted">
             {{ passkeySupported ? 'Biometric / device unlock' : 'Not supported on this device' }}
           </p>
         </button>
@@ -156,11 +154,11 @@ async function handleSubmit() {
       <!-- Passkey info -->
       <Card v-else>
         <div class="space-y-3">
-          <p class="text-sm text-gray-700 dark:text-gray-300">
+          <p class="text-sm text-text">
             Use your device's biometric authentication (fingerprint, face recognition) or screen
             lock to secure your wallet.
           </p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">
+          <p class="text-xs text-text-muted">
             Your browser will prompt you to register a passkey when you continue.
           </p>
         </div>
@@ -173,7 +171,7 @@ async function handleSubmit() {
         </Button>
       </div>
 
-      <p v-if="store.error" class="text-xs text-red-500 text-center">
+      <p v-if="store.error" class="text-xs text-danger text-center">
         {{ store.error }}
       </p>
     </div>

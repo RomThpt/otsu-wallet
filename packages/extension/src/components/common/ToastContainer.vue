@@ -6,11 +6,11 @@ const { toasts, dismiss } = useToast()
 function colorClasses(type: 'success' | 'error' | 'info'): string {
   switch (type) {
     case 'success':
-      return 'bg-green-600 text-white'
+      return 'bg-success text-white'
     case 'error':
-      return 'bg-red-600 text-white'
+      return 'bg-danger text-white'
     case 'info':
-      return 'bg-blue-600 text-white'
+      return 'bg-link text-white'
   }
 }
 </script>

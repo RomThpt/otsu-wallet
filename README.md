@@ -41,7 +41,6 @@ A secure, open-source browser extension wallet for the XRP Ledger and XRPL EVM S
 
 <p align="center">
   <img src="store/screenshots/import-wallet.png" width="240" alt="Import Wallet" />
-  <img src="store/screenshots/eva01-theme.png" width="240" alt="EVA-01 Theme" />
 </p>
 
 ## Security
@@ -55,11 +54,12 @@ See [Privacy Policy](PRIVACY.md) for details.
 
 ## Themes
 
-Otsu Wallet ships with 4 themes:
+Otsu Wallet ships with 3 themes:
 - Light
 - Dark
 - System (follows OS preference)
-- **EVA-01** -- Evangelion-inspired theme with lime/purple palette and angular design
+
+Themes share a blue-shadow / warm-orange-highlight screenprint palette -- matte and high contrast, with a subtle film-grain overlay. Light mode pairs a deep navy ink with ivory/peach paper; Dark mode pairs warm cream text with ultramarine shadows and burnt-orange highlights.
 
 ## Architecture
 

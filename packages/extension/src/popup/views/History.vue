@@ -59,7 +59,7 @@ async function loadMore() {
       <p class="text-sm text-text-muted">No transactions yet</p>
     </div>
 
-    <div v-else class="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+    <div v-else class="flex-1 overflow-y-auto divide-y divide-border">
       <TransactionItem
         v-for="tx in wallet.transactions"
         :key="tx.hash"
@@ -75,6 +75,6 @@ async function loadMore() {
       </div>
     </div>
 
-    <p v-if="error" class="px-4 py-2 text-xs text-red-500">{{ error }}</p>
+    <p v-if="error" class="px-4 py-2 text-xs text-danger">{{ error }}</p>
   </div>
 </template>

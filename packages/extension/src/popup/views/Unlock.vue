@@ -143,9 +143,9 @@ onUnmounted(() => {
           </span>
         </Button>
 
-        <p v-if="error" class="text-xs text-red-500 text-center">{{ error }}</p>
+        <p v-if="error" class="text-xs text-danger text-center">{{ error }}</p>
 
-        <p v-if="lockoutSeconds > 0" class="text-xs text-red-500 text-center">
+        <p v-if="lockoutSeconds > 0" class="text-xs text-danger text-center">
           Too many attempts. Try again in {{ lockoutSeconds }}s
         </p>
       </div>

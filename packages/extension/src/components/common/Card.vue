@@ -7,7 +7,10 @@ defineProps<{
 
 <template>
   <div
-    :class="[variant === 'plain' ? '' : 'border-b border-border', { 'py-4': padding !== false }]"
+    :class="[
+      variant === 'plain' ? '' : 'rounded-xl bg-bg-subtle border border-border p-4 shadow-card',
+      { 'p-4': padding !== false },
+    ]"
   >
     <slot />
   </div>

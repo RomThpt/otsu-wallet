@@ -36,7 +36,6 @@ const THEME_OPTIONS = [
   { value: 'light' as const, label: 'Light' },
   { value: 'dark' as const, label: 'Dark' },
   { value: 'system' as const, label: 'System' },
-  { value: 'evangelion' as const, label: 'EVA-01' },
 ]
 
 const blindSigning = computed(() => settingsStore.settings?.blindSigningEnabled ?? false)
@@ -72,7 +71,7 @@ async function setAutoLock(minutes: number) {
   }
 }
 
-async function setTheme(value: 'light' | 'dark' | 'system' | 'evangelion') {
+async function setTheme(value: 'light' | 'dark' | 'system') {
   try {
     applyThemeToDOM(value)
     await settingsStore.updateSettings({ theme: value })
@@ -187,9 +186,7 @@ async function handleUnlinkWallet() {
     </div>
 
     <div v-if="loading" class="flex-1 flex items-center justify-center">
-      <div
-        class="animate-spin h-6 w-6 border-2 border-primary-500 border-t-transparent rounded-full"
-      />
+      <div class="animate-spin h-6 w-6 border-2 border-accent border-t-transparent rounded-full" />
     </div>
 
     <div v-else class="flex-1 overflow-y-auto">
@@ -326,7 +323,7 @@ async function handleUnlinkWallet() {
 
         <div v-if="changingAuth" class="mt-2 flex items-center gap-2">
           <div
-            class="animate-spin h-3 w-3 border-2 border-primary-500 border-t-transparent rounded-full"
+            class="animate-spin h-3 w-3 border-2 border-accent border-t-transparent rounded-full"
           />
           <span class="text-xs text-text-muted">Switching...</span>
         </div>
@@ -413,7 +410,7 @@ async function handleUnlinkWallet() {
 
         <div v-if="identity.loading" class="mt-2 flex items-center gap-2">
           <div
-            class="animate-spin h-3 w-3 border-2 border-primary-500 border-t-transparent rounded-full"
+            class="animate-spin h-3 w-3 border-2 border-accent border-t-transparent rounded-full"
           />
           <span class="text-xs text-text-muted">Loading...</span>
         </div>

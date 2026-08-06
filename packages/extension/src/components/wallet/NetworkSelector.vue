@@ -43,7 +43,7 @@ const activeConfig = computed(() => {
 })
 
 const dotColor = computed(() => {
-  if (!activeConfig.value) return 'bg-gray-400'
+  if (!activeConfig.value) return 'bg-text-muted'
   return networkDotColor(activeConfig.value)
 })
 
@@ -53,18 +53,17 @@ const chainBadge = computed(() => {
 })
 
 function networkDotColor(config: NetworkConfig): string {
-  if (config.chainType === 'evm') return 'bg-orange-500'
+  if (config.chainType === 'evm') return 'bg-accent'
   switch (config.type) {
     case 'mainnet':
-      return 'bg-green-500'
+      return 'bg-success'
     case 'testnet':
     case 'devnet':
-      return 'bg-blue-500'
+      return 'bg-link'
     case 'custom':
-      if ('addedAt' in config) return 'bg-gray-400'
-      return 'bg-purple-500'
+      return 'bg-text-muted'
     default:
-      return 'bg-gray-400'
+      return 'bg-text-muted'
   }
 }
 
@@ -143,7 +142,7 @@ function flatIndex(groupIdx: number, itemIdx: number): number {
       {{ activeConfig?.name ?? activeNetwork }}
       <span
         v-if="chainBadge"
-        class="px-1 py-0.5 rounded text-[9px] font-semibold bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200"
+        class="px-1 py-0.5 rounded text-[9px] font-semibold bg-accent/10 text-accent"
       >
         {{ chainBadge }}
       </span>
@@ -193,7 +192,7 @@ function flatIndex(groupIdx: number, itemIdx: number): number {
           <span class="flex-1 truncate">{{ config.name }}</span>
           <span
             v-if="config.chainType === 'evm'"
-            class="px-1 py-0.5 rounded text-[9px] font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400"
+            class="px-1 py-0.5 rounded text-[9px] font-semibold bg-accent/10 text-accent"
           >
             EVM
           </span>

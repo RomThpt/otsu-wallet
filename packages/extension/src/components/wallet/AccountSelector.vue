@@ -116,7 +116,7 @@ function chainIcon(account: Account): string | null {
         </div>
         <span
           v-if="active.chainType === 'evm'"
-          class="px-1 py-0.5 rounded text-[9px] font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400"
+          class="px-1 py-0.5 rounded text-[9px] font-semibold bg-accent/10 text-accent"
         >
           EVM
         </span>
@@ -164,7 +164,7 @@ function chainIcon(account: Account): string | null {
               <p class="text-xs font-medium truncate">{{ account.label }}</p>
               <span
                 v-if="chainIcon(account)"
-                class="px-1 py-0.5 rounded text-[8px] font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 shrink-0"
+                class="px-1 py-0.5 rounded text-[8px] font-semibold bg-accent/10 text-accent shrink-0"
               >
                 {{ chainIcon(account) }}
               </span>

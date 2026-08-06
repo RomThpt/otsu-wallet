@@ -50,7 +50,7 @@ const allSelected = computed(() => {
     <div class="w-full max-w-md space-y-6 p-8">
       <div>
         <h2 class="text-2xl font-bold">Verify Recovery Phrase</h2>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        <p class="mt-2 text-sm text-text-muted">
           Select the correct word for each position to confirm you saved your phrase.
         </p>
       </div>
@@ -65,8 +65,8 @@ const allSelected = computed(() => {
               :class="[
                 'rounded-lg border px-3 py-2 text-sm transition-colors',
                 selectedWords[i] === word
-                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                  : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500',
+                  ? 'border-accent bg-accent/10 text-accent'
+                  : 'border-border hover:border-accent',
               ]"
               @click="selectedWords[i] = word"
             >
@@ -83,7 +83,7 @@ const allSelected = computed(() => {
         </Button>
       </div>
 
-      <p v-if="allSelected && !isCorrect" class="text-xs text-red-500 text-center">
+      <p v-if="allSelected && !isCorrect" class="text-xs text-danger text-center">
         One or more words are incorrect. Please try again.
       </p>
     </div>

@@ -40,20 +40,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div
-    class="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-  >
+  <div class="min-h-screen flex items-center justify-center bg-bg text-text">
     <div class="text-center p-8">
       <template v-if="status === 'loading'">
         <div
-          class="animate-spin h-8 w-8 border-2 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"
+          class="animate-spin h-8 w-8 border-2 border-accent border-t-transparent rounded-full mx-auto mb-4"
         />
         <p class="text-sm">Completing login...</p>
       </template>
 
       <template v-else-if="status === 'success'">
         <svg
-          class="h-12 w-12 text-green-500 mx-auto mb-4"
+          class="h-12 w-12 text-success mx-auto mb-4"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -66,12 +64,12 @@ onMounted(async () => {
           />
         </svg>
         <p class="text-sm font-medium">Connected!</p>
-        <p class="text-xs text-gray-500 mt-1">This tab will close automatically.</p>
+        <p class="text-xs text-text-muted mt-1">This tab will close automatically.</p>
       </template>
 
       <template v-else>
         <svg
-          class="h-12 w-12 text-red-500 mx-auto mb-4"
+          class="h-12 w-12 text-danger mx-auto mb-4"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -83,10 +81,10 @@ onMounted(async () => {
             d="M6 18L18 6M6 6l12 12"
           />
         </svg>
-        <p class="text-sm font-medium text-red-600">Login failed</p>
-        <p class="text-xs text-gray-500 mt-1">{{ errorMessage }}</p>
+        <p class="text-sm font-medium text-danger">Login failed</p>
+        <p class="text-xs text-text-muted mt-1">{{ errorMessage }}</p>
         <button
-          class="mt-4 px-4 py-2 text-xs rounded-md bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+          class="mt-4 px-4 py-2 text-xs rounded-xl bg-accent text-accent-fg hover:opacity-90 transition-colors"
           @click="closeTab"
         >
           Close

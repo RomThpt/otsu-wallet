@@ -19,7 +19,7 @@ defineProps<{
       <div
         v-for="(ask, i) in [...asks].reverse().slice(0, 8)"
         :key="`ask-${i}`"
-        class="flex px-2 py-0.5 bg-red-50/50 dark:bg-red-900/10"
+        class="flex px-2 py-0.5 bg-danger/5"
       >
         <span class="flex-1 text-danger">{{ Number(ask.price).toFixed(6) }}</span>
         <span class="flex-1 text-right">{{ Number(ask.amount).toFixed(4) }}</span>
@@ -40,7 +40,7 @@ defineProps<{
       <div
         v-for="(bid, i) in bids.slice(0, 8)"
         :key="`bid-${i}`"
-        class="flex px-2 py-0.5 bg-green-50/50 dark:bg-green-900/10"
+        class="flex px-2 py-0.5 bg-success/5"
       >
         <span class="flex-1 text-success">{{ Number(bid.price).toFixed(6) }}</span>
         <span class="flex-1 text-right">{{ Number(bid.amount).toFixed(4) }}</span>

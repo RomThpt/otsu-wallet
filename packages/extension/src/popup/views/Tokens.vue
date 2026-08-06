@@ -66,7 +66,7 @@ async function handleRemoveTrustline(currency: string, issuer: string) {
         />
         <div class="px-4 pb-2">
           <button
-            class="text-xs text-red-500 hover:text-red-700"
+            class="text-xs text-danger"
             @click="handleRemoveTrustline(token.currency, token.issuer)"
           >
             Remove Trustline

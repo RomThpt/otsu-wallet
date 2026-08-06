@@ -55,6 +55,11 @@ async function handleSwitchNetwork(networkId: string) {
   await wallet.switchNetwork(networkId)
   await Promise.all([wallet.fetchBalance(), wallet.fetchXrpPrice()])
 }
+
+function isActive(item: (typeof navItems)[number]): boolean {
+  const path = router.currentRoute.value.path
+  return item.exact ? path === item.to : path.startsWith(item.to)
+}
 </script>
 
 <template>
@@ -134,7 +139,7 @@ async function handleSwitchNetwork(networkId: string) {
       <ToastContainer />
       <OfflineBanner v-if="!isOnline" />
 
-      <main class="flex-1 overflow-y-auto">
+      <main class="flex-1 overflow-y-auto p-3">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
@@ -147,17 +152,9 @@ async function handleSwitchNetwork(networkId: string) {
           v-for="item in navItems"
           :key="item.to"
           :to="item.to"
-          class="relative flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] transition-colors"
-          :class="
-            (item.exact ? $route.path === item.to : $route.path.startsWith(item.to))
-              ? 'text-text'
-              : 'text-text-muted hover:text-text'
-          "
+          class="flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] transition-colors rounded-full mx-0.5"
+          :class="isActive(item) ? 'bg-accent/10 text-accent' : 'text-text-muted hover:text-text'"
         >
-          <span
-            v-if="item.exact ? $route.path === item.to : $route.path.startsWith(item.to)"
-            class="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-accent"
-          />
           <component :is="item.icon" />
           <span>{{ item.label }}</span>
         </router-link>

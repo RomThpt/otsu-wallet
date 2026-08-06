@@ -22,7 +22,7 @@ onMounted(async () => {
     <div v-if="ready" class="w-full max-w-md space-y-8 p-8">
       <div class="text-center">
         <h1 class="text-4xl font-bold tracking-tight">Otsu</h1>
-        <p class="mt-3 text-lg text-gray-600 dark:text-gray-400">Your XRPL wallet</p>
+        <p class="mt-3 text-lg text-text-muted">Your XRPL wallet</p>
       </div>
 
       <div class="space-y-4">
@@ -32,7 +32,7 @@ onMounted(async () => {
         </Button>
       </div>
 
-      <p class="text-center text-xs text-gray-500 dark:text-gray-500">v0.1.0</p>
+      <p class="text-center text-xs text-text-muted">v0.1.0</p>
     </div>
   </div>
 </template>

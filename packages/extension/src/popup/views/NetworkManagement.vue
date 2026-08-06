@@ -26,15 +26,15 @@ async function handleRemove(networkId: string) {
 }
 
 function networkDotColor(type: string, isCustom: boolean): string {
-  if (isCustom) return 'bg-gray-400'
+  if (isCustom) return 'bg-text-muted'
   switch (type) {
     case 'mainnet':
-      return 'bg-green-500'
+      return 'bg-success'
     case 'testnet':
     case 'devnet':
-      return 'bg-blue-500'
+      return 'bg-link'
     default:
-      return 'bg-purple-500'
+      return 'bg-text-muted'
   }
 }
 </script>
@@ -114,7 +114,7 @@ function networkDotColor(type: string, isCustom: boolean): string {
             class="flex items-center gap-3 flex-1 min-w-0 text-left"
             @click="handleSwitch(config.id)"
           >
-            <span class="w-2.5 h-2.5 rounded-full bg-gray-400 shrink-0" />
+            <span class="w-2.5 h-2.5 rounded-full bg-text-muted shrink-0" />
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium">{{ config.name }}</p>
               <p class="text-xs text-text-muted truncate">{{ config.url }}</p>

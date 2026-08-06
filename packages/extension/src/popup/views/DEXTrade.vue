@@ -118,7 +118,7 @@ async function placeOrder() {
           <button
             :class="[
               'flex-1 py-1.5 text-xs font-medium transition-colors',
-              tab === 'buy' ? 'bg-green-500 text-white' : 'bg-bg-subtle',
+              tab === 'buy' ? 'bg-success text-white' : 'bg-bg-subtle',
             ]"
             @click="tab = 'buy'"
           >
@@ -127,7 +127,7 @@ async function placeOrder() {
           <button
             :class="[
               'flex-1 py-1.5 text-xs font-medium transition-colors',
-              tab === 'sell' ? 'bg-red-500 text-white' : 'bg-bg-subtle',
+              tab === 'sell' ? 'bg-danger text-white' : 'bg-bg-subtle',
             ]"
             @click="tab = 'sell'"
           >

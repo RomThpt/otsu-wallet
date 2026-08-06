@@ -93,11 +93,11 @@ async function executeMint() {
 
         <div class="space-y-2">
           <label class="flex items-center gap-2">
-            <input v-model="transferable" type="checkbox" class="rounded border-gray-300" />
+            <input v-model="transferable" type="checkbox" class="rounded border-border" />
             <span class="text-sm">Transferable</span>
           </label>
           <label class="flex items-center gap-2">
-            <input v-model="burnable" type="checkbox" class="rounded border-gray-300" />
+            <input v-model="burnable" type="checkbox" class="rounded border-border" />
             <span class="text-sm">Burnable</span>
           </label>
         </div>

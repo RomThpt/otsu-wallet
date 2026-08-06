@@ -311,7 +311,7 @@ async function executeSend() {
         />
       </template>
 
-      <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+      <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
       <Button block :disabled="!canSend" @click="confirmSend"> Review </Button>
     </template>
@@ -353,7 +353,7 @@ async function executeSend() {
         </div>
       </Card>
 
-      <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+      <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
       <div class="flex gap-3">
         <Button variant="secondary" block @click="step = 'form'">Back</Button>

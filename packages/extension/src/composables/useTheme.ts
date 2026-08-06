@@ -1,6 +1,6 @@
 import { ref, watch, onMounted } from 'vue'
 
-type Theme = 'light' | 'dark' | 'system' | 'evangelion'
+type Theme = 'light' | 'dark' | 'system'
 
 const STORAGE_KEY = 'otsu-theme'
 
@@ -12,16 +12,9 @@ function getSystemTheme(): 'light' | 'dark' {
 
 function applyTheme(theme: Theme): void {
   const el = document.documentElement.classList
-
-  el.remove('dark', 'evangelion')
-
-  if (theme === 'evangelion') {
-    el.add('dark', 'evangelion')
-  } else {
-    const resolved = theme === 'system' ? getSystemTheme() : theme
-    if (resolved === 'dark') {
-      el.add('dark')
-    }
+  el.remove('dark')
+  if (theme === 'dark') {
+    el.add('dark')
   }
 }
 
