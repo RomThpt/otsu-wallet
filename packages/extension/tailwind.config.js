@@ -4,6 +4,10 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Ubuntu Mono', 'ui-monospace', 'SFMono-Regular', 'Consolas', 'monospace'],
+        mono: ['JetBrains Mono Variable', 'SFMono-Regular', 'Consolas', 'monospace'],
+      },
       colors: {
         bg: 'rgb(var(--bg) / <alpha-value>)',
         'bg-subtle': 'rgb(var(--bg-subtle) / <alpha-value>)',

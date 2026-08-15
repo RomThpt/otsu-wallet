@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, useId } from 'vue'
 
 interface Contact {
   name: string
@@ -24,6 +24,8 @@ const emit = defineEmits<{
 const contacts = ref<Contact[]>([])
 const showSuggestions = ref(false)
 const inputFocused = ref(false)
+const inputId = useId()
+const errorId = `${inputId}-error`
 
 const filteredContacts = computed(() => {
   if (!props.modelValue) return contacts.value.slice(0, 5)
@@ -73,16 +75,19 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="relative">
-    <label v-if="label" class="block text-sm font-medium text-text mb-1">
+  <div class="form-field relative">
+    <label v-if="label" :for="inputId" class="form-label">
       {{ label }}
     </label>
     <input
+      :id="inputId"
       :value="modelValue"
       type="text"
       :placeholder="placeholder"
-      class="block w-full rounded-md border px-3 py-2 text-sm bg-bg-subtle text-text focus:outline-none focus:ring-2 focus:ring-link"
-      :class="[error ? 'border-danger' : 'border-border']"
+      :aria-invalid="error ? 'true' : undefined"
+      :aria-describedby="error ? errorId : undefined"
+      class="form-control font-mono"
+      :class="{ 'form-control-error': error }"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       @focus="handleFocus"
       @blur="handleBlur"
@@ -91,13 +96,13 @@ onMounted(async () => {
     <!-- Suggestions dropdown -->
     <div
       v-if="shouldShowSuggestions"
-      class="absolute z-10 mt-1 w-full rounded-md border border-border bg-bg-subtle shadow-lg max-h-40 overflow-y-auto"
+      class="absolute z-10 mt-1 w-full max-h-40 overflow-y-auto rounded-[14px] border border-border bg-bg-subtle p-1 shadow-card"
     >
       <button
         v-for="contact in filteredContacts"
         :key="contact.address"
         type="button"
-        class="w-full px-3 py-2 text-left hover:bg-bg-hover transition-colors"
+        class="w-full rounded-[10px] px-3 py-2 text-left transition-colors hover:bg-bg-hover"
         @mousedown.prevent="selectContact(contact)"
       >
         <p class="text-sm font-medium">{{ contact.name }}</p>
@@ -105,6 +110,6 @@ onMounted(async () => {
       </button>
     </div>
 
-    <p v-if="error" class="mt-1 text-xs text-danger">{{ error }}</p>
+    <p v-if="error" :id="errorId" class="form-error">{{ error }}</p>
   </div>
 </template>

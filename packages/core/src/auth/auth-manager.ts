@@ -7,7 +7,12 @@ import {
   vaultExists,
   destroyVault,
 } from './auth-password'
-import { storePasskeyVault, decryptPasskeyVault, hasPasskey } from './auth-passkey'
+import {
+  storePasskeyVault,
+  decryptPasskeyVaultWithMetadata,
+  hasPasskey,
+  destroyPasskeyVault,
+} from './auth-passkey'
 import { SessionManager } from '../storage/session'
 
 const LOCKOUT_STORAGE_KEY = 'otsu-lockout'
@@ -100,8 +105,13 @@ export class AuthManager {
         if (!passkeyKey) {
           throw new OtsuError(ErrorCodes.PASSKEY_NOT_SUPPORTED, 'Passkey decryption key required')
         }
-        data = await decryptPasskeyVault(passkeyKey)
-        this.cachedSecret = { method: 'passkey', credentialId: '', prfKey: passkeyKey }
+        const decrypted = await decryptPasskeyVaultWithMetadata(passkeyKey)
+        data = decrypted.vaultData
+        this.cachedSecret = {
+          method: 'passkey',
+          credentialId: decrypted.credentialId,
+          prfKey: passkeyKey,
+        }
       }
 
       const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, [
@@ -163,6 +173,7 @@ export class AuthManager {
     this.lockedUntil = 0
     await this.persistLockout()
     await destroyVault()
+    await destroyPasskeyVault()
   }
 
   getVaultData(): VaultData | null {

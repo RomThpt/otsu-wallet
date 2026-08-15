@@ -4,6 +4,9 @@ export interface TokenBalance {
   value: string
   limit: string
   noRipple: boolean
+  authorized?: boolean
+  frozen?: boolean
+  disabledReason?: string
 }
 
 export interface TokenMetadata {
@@ -22,4 +25,32 @@ export interface TrustlineParams {
   limit: string
   qualityIn?: number
   qualityOut?: number
+}
+
+export type XrplAsset =
+  | { type: 'native'; currency: 'XRP' }
+  | { type: 'issued'; currency: string; issuer: string }
+  | {
+      type: 'mpt'
+      issuanceId: string
+      assetScale: number
+      issuer?: string
+    }
+
+export type XrplAssetAmount =
+  | string
+  | { currency: string; issuer: string; value: string }
+  | { mpt_issuance_id: string; value: string }
+
+export interface OwnedXrplAsset {
+  key: string
+  asset: XrplAsset
+  symbol: string
+  name: string
+  balance: string
+  transactionBalance: string
+  lockedBalance?: string
+  authorized: boolean
+  tradeable: boolean
+  disabledReason?: string
 }

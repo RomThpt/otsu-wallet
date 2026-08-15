@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useTheme } from '../composables/useTheme'
 import { useWalletStore } from '../stores/wallet'
 import { useIdentityStore } from '../stores/identity'
@@ -7,12 +7,6 @@ import Unlock from './views/Unlock.vue'
 import AccountSelector from '../components/wallet/AccountSelector.vue'
 import NetworkSelector from '../components/wallet/NetworkSelector.vue'
 import OfflineBanner from '../components/common/OfflineBanner.vue'
-import ToastContainer from '../components/common/ToastContainer.vue'
-import IconHome from '../components/common/icons/IconHome.vue'
-import IconArrowUp from '../components/common/icons/IconArrowUp.vue'
-import IconArrowDown from '../components/common/icons/IconArrowDown.vue'
-import IconClock from '../components/common/icons/IconClock.vue'
-import IconCompass from '../components/common/icons/IconCompass.vue'
 import { useOnlineStatus } from '../composables/useOnlineStatus'
 import { useRouter } from 'vue-router'
 
@@ -22,19 +16,25 @@ const wallet = useWalletStore()
 const identity = useIdentityStore()
 const { isOnline } = useOnlineStatus()
 const initialized = ref(false)
-
-const navItems = [
-  { to: '/', label: 'Home', exact: true, icon: IconHome },
-  { to: '/send', label: 'Send', exact: true, icon: IconArrowUp },
-  { to: '/receive', label: 'Receive', exact: true, icon: IconArrowDown },
-  { to: '/history', label: 'History', exact: true, icon: IconClock },
-  { to: '/explore', label: 'Explore', exact: false, icon: IconCompass },
-] as const
+const portfolioRoutes = new Set([
+  '/send',
+  '/receive',
+  '/history',
+  '/explore',
+  '/explore/tokens',
+  '/explore/nfts',
+  '/explore/dex',
+  '/bridge',
+])
+const showPortfolioBack = computed(() => portfolioRoutes.has(router.currentRoute.value.path))
+const isDashboard = computed(() => router.currentRoute.value.path === '/')
 
 onMounted(async () => {
   try {
     await wallet.fetchState()
-    await Promise.all([wallet.fetchNetworks(), identity.fetchState()])
+    await wallet.fetchNetworks()
+    if (!wallet.locked) await wallet.hydrateCachedData()
+    await identity.fetchState()
   } catch (error) {
     console.error('Failed to fetch wallet state:', error)
   } finally {
@@ -44,7 +44,12 @@ onMounted(async () => {
 
 async function handleSelectAccount(address: string) {
   await wallet.setActiveAccount(address)
-  await wallet.fetchBalance()
+  if (wallet.isEvmNetwork) {
+    await Promise.all([wallet.fetchEvmBalance(), wallet.fetchEvmTokens()])
+  } else {
+    await wallet.hydrateCachedData()
+    await Promise.all([wallet.fetchBalance(), wallet.fetchXrpPrice(), wallet.fetchTokens()])
+  }
 }
 
 async function handleDeriveMore() {
@@ -53,17 +58,17 @@ async function handleDeriveMore() {
 
 async function handleSwitchNetwork(networkId: string) {
   await wallet.switchNetwork(networkId)
-  await Promise.all([wallet.fetchBalance(), wallet.fetchXrpPrice()])
-}
-
-function isActive(item: (typeof navItems)[number]): boolean {
-  const path = router.currentRoute.value.path
-  return item.exact ? path === item.to : path.startsWith(item.to)
+  if (wallet.isEvmNetwork) {
+    await Promise.all([wallet.fetchEvmBalance(), wallet.fetchEvmTokens()])
+  } else {
+    await wallet.hydrateCachedData()
+    await Promise.all([wallet.fetchBalance(), wallet.fetchXrpPrice(), wallet.fetchTokens()])
+  }
 }
 </script>
 
 <template>
-  <div class="w-[360px] h-[600px] bg-bg text-text flex flex-col overflow-hidden">
+  <div class="w-popup h-popup bg-bg text-text flex flex-col overflow-hidden relative">
     <template v-if="!initialized">
       <div class="flex-1 flex items-center justify-center">
         <div
@@ -77,17 +82,39 @@ function isActive(item: (typeof navItems)[number]): boolean {
     </template>
 
     <template v-else>
-      <header class="flex items-center justify-between px-4 h-11 border-b border-border">
+      <header
+        class="relative z-10 flex shrink-0 items-center justify-between"
+        :class="isDashboard ? 'h-[72px] px-4' : 'h-16 px-3'"
+      >
+        <button
+          v-if="showPortfolioBack"
+          type="button"
+          aria-label="Back to wallet overview"
+          class="flex h-11 items-center gap-2 rounded-2xl px-2 text-sm font-semibold transition-colors hover:bg-bg-hover active:bg-bg-hover"
+          @click="router.push('/')"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          Wallet
+        </button>
         <AccountSelector
+          v-else
           :accounts="wallet.accounts"
           :active-account="wallet.activeAccount"
           :loading="wallet.loading"
           :chain-type="wallet.currentChainType"
+          :prominent="isDashboard"
           @select="handleSelectAccount"
           @add-account="$router.push('/accounts')"
           @load-more="handleDeriveMore"
         />
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-1.5">
           <NetworkSelector
             :active-network="wallet.network"
             :predefined-networks="wallet.predefinedNetworks"
@@ -98,27 +125,21 @@ function isActive(item: (typeof navItems)[number]): boolean {
           <router-link
             to="/settings"
             aria-label="Settings"
-            class="p-1.5 rounded hover:bg-bg-hover transition-colors"
+            class="flex h-10 w-10 items-center justify-center rounded-full text-text-muted transition-all duration-150 hover:bg-bg-hover hover:text-text active:scale-95"
           >
             <img
               v-if="identity.loggedIn && identity.avatarUrl"
               :src="identity.avatarUrl"
               alt="Profile"
-              class="h-5 w-5 rounded-full object-cover"
+              class="h-7 w-7 rounded-full object-cover"
             />
             <div
               v-else-if="identity.loggedIn && identity.initials"
-              class="h-5 w-5 rounded-full bg-bg-subtle text-text flex items-center justify-center text-[9px] font-medium"
+              class="h-7 w-7 rounded-full bg-bg-subtle text-text flex items-center justify-center text-[10px] font-semibold ring-1 ring-border"
             >
               {{ identity.initials }}
             </div>
-            <svg
-              v-else
-              class="h-5 w-5 text-text-muted"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -136,29 +157,15 @@ function isActive(item: (typeof navItems)[number]): boolean {
         </div>
       </header>
 
-      <ToastContainer />
       <OfflineBanner v-if="!isOnline" />
 
-      <main class="flex-1 overflow-y-auto p-3">
+      <main class="flex-1 min-h-0 overflow-y-auto overscroll-contain">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
           </transition>
         </router-view>
       </main>
-
-      <nav class="grid grid-cols-5 border-t border-border">
-        <router-link
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
-          class="flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] transition-colors rounded-full mx-0.5"
-          :class="isActive(item) ? 'bg-accent/10 text-accent' : 'text-text-muted hover:text-text'"
-        >
-          <component :is="item.icon" />
-          <span>{{ item.label }}</span>
-        </router-link>
-      </nav>
     </template>
   </div>
 </template>

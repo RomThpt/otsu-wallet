@@ -35,7 +35,6 @@ A secure, open-source browser extension wallet for the XRP Ledger and XRPL EVM S
 
 **dApp Integration**
 - Standard XRPL provider API
-- EIP-1193 compatible EVM provider
 - Granular permission scopes (read, sign, submit, network switching)
 - Connected dApp management
 
@@ -59,7 +58,7 @@ Otsu Wallet ships with 3 themes:
 - Dark
 - System (follows OS preference)
 
-Themes share a blue-shadow / warm-orange-highlight screenprint palette -- matte and high contrast, with a subtle film-grain overlay. Light mode pairs a deep navy ink with ivory/peach paper; Dark mode pairs warm cream text with ultramarine shadows and burnt-orange highlights.
+Both themes use a clean, neutral slate palette with a single blue accent. Light mode uses soft gray and white surfaces; dark mode uses deep slate surfaces with high-contrast text.
 
 ## Architecture
 
@@ -77,6 +76,7 @@ Monorepo with [pnpm](https://pnpm.io/) workspaces:
 ## Tech Stack
 
 - **Frontend**: Vue 3, TypeScript, Tailwind CSS 3
+- **Typography**: Self-hosted Ubuntu Mono and JetBrains Mono Variable
 - **Build**: Vite 6, pnpm workspaces
 - **XRPL**: xrpl.js v4
 - **EVM**: ethers.js v6

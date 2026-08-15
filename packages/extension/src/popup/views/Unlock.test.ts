@@ -5,6 +5,13 @@ import { createPinia, setActivePinia } from 'pinia'
 const mockUnlock = vi.fn()
 const mockResetWallet = vi.fn()
 
+vi.mock('webextension-polyfill', () => ({
+  default: {
+    runtime: { getURL: vi.fn((path: string) => path) },
+    tabs: { create: vi.fn() },
+  },
+}))
+
 vi.mock('../../stores/wallet', () => ({
   useWalletStore: () => ({
     locked: true,

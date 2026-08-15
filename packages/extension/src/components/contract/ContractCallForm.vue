@@ -54,8 +54,8 @@ function handleSubmit() {
     </div>
 
     <div v-if="fn.parameters.length > 0" class="space-y-3">
-      <div v-for="(param, idx) in fn.parameters" :key="idx">
-        <label class="block text-xs text-text-muted mb-1">
+      <div v-for="(param, idx) in fn.parameters" :key="idx" class="form-field">
+        <label class="form-label">
           <span class="font-mono px-1 py-0.5 rounded bg-bg-subtle text-link">
             {{ param.sType }}
           </span>
@@ -65,26 +65,22 @@ function handleSubmit() {
         <input
           v-model="paramValues[idx]"
           type="text"
-          class="w-full px-3 py-2 text-sm rounded-md border border-border bg-bg focus:ring-2 focus:ring-link focus:border-transparent"
+          class="form-control"
           :placeholder="`Enter ${param.sType} value`"
         />
       </div>
     </div>
 
-    <div>
-      <label class="block text-xs text-text-muted mb-1"> Gas limit (fee in drops) </label>
+    <div class="form-field">
+      <label class="form-label">Gas limit (fee in drops)</label>
       <div class="flex items-center gap-2">
-        <input
-          v-model="fee"
-          type="text"
-          class="flex-1 px-3 py-2 text-sm rounded-md border border-border bg-bg focus:ring-2 focus:ring-link focus:border-transparent font-mono"
-        />
+        <input v-model="fee" type="text" class="form-control min-w-0 flex-1 font-mono" />
         <span class="text-xs text-text-muted whitespace-nowrap">{{ feeXrp }} XRP</span>
       </div>
     </div>
 
     <button
-      class="w-full px-4 py-2.5 text-sm font-medium rounded-lg bg-accent text-accent-fg hover:opacity-90 transition-colors disabled:opacity-50"
+      class="h-11 w-full rounded-[14px] bg-accent px-4 text-sm font-semibold text-accent-fg transition-colors hover:opacity-90 disabled:opacity-50"
       :disabled="loading"
       @click="handleSubmit"
     >

@@ -15,6 +15,7 @@ const sessionStore: { unlocked: boolean; key: CryptoKey | null } = {
   unlocked: false,
   key: null,
 }
+const cloneVaultData = (data: VaultData): VaultData => structuredClone(data)
 
 vi.mock('@otsu/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@otsu/core')>()
@@ -27,32 +28,34 @@ vi.mock('@otsu/core', async (importOriginal) => {
       return sessionStore.unlocked
     }
 
+    async hasWallet(): Promise<boolean> {
+      return vaultStore.data !== null
+    }
+
     async setup(vaultData: VaultData, _method: AuthMethod, _password?: string): Promise<void> {
-      vaultStore.data = vaultData
-      const key = await crypto.subtle.generateKey(
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['encrypt', 'decrypt'],
-      )
+      vaultStore.data = cloneVaultData(vaultData)
+      const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, [
+        'encrypt',
+        'decrypt',
+      ])
       sessionStore.key = key
       sessionStore.unlocked = true
     }
 
     async updateVaultData(vaultData: VaultData): Promise<void> {
       if (!sessionStore.unlocked) throw new Error('Wallet is locked')
-      vaultStore.data = vaultData
+      vaultStore.data = cloneVaultData(vaultData)
     }
 
     async unlock(_method: AuthMethod, _password?: string): Promise<VaultData> {
       if (!vaultStore.data) throw new Error('No vault found')
-      const key = await crypto.subtle.generateKey(
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['encrypt', 'decrypt'],
-      )
+      const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, [
+        'encrypt',
+        'decrypt',
+      ])
       sessionStore.key = key
       sessionStore.unlocked = true
-      return vaultStore.data
+      return cloneVaultData(vaultStore.data)
     }
 
     lock(): void {
@@ -62,7 +65,7 @@ vi.mock('@otsu/core', async (importOriginal) => {
 
     getVaultData(): VaultData | null {
       if (!sessionStore.unlocked) return null
-      return vaultStore.data
+      return vaultStore.data ? cloneVaultData(vaultStore.data) : null
     }
 
     setAutoLockMinutes(_minutes: number): void {
@@ -103,14 +106,12 @@ vi.mock('@otsu/core', async (importOriginal) => {
       marker: undefined,
     }),
     getBookOffers: vi.fn().mockResolvedValue([]),
-    prepareTransaction: vi.fn().mockImplementation(
-      async (tx: Record<string, unknown>) => ({
-        ...tx,
-        Sequence: 1,
-        Fee: '12',
-        LastLedgerSequence: 1000,
-      }),
-    ),
+    prepareTransaction: vi.fn().mockImplementation(async (tx: Record<string, unknown>) => ({
+      ...tx,
+      Sequence: 1,
+      Fee: '12',
+      LastLedgerSequence: 1000,
+    })),
     submitTransaction: vi.fn().mockResolvedValue({
       result: {
         engine_result: 'tesSUCCESS',
@@ -118,7 +119,16 @@ vi.mock('@otsu/core', async (importOriginal) => {
       },
     }),
     fundWallet: vi.fn().mockResolvedValue({ balance: 1000 }),
-    request: vi.fn().mockResolvedValue({}),
+    request: vi.fn().mockImplementation(async (request: Record<string, unknown>) => {
+      if (request.command !== 'simulate') return {}
+      const tx = request.tx_json as Record<string, unknown>
+      return {
+        engine_result: 'tesSUCCESS',
+        engine_result_message: 'The simulated transaction would have been applied.',
+        tx_json: { ...tx },
+        meta: { AffectedNodes: [], TransactionResult: 'tesSUCCESS' },
+      }
+    }),
   })
 
   const makeMockPriceClient = () => ({
@@ -127,6 +137,7 @@ vi.mock('@otsu/core', async (importOriginal) => {
 
   const makeMockTokenClient = () => ({
     getAccountTokens: vi.fn().mockResolvedValue([]),
+    getMptTokens: vi.fn().mockResolvedValue([]),
     buildSetTrustline: vi.fn().mockReturnValue({
       TransactionType: 'TrustSet',
       Account: 'rTestAddress',
@@ -160,6 +171,15 @@ vi.mock('@otsu/core', async (importOriginal) => {
   const makeMockDexClient = () => ({
     getOrderBook: vi.fn().mockResolvedValue({ bids: [], asks: [] }),
     getAccountOffers: vi.fn().mockResolvedValue([]),
+    getSwapQuote: vi.fn().mockResolvedValue({
+      inputAmount: '1',
+      expectedOutput: '2',
+      minimumOutput: '1.99',
+      priceImpactBps: 0,
+      takerGets: '1000000',
+      takerPays: { currency: 'USD', issuer: 'rIssuer', value: '1.99' },
+      flags: 0x000c0000,
+    }),
   })
 
   return {
@@ -180,10 +200,20 @@ vi.mock('@otsu/core', async (importOriginal) => {
 // ---------------------------------------------------------------------------
 
 import { WalletController } from '../src/background/controllers/wallet'
+import {
+  DexClient,
+  deriveAccount,
+  deriveEvmAccount,
+  derivedToVaultAccount,
+  Keyring,
+  TokenClient,
+} from '@otsu/core'
 
 // A valid 24-word BIP-39 mnemonic for XRPL (deterministic)
 const TEST_MNEMONIC =
   'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art'
+const SECOND_TEST_MNEMONIC =
+  'legal winner thank year wave sausage worth useful legal winner thank yellow'
 const TEST_PASSWORD = 'test-password-123'
 
 function createController(): WalletController {
@@ -205,6 +235,199 @@ describe('WalletController integration', () => {
     resetChromeMock()
     resetVaultStore()
     vi.clearAllMocks()
+  })
+
+  describe('hardware accounts', () => {
+    it('persists a Ledger EVM account without private key material', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const derived = deriveEvmAccount(SECOND_TEST_MNEMONIC, 0)
+
+      const [account] = await controller.addHardwareAccounts([
+        {
+          provider: 'ledger',
+          address: derived.address,
+          publicKey: derived.publicKey,
+          derivationPath: derived.derivationPath,
+          chainType: 'evm',
+          index: 0,
+          model: 'Nano X',
+        },
+      ])
+
+      expect(account.type).toBe('hardware')
+      expect(account.hardware?.provider).toBe('ledger')
+      const stored = vaultStore.data?.accounts.find((item) => item.address === derived.address)
+      expect(stored?.privateKey).toBeUndefined()
+      controller.lock()
+      const restored = await controller.unlock('password', TEST_PASSWORD)
+      expect(restored.accounts.find((item) => item.address === derived.address)?.type).toBe(
+        'hardware',
+      )
+    })
+
+    it('persists a Ledger XRPL account without private key material', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const derived = deriveAccount(SECOND_TEST_MNEMONIC, 0)
+
+      const [account] = await controller.addHardwareAccounts([
+        {
+          provider: 'ledger',
+          address: derived.address,
+          publicKey: derived.publicKey,
+          derivationPath: derived.derivationPath,
+          chainType: 'xrpl',
+          index: 0,
+        },
+      ])
+
+      expect(account.type).toBe('hardware')
+      expect(account.hardware?.provider).toBe('ledger')
+      const stored = vaultStore.data?.accounts.find((item) => item.address === derived.address)
+      expect(stored?.type).toBe('hardware')
+      expect(stored).not.toHaveProperty('privateKey')
+    })
+
+    it('adds a verified Trezor pair and activates the account for the current chain', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller.switchNetwork('evm-testnet')
+      const xrpl = deriveAccount(SECOND_TEST_MNEMONIC, 0)
+      const evm = deriveEvmAccount(SECOND_TEST_MNEMONIC, 0)
+
+      const accounts = await controller.addHardwareAccounts([
+        {
+          provider: 'trezor',
+          address: xrpl.address,
+          publicKey: xrpl.publicKey,
+          derivationPath: xrpl.derivationPath,
+          chainType: 'xrpl',
+          index: 0,
+          deviceId: 'trezor-device',
+        },
+        {
+          provider: 'trezor',
+          address: evm.address,
+          publicKey: evm.publicKey,
+          derivationPath: evm.derivationPath,
+          chainType: 'evm',
+          index: 0,
+          deviceId: 'trezor-device',
+        },
+      ])
+
+      expect(accounts).toHaveLength(2)
+      expect(controller.getState().network).toBe('evm-testnet')
+      expect(controller.getState().activeAccount).toBe(evm.address)
+    })
+
+    it('does not silently replace a Ledger account with a software account on chain switch', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const xrpl = deriveAccount(SECOND_TEST_MNEMONIC, 0)
+      await controller.addHardwareAccounts([
+        {
+          provider: 'ledger',
+          address: xrpl.address,
+          publicKey: xrpl.publicKey,
+          derivationPath: xrpl.derivationPath,
+          chainType: 'xrpl',
+          index: 0,
+        },
+      ])
+
+      await controller.switchNetwork('evm-testnet')
+
+      expect(controller.getState().activeAccount).toBeNull()
+      const softwareEvm = controller
+        .getState()
+        .accounts.find((account) => account.chainType === 'evm' && account.type !== 'hardware')!
+      await controller.setActiveAccount(softwareEvm.address)
+      expect(controller.getState().activeAccount).toBe(softwareEvm.address)
+    })
+
+    it('rejects hardware EVM calldata until the contract action can be reviewed safely', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller.switchNetwork('evm-testnet')
+      const evm = deriveEvmAccount(SECOND_TEST_MNEMONIC, 0)
+      await controller.addHardwareAccounts([
+        {
+          provider: 'ledger',
+          address: evm.address,
+          publicKey: evm.publicKey,
+          derivationPath: evm.derivationPath,
+          chainType: 'evm',
+          index: 0,
+        },
+      ])
+
+      await expect(
+        controller.prepareTransactionReview({
+          intent: {
+            chainType: 'evm',
+            kind: 'transaction',
+            to: '0x1111111111111111111111111111111111111111',
+            data: '0xa9059cbb',
+          },
+        }),
+      ).rejects.toThrow('calldata can be safely reviewed')
+    })
+
+    it('broadcasts only the exact XRPL transaction approved by a hardware wallet', async () => {
+      const { XrplClient } = await import('@otsu/core')
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const derived = deriveAccount(SECOND_TEST_MNEMONIC, 0)
+      await controller.addHardwareAccounts([
+        {
+          provider: 'ledger',
+          address: derived.address,
+          publicKey: derived.publicKey,
+          derivationPath: derived.derivationPath,
+          chainType: 'xrpl',
+          index: 0,
+        },
+      ])
+      const signer = new Keyring()
+      signer.addAccount(derivedToVaultAccount(derived))
+
+      const prepare = () =>
+        controller.prepareTransactionReview({
+          intent: {
+            chainType: 'xrpl',
+            kind: 'payment',
+            destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+            amount: '12000000',
+          },
+        })
+      const review = await prepare()
+      const approved = signer.sign(derived.address, review.deviceTransaction as never)
+
+      await expect(
+        controller.confirmTransactionReview({
+          reviewId: review.reviewId,
+          externalSignedTransaction: approved.tx_blob,
+        }),
+      ).resolves.toBe('MOCK_TX_HASH_000000000000000000000001')
+
+      const xrplClient = vi.mocked(XrplClient).mock.results.at(-1)?.value
+      expect(xrplClient.submitTransaction).toHaveBeenCalledWith(approved.tx_blob)
+
+      const tamperedReview = await prepare()
+      const tampered = signer.sign(derived.address, {
+        ...tamperedReview.deviceTransaction,
+        Amount: '13000000',
+      } as never)
+      await expect(
+        controller.confirmTransactionReview({
+          reviewId: tamperedReview.reviewId,
+          externalSignedTransaction: tampered.tx_blob,
+        }),
+      ).rejects.toThrow('different from the reviewed payload')
+      expect(xrplClient.submitTransaction).toHaveBeenCalledTimes(1)
+    })
   })
 
   // -------------------------------------------------------------------------
@@ -274,6 +497,19 @@ describe('WalletController integration', () => {
       expect(state.activeAccount).toBe(address)
     })
 
+    it('preserves the selected account through lock and unlock', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const derived = await controller.deriveMoreAccounts(1)
+      const selected = derived.find((account) => account.chainType === 'xrpl')!
+      await controller.setActiveAccount(selected.address)
+
+      controller.lock()
+      const state = await controller.unlock('password', TEST_PASSWORD)
+
+      expect(state.activeAccount).toBe(selected.address)
+    })
+
     it('persists state to chrome.storage.local on createWallet', async () => {
       const { chromeMock: cm } = await import('./mocks/chrome')
       const controller = createController()
@@ -333,7 +569,9 @@ describe('WalletController integration', () => {
       const controller = createController()
       await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
 
-      const derived = await controller.deriveMoreAccounts(2)
+      const derived = (await controller.deriveMoreAccounts(2)).filter(
+        (account) => account.chainType === 'xrpl',
+      )
 
       expect(derived[0].derivationPath).toContain('/1')
       expect(derived[1].derivationPath).toContain('/2')
@@ -342,6 +580,79 @@ describe('WalletController integration', () => {
 
   // -------------------------------------------------------------------------
   describe('import account flow', () => {
+    it('adds a second seed as a paired XRPL and EVM wallet without replacing the first', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const originalAddresses = controller.getState().accounts.map((account) => account.address)
+
+      const imported = await controller.importSeed(SECOND_TEST_MNEMONIC, 'Savings')
+
+      expect(controller.getState().accounts).toHaveLength(4)
+      expect(controller.getState().accounts.map((account) => account.address)).toEqual(
+        expect.arrayContaining(originalAddresses),
+      )
+      expect(imported.xrpl.label).toBe('Savings')
+      expect(imported.evm.label).toBe('Savings · EVM')
+      expect(imported.xrpl.seedSourceId).toBe(imported.evm.seedSourceId)
+      expect(imported.xrpl.seedSourceId).not.toBe(
+        controller.getState().accounts.find((account) => account.address === originalAddresses[0])
+          ?.seedSourceId,
+      )
+    })
+
+    it('rejects a duplicate seed atomically', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller.importSeed(SECOND_TEST_MNEMONIC)
+      const beforeState = controller.getState()
+      const beforeVault = structuredClone(vaultStore.data)
+
+      await expect(
+        controller.importSeed(`  ${SECOND_TEST_MNEMONIC.toUpperCase()}  `),
+      ).rejects.toThrow('Seed already exists')
+
+      expect(controller.getState()).toEqual(beforeState)
+      expect(vaultStore.data).toEqual(beforeVault)
+    })
+
+    it('derives the next account from the selected seed source without skipping indexes', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const imported = await controller.importSeed(SECOND_TEST_MNEMONIC)
+
+      const derived = await controller.deriveMoreAccounts(1, imported.xrpl.seedSourceId)
+
+      expect(derived).toHaveLength(2)
+      expect(derived.every((account) => account.index === 1)).toBe(true)
+      expect(derived.every((account) => account.seedSourceId === imported.xrpl.seedSourceId)).toBe(
+        true,
+      )
+    })
+
+    it('restores every seed-backed account after lock and unlock', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller.importSeed(SECOND_TEST_MNEMONIC)
+      const addresses = controller.getState().accounts.map((account) => account.address)
+
+      controller.lock()
+      const restored = await controller.unlock('password', TEST_PASSWORD)
+
+      expect(restored.accounts.map((account) => account.address)).toEqual(addresses)
+      expect(new Set(restored.accounts.map((account) => account.seedSourceId)).size).toBe(2)
+    })
+
+    it('activates the imported seed account for the current chain without switching networks', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller.switchNetwork('evm-testnet')
+
+      const imported = await controller.importSeed(SECOND_TEST_MNEMONIC)
+
+      expect(controller.getState().network).toBe('evm-testnet')
+      expect(controller.getState().activeAccount).toBe(imported.evm.address)
+    })
+
     it('imports an account via secret_key format', async () => {
       const controller = createController()
       await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
@@ -479,19 +790,31 @@ describe('WalletController integration', () => {
       expect(cm.storage.local.set).toHaveBeenCalled()
     })
 
-    it('returns XRP price from the mocked price client', async () => {
+    it('returns a fixed $1 XRP price on XRPL test networks', async () => {
+      const { PriceClient } = await import('@otsu/core')
       const controller = createController()
       await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
 
       const price = await controller.getXrpPrice()
 
-      expect(price).toBe('2.50')
+      const priceClient = vi.mocked(PriceClient).mock.results.at(-1)?.value
+      expect(price).toBe('1')
+      expect(priceClient.getXrpUsdPrice).not.toHaveBeenCalled()
+    })
+
+    it('returns the live XRP price on mainnet', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller.switchNetwork('mainnet')
+
+      await expect(controller.getXrpPrice()).resolves.toBe('2.50')
     })
 
     it('caches the price to chrome.storage.local after fetching', async () => {
       const { chromeMock: cm } = await import('./mocks/chrome')
       const controller = createController()
       await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller.switchNetwork('mainnet')
 
       vi.clearAllMocks()
       await controller.getXrpPrice()
@@ -503,6 +826,7 @@ describe('WalletController integration', () => {
       const { PriceClient } = await import('@otsu/core')
       const controller = createController()
       await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller.switchNetwork('mainnet')
 
       // Prime the cache
       await controller.getXrpPrice()
@@ -514,15 +838,522 @@ describe('WalletController integration', () => {
 
       // New controller shares the same chrome mock storage (same module-level store)
       const controller2 = createController()
-      await controller2.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller2.initialize()
+      await controller2.unlock('password', TEST_PASSWORD)
+      await controller2.switchNetwork('mainnet')
 
       const price = await controller2.getXrpPrice()
       expect(price).toBe('2.50')
     })
 
+    it('keeps a valid cached price when the live order book returns zero', async () => {
+      const { PriceClient } = await import('@otsu/core')
+      vi.mocked(PriceClient).mockImplementation(() => ({
+        getXrpUsdPrice: vi.fn().mockResolvedValue('2.50'),
+      }))
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller.switchNetwork('mainnet')
+      await controller.getXrpPrice()
+
+      vi.mocked(PriceClient).mockImplementation(() => ({
+        getXrpUsdPrice: vi.fn().mockResolvedValue('0'),
+      }))
+      const controller2 = createController()
+      await controller2.initialize()
+      await controller2.unlock('password', TEST_PASSWORD)
+      await controller2.switchNetwork('mainnet')
+
+      await expect(controller2.getXrpPrice()).resolves.toBe('2.50')
+    })
+
     it('throws when no active account on getTokens', async () => {
       const controller = createController()
       await expect(controller.getTokens()).rejects.toThrow('No active account')
+    })
+  })
+
+  describe('owned assets and reviewed asset operations', () => {
+    it('combines spendable XRP, trustlines, and MPT holdings', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const tokenClient = vi.mocked(TokenClient).mock.results.at(-1)!.value
+      vi.mocked(tokenClient.getAccountTokens).mockResolvedValueOnce([
+        {
+          currency: 'USD',
+          issuer: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          value: '4.5',
+          limit: '1000',
+          noRipple: true,
+        },
+      ])
+      vi.mocked(tokenClient.getMptTokens).mockResolvedValueOnce([
+        {
+          key: `mpt:${'A'.repeat(48)}`,
+          asset: { type: 'mpt', issuanceId: 'A'.repeat(48), assetScale: 2 },
+          symbol: 'MPT AAAAAA',
+          name: 'MPT AAAAAA',
+          balance: '1.25',
+          transactionBalance: '125',
+          authorized: true,
+          tradeable: true,
+        },
+      ])
+
+      const assets = await controller.getOwnedAssets()
+
+      expect(assets.map((asset) => [asset.asset.type, asset.balance])).toEqual([
+        ['native', '10'],
+        ['issued', '4.5'],
+        ['mpt', '1.25'],
+      ])
+    })
+
+    it('prepares and simulates trustline authorization through the generic review', async () => {
+      const { XrplClient } = await import('@otsu/core')
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+
+      const review = await controller.prepareTransactionReview({
+        intent: {
+          chainType: 'xrpl',
+          kind: 'trustline',
+          action: 'add',
+          currency: 'USD',
+          issuer: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          limit: '1000',
+        },
+      })
+
+      const xrplClient = vi.mocked(XrplClient).mock.results.at(-1)!.value
+      expect(review).toMatchObject({
+        title: 'Add trustline',
+        transactionType: 'TrustSet',
+        simulation: { success: true },
+      })
+      expect(xrplClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'simulate',
+          tx_json: expect.objectContaining({ TransactionType: 'TrustSet' }),
+        }),
+      )
+      expect(xrplClient.submitTransaction).not.toHaveBeenCalled()
+    })
+
+    it('blocks removing a trustline that still has a balance', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const tokenClient = vi.mocked(TokenClient).mock.results.at(-1)!.value
+      vi.mocked(tokenClient.getAccountTokens).mockResolvedValueOnce([
+        {
+          currency: 'USD',
+          issuer: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          value: '1',
+          limit: '1000',
+          noRipple: true,
+        },
+      ])
+
+      await expect(
+        controller.prepareTransactionReview({
+          intent: {
+            chainType: 'xrpl',
+            kind: 'trustline',
+            action: 'remove',
+            currency: 'USD',
+            issuer: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          },
+        }),
+      ).rejects.toThrow('remaining balance')
+    })
+
+    it('blocks removing an MPT referenced by an open offer', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const issuanceId = 'A'.repeat(48)
+      const tokenClient = vi.mocked(TokenClient).mock.results.at(-1)!.value
+      vi.mocked(tokenClient.getMptTokens).mockResolvedValueOnce([
+        {
+          key: `mpt:${issuanceId}`,
+          asset: { type: 'mpt', issuanceId, assetScale: 0 },
+          symbol: 'MPT',
+          name: 'MPT',
+          balance: '0',
+          transactionBalance: '0',
+          authorized: true,
+          tradeable: true,
+        },
+      ])
+      const dexClient = vi.mocked(DexClient).mock.results.at(-1)!.value
+      vi.mocked(dexClient.getAccountOffers).mockResolvedValueOnce([
+        {
+          seq: 1,
+          takerGets: { mpt_issuance_id: issuanceId, value: '10' },
+          takerPays: '1000000',
+          flags: 0,
+        },
+      ])
+
+      await expect(
+        controller.prepareTransactionReview({
+          intent: {
+            chainType: 'xrpl',
+            kind: 'mpt-authorization',
+            action: 'unauthorize',
+            issuanceId,
+          },
+        }),
+      ).rejects.toThrow('Cancel open offers')
+    })
+
+    it('binds an executable quote to an OfferCreate review and simulates it', async () => {
+      const { XrplClient } = await import('@otsu/core')
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const tokenClient = vi.mocked(TokenClient).mock.results.at(-1)!.value
+      vi.mocked(tokenClient.getAccountTokens).mockResolvedValue([
+        {
+          currency: 'USD',
+          issuer: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          value: '5',
+          limit: '1000',
+          noRipple: true,
+        },
+      ])
+      const dexClient = vi.mocked(DexClient).mock.results.at(-1)!.value
+      vi.mocked(dexClient.getSwapQuote).mockResolvedValueOnce({
+        inputAmount: '1',
+        expectedOutput: '2',
+        minimumOutput: '1.99',
+        priceImpactBps: 0,
+        takerGets: '1000000',
+        takerPays: {
+          currency: 'USD',
+          issuer: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          value: '1.99',
+        },
+        flags: 0x000c0000,
+      })
+      const quote = await controller.getSwapQuote({
+        from: { type: 'native', currency: 'XRP' },
+        to: {
+          type: 'issued',
+          currency: 'USD',
+          issuer: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+        },
+        amount: '1',
+        slippageBps: 50,
+      })
+
+      const review = await controller.prepareTransactionReview({
+        intent: { chainType: 'xrpl', kind: 'swap', quoteId: quote.quoteId },
+      })
+
+      const xrplClient = vi.mocked(XrplClient).mock.results.at(-1)!.value
+      expect(review).toMatchObject({
+        title: 'Review swap',
+        transactionType: 'OfferCreate',
+        simulation: { success: true },
+      })
+      expect(xrplClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'simulate',
+          tx_json: expect.objectContaining({
+            TransactionType: 'OfferCreate',
+            Flags: 0x000c0000,
+          }),
+        }),
+      )
+    })
+  })
+
+  describe('payment simulation', () => {
+    it('previews an XRP payment through the ledger simulate RPC without submitting it', async () => {
+      const { XrplClient } = await import('@otsu/core')
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+
+      const result = await controller.simulatePayment({
+        destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+        amount: '12000000',
+      })
+
+      const xrplClient = vi.mocked(XrplClient).mock.results.at(-1)?.value
+      expect(xrplClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'simulate', binary: false }),
+      )
+      expect(xrplClient.submitTransaction).not.toHaveBeenCalled()
+      expect(result).toMatchObject({
+        success: true,
+        engineResult: 'tesSUCCESS',
+        fee: '0.000012',
+      })
+      expect(result.balanceChanges[0]).toMatchObject({ currency: 'XRP', delta: '-12.000000' })
+    })
+
+    it('re-simulates the exact reviewed XRPL payload before one-time confirmation', async () => {
+      const { XrplClient } = await import('@otsu/core')
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const review = await controller.prepareTransactionReview({
+        intent: {
+          chainType: 'xrpl',
+          kind: 'payment',
+          destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          amount: '12000000',
+        },
+      })
+      const xrplClient = vi.mocked(XrplClient).mock.results.at(-1)?.value
+      const reviewedPayload = xrplClient.request.mock.calls[0][0].tx_json
+
+      const hash = await controller.confirmTransactionReview({ reviewId: review.reviewId })
+
+      expect(hash).toBe('MOCK_TX_HASH_000000000000000000000001')
+      expect(xrplClient.request).toHaveBeenCalledTimes(2)
+      expect(xrplClient.request.mock.calls[1][0].tx_json).toEqual(reviewedPayload)
+      expect(xrplClient.submitTransaction).toHaveBeenCalledOnce()
+      await expect(
+        controller.confirmTransactionReview({ reviewId: review.reviewId }),
+      ).rejects.toThrow('expired')
+    })
+
+    it('discards a review prepared while the network context changes and returns', async () => {
+      const { XrplClient } = await import('@otsu/core')
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const xrplClient = vi.mocked(XrplClient).mock.results.at(-1)!.value
+      let releaseSimulation!: () => void
+      xrplClient.request.mockImplementationOnce(
+        (request: Record<string, unknown>) =>
+          new Promise((resolve) => {
+            releaseSimulation = () =>
+              resolve({
+                engine_result: 'tesSUCCESS',
+                engine_result_message: 'Success',
+                tx_json: request.tx_json,
+                meta: { AffectedNodes: [] },
+              })
+          }),
+      )
+
+      const preparation = controller.prepareTransactionReview({
+        intent: {
+          chainType: 'xrpl',
+          kind: 'payment',
+          destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          amount: '1000000',
+        },
+      })
+      await vi.waitFor(() => expect(releaseSimulation).toBeTypeOf('function'))
+      await controller.switchNetwork('mainnet')
+      await controller.switchNetwork('testnet')
+      releaseSimulation()
+
+      await expect(preparation).rejects.toThrow('Account or network changed')
+    })
+
+    it('does not sign or submit when the confirmation simulation fails', async () => {
+      const { XrplClient } = await import('@otsu/core')
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const review = await controller.prepareTransactionReview({
+        intent: {
+          chainType: 'xrpl',
+          kind: 'payment',
+          destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          amount: '12000000',
+        },
+      })
+      const xrplClient = vi.mocked(XrplClient).mock.results.at(-1)?.value
+      xrplClient.request.mockResolvedValueOnce({
+        engine_result: 'tecPATH_DRY',
+        engine_result_message: 'Path could not send partial amount.',
+        tx_json: {},
+        meta: { AffectedNodes: [] },
+      })
+
+      await expect(
+        controller.confirmTransactionReview({ reviewId: review.reviewId }),
+      ).rejects.toThrow('Path could not send partial amount')
+      expect(xrplClient.submitTransaction).not.toHaveBeenCalled()
+    })
+
+    it('rejects a ledger submission result that was not accepted', async () => {
+      const { XrplClient } = await import('@otsu/core')
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const review = await controller.prepareTransactionReview({
+        intent: {
+          chainType: 'xrpl',
+          kind: 'payment',
+          destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          amount: '1000000',
+        },
+      })
+      const xrplClient = vi.mocked(XrplClient).mock.results.at(-1)!.value
+      xrplClient.submitTransaction.mockResolvedValueOnce({
+        result: {
+          engine_result: 'tecUNFUNDED_PAYMENT',
+          engine_result_message: 'Insufficient XRP balance.',
+          tx_json: { hash: 'REJECTED_HASH' },
+        },
+      })
+
+      await expect(
+        controller.confirmTransactionReview({ reviewId: review.reviewId }),
+      ).rejects.toThrow('Insufficient XRP balance')
+    })
+
+    it('does not sign when the active account changes during confirmation simulation', async () => {
+      const { XrplClient } = await import('@otsu/core')
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const original = controller.getState().activeAccount!
+      const imported = await controller.importSeed(
+        'legal winner thank year wave sausage worth useful legal winner thank yellow',
+        'Second wallet',
+      )
+      await controller.setActiveAccount(original)
+      const review = await controller.prepareTransactionReview({
+        intent: {
+          chainType: 'xrpl',
+          kind: 'payment',
+          destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          amount: '1000000',
+        },
+      })
+      const xrplClient = vi.mocked(XrplClient).mock.results.at(-1)!.value
+      const reviewedPayload = xrplClient.request.mock.calls.at(-1)![0].tx_json
+      let releaseSimulation!: () => void
+      xrplClient.request.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseSimulation = () =>
+              resolve({
+                engine_result: 'tesSUCCESS',
+                engine_result_message: 'Success',
+                tx_json: reviewedPayload,
+                meta: { AffectedNodes: [] },
+              })
+          }),
+      )
+
+      const confirmation = controller.confirmTransactionReview({ reviewId: review.reviewId })
+      await vi.waitFor(() => expect(releaseSimulation).toBeTypeOf('function'))
+      await controller.setActiveAccount(imported.xrpl.address)
+      releaseSimulation()
+
+      await expect(confirmation).rejects.toThrow('Account or network changed')
+      expect(xrplClient.submitTransaction).not.toHaveBeenCalled()
+    })
+
+    it('does not sign when the network changes and returns during confirmation simulation', async () => {
+      const { XrplClient } = await import('@otsu/core')
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const review = await controller.prepareTransactionReview({
+        intent: {
+          chainType: 'xrpl',
+          kind: 'payment',
+          destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          amount: '1000000',
+        },
+      })
+      const xrplClient = vi.mocked(XrplClient).mock.results.at(-1)!.value
+      const reviewedPayload = xrplClient.request.mock.calls.at(-1)![0].tx_json
+      let releaseSimulation!: () => void
+      xrplClient.request.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseSimulation = () =>
+              resolve({
+                engine_result: 'tesSUCCESS',
+                engine_result_message: 'Success',
+                tx_json: reviewedPayload,
+                meta: { AffectedNodes: [] },
+              })
+          }),
+      )
+
+      const confirmation = controller.confirmTransactionReview({ reviewId: review.reviewId })
+      await vi.waitFor(() => expect(releaseSimulation).toBeTypeOf('function'))
+      await controller.switchNetwork('mainnet')
+      await controller.switchNetwork('testnet')
+      releaseSimulation()
+
+      await expect(confirmation).rejects.toThrow('Account or network changed')
+      expect(xrplClient.submitTransaction).not.toHaveBeenCalled()
+    })
+
+    it('prepares and re-simulates the exact dApp transaction before signing', async () => {
+      const { XrplClient } = await import('@otsu/core')
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      const account = controller.getState().activeAccount!
+
+      const prepared = await controller.prepareExternalXrplTransaction(
+        {
+          TransactionType: 'Payment',
+          Account: account,
+          Destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+          Amount: '1000000',
+        },
+        account,
+      )
+      const signed = await controller.signExternalXrplTransaction(prepared.transaction, false)
+      const xrplClient = vi.mocked(XrplClient).mock.results.at(-1)!.value
+
+      expect(prepared.simulation.success).toBe(true)
+      expect(signed.txBlob).toMatch(/^[A-F0-9]+$/)
+      expect(signed.hash).toHaveLength(64)
+      expect(xrplClient.request).toHaveBeenCalledTimes(2)
+      expect(xrplClient.request.mock.calls[1][0].tx_json).toEqual(prepared.transaction)
+      expect(xrplClient.submitTransaction).not.toHaveBeenCalled()
+    })
+
+    it('rejects a dApp transaction targeting a different account before simulation', async () => {
+      const { XrplClient } = await import('@otsu/core')
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+
+      await expect(
+        controller.prepareExternalXrplTransaction(
+          {
+            TransactionType: 'Payment',
+            Account: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+            Destination: 'rHJTqWTmDwUj3xpScH8J3YseG3kAHbYpgB',
+            Amount: '1000000',
+          },
+          controller.getState().activeAccount!,
+        ),
+      ).rejects.toThrow('does not match the connected account')
+      const xrplClient = vi.mocked(XrplClient).mock.results.at(-1)!.value
+      expect(xrplClient.request).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('cached portfolio hydration', () => {
+    it('isolates cached account data by XRPL network', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller.getBalance()
+
+      await expect(controller.getCachedData()).resolves.toMatchObject({
+        balance: { total: '20000000', available: '10000000', reserved: '10000000' },
+        price: '1',
+      })
+
+      await controller.switchNetwork('mainnet')
+      await expect(controller.getCachedData()).resolves.toMatchObject({ balance: null })
+    })
+
+    it('does not expose cached portfolio data while the wallet is locked', async () => {
+      const controller = createController()
+      await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller.getBalance()
+      controller.lock()
+
+      await expect(controller.getCachedData()).rejects.toThrow('Wallet is locked')
     })
   })
 
@@ -635,7 +1466,8 @@ describe('WalletController integration', () => {
       }))
 
       const controller2 = createController()
-      await controller2.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
+      await controller2.initialize()
+      await controller2.unlock('password', TEST_PASSWORD)
 
       const page = await controller2.getTransactionHistory()
       expect(Array.isArray(page.transactions)).toBe(true)
@@ -695,9 +1527,9 @@ describe('WalletController integration', () => {
       const controller = createController()
       await controller.createWallet('password', TEST_PASSWORD, TEST_MNEMONIC)
 
-      await expect(
-        controller.updateAccountLabel('rNonExistent', 'Label'),
-      ).rejects.toThrow('Account not found')
+      await expect(controller.updateAccountLabel('rNonExistent', 'Label')).rejects.toThrow(
+        'Account not found',
+      )
     })
   })
 

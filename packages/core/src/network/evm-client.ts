@@ -58,6 +58,24 @@ export class EvmClient {
     return gas.toString()
   }
 
+  async simulateTransaction(tx: TransactionRequest): Promise<{
+    success: boolean
+    gasEstimate?: string
+    returnData?: string
+    error?: string
+  }> {
+    const provider = this.requireProvider()
+    try {
+      const [gas, returnData] = await Promise.all([provider.estimateGas(tx), provider.call(tx)])
+      return { success: true, gasEstimate: gas.toString(), returnData }
+    } catch (cause) {
+      return {
+        success: false,
+        error: cause instanceof Error ? cause.message : 'EVM simulation failed',
+      }
+    }
+  }
+
   async sendRawTransaction(signedTx: string): Promise<TransactionResponse> {
     const provider = this.requireProvider()
     return provider.broadcastTransaction(signedTx)

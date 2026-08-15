@@ -101,10 +101,13 @@ export class TransactionHistoryClient {
   private parseAmount(
     txData: Record<string, unknown>,
     meta: Record<string, unknown> | undefined,
-    direction: TransactionDirection,
+    _direction: TransactionDirection,
   ): TransactionAmount {
+    const deliveredAmount = meta?.delivered_amount ?? meta?.DeliveredAmount
     const rawAmount =
-      direction === 'received' && meta ? (meta.delivered_amount ?? txData.Amount) : txData.Amount
+      deliveredAmount && deliveredAmount !== 'unavailable'
+        ? deliveredAmount
+        : (txData.DeliverMax ?? txData.Amount)
 
     if (typeof rawAmount === 'string') {
       return { currency: 'XRP', value: rawAmount }

@@ -4,11 +4,9 @@ import { useRouter } from 'vue-router'
 import { useWalletStore } from '../../stores/wallet'
 import Button from '../../components/common/Button.vue'
 import Card from '../../components/common/Card.vue'
-import { useToast } from '../../composables/useToast'
 
 const router = useRouter()
 const wallet = useWalletStore()
-const toast = useToast()
 
 const step = ref<'verify' | 'reveal'>('verify')
 const password = ref('')
@@ -64,7 +62,6 @@ function showMnemonic(mnemonic: string) {
 
   clearTimer = setTimeout(() => {
     clearMnemonic()
-    toast.success('Seed phrase cleared for security')
   }, 60000)
 }
 
@@ -82,7 +79,6 @@ let clipboardTimer: ReturnType<typeof setTimeout> | null = null
 function copyToClipboard() {
   navigator.clipboard.writeText(words.value.join(' '))
   copied.value = true
-  toast.success('Copied -- clipboard will be cleared in 15 seconds')
 
   if (clipboardTimer) clearTimeout(clipboardTimer)
   clipboardTimer = setTimeout(async () => {
@@ -140,18 +136,18 @@ onUnmounted(() => {
 
         <!-- Password verification -->
         <template v-if="wallet.authMethod === 'password'">
-          <div>
-            <label class="text-sm font-medium text-text"> Enter Password </label>
+          <div class="form-field">
+            <label class="form-label">Enter Password</label>
             <input
               v-model="password"
               type="password"
               placeholder="Your wallet password"
-              class="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg text-text focus:outline-none focus:ring-2 focus:ring-link"
+              class="form-control"
               @keyup.enter="revealWithPassword"
             />
           </div>
 
-          <p v-if="error" class="text-xs text-danger">{{ error }}</p>
+          <p v-if="error" class="form-error">{{ error }}</p>
 
           <Button block :loading="loading" :disabled="!password" @click="revealWithPassword">
             Reveal Seed Phrase
@@ -160,7 +156,7 @@ onUnmounted(() => {
 
         <!-- Passkey verification -->
         <template v-else>
-          <p v-if="error" class="text-xs text-danger">{{ error }}</p>
+          <p v-if="error" class="form-error">{{ error }}</p>
 
           <Button block :loading="loading" @click="revealWithPasskey">
             <span class="flex items-center justify-center gap-2">

@@ -296,13 +296,13 @@ async function handleUnlinkWallet() {
             v-model="newPassword"
             type="password"
             placeholder="New password (min 8 chars)"
-            class="w-full px-3 py-2 text-xs rounded-md border border-border bg-bg focus:outline-none focus:ring-1 focus:ring-link"
+            class="form-control"
           />
           <input
             v-model="confirmPassword"
             type="password"
             placeholder="Confirm password"
-            class="w-full px-3 py-2 text-xs rounded-md border border-border bg-bg focus:outline-none focus:ring-1 focus:ring-link"
+            class="form-control"
           />
           <div class="flex gap-2">
             <button

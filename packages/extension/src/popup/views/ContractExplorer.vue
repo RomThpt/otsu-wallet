@@ -3,14 +3,12 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ContractFunction, ContractCallParams } from '@otsu/types'
 import { useContractStore } from '../../stores/contract'
-import { useToast } from '../../composables/useToast'
 import ContractFunctionCard from '../../components/contract/ContractFunctionCard.vue'
 import ContractCallForm from '../../components/contract/ContractCallForm.vue'
 import Skeleton from '../../components/common/Skeleton.vue'
 
 const router = useRouter()
 const contractStore = useContractStore()
-const toast = useToast()
 
 const addressInput = ref('')
 const selectedFn = ref<ContractFunction | null>(null)
@@ -40,10 +38,8 @@ async function handleCallSubmit(params: {
     parameters: params.parameters as ContractCallParams['parameters'],
   })
   if (hash) {
-    toast.success(`Transaction submitted: ${hash.slice(0, 12)}...`)
     selectedFn.value = null
   } else if (contractStore.error) {
-    toast.error(contractStore.error)
   }
 }
 
@@ -86,11 +82,11 @@ function truncate(addr: string): string {
           v-model="addressInput"
           type="text"
           placeholder="Enter contract address (r...)"
-          class="flex-1 px-3 py-2 text-sm rounded-md border border-border bg-bg-subtle focus:ring-2 focus:ring-link focus:border-transparent font-mono"
+          class="form-control min-w-0 flex-1 font-mono"
           @keyup.enter="handleLookup"
         />
         <button
-          class="px-4 py-2 text-sm font-medium rounded-md bg-accent text-accent-fg hover:opacity-90 transition-colors disabled:opacity-50"
+          class="h-11 rounded-[14px] bg-accent px-4 text-sm font-semibold text-accent-fg transition-colors hover:opacity-90 disabled:opacity-50"
           :disabled="contractStore.loading || !addressInput.trim()"
           @click="handleLookup"
         >

@@ -9,7 +9,8 @@ const props = defineProps<{
 
 const displayAmount = computed(() => {
   if (props.tx.amount.currency === 'XRP') {
-    return `${(Number(props.tx.amount.value) / DROPS_PER_XRP).toFixed(6)} XRP`
+    const value = Number(props.tx.amount.value) / DROPS_PER_XRP
+    return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 6 }).format(value)} XRP`
   }
   return `${props.tx.amount.value} ${props.tx.amount.currency}`
 })
@@ -62,6 +63,12 @@ const timeAgo = computed(() => {
   return new Date(props.tx.timestamp).toLocaleDateString()
 })
 
+const counterparty = computed(() => {
+  if (props.tx.direction === 'sent') return truncate(props.tx.destination ?? '')
+  if (props.tx.direction === 'received') return truncate(props.tx.account)
+  return props.tx.type
+})
+
 function truncate(addr: string): string {
   if (!addr) return ''
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`
@@ -69,9 +76,11 @@ function truncate(addr: string): string {
 </script>
 
 <template>
-  <div class="flex items-center gap-3 px-4 py-3 hover:bg-bg-hover transition-colors">
-    <!-- Direction Arrow -->
-    <div class="flex items-center justify-center w-8 h-8 rounded-full shrink-0 bg-bg-subtle">
+  <button
+    type="button"
+    class="flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-bg-hover active:bg-bg-hover"
+  >
+    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-bg-hover">
       <svg
         v-if="tx.direction === 'sent'"
         class="w-4 h-4 text-danger"
@@ -130,28 +139,18 @@ function truncate(addr: string): string {
       </svg>
     </div>
 
-    <!-- Details -->
-    <div class="flex-1 min-w-0">
-      <div class="flex justify-between items-center">
-        <span class="text-sm font-medium">{{ directionLabel }}</span>
-        <span class="text-sm font-medium" :class="directionColor">
-          {{ directionSign }}{{ displayAmount }}
-        </span>
-      </div>
-      <div class="flex justify-between items-center mt-0.5">
-        <span class="text-xs text-text-muted font-mono">
-          {{ tx.direction === 'sent' ? truncate(tx.destination ?? '') : truncate(tx.account) }}
-        </span>
-        <span class="text-xs text-text-muted">{{ timeAgo }}</span>
-      </div>
+    <div class="min-w-0 flex-1">
+      <span class="block truncate text-sm font-semibold">{{ directionLabel }}</span>
+      <span class="mt-0.5 block truncate text-xs text-text-muted">
+        {{ counterparty }}<template v-if="timeAgo"> · {{ timeAgo }}</template>
+      </span>
     </div>
-
-    <!-- Status -->
-    <span
-      v-if="!tx.successful"
-      class="text-xs px-1.5 py-0.5 rounded bg-bg-subtle text-danger shrink-0"
-    >
-      Failed
-    </span>
-  </div>
+    <div class="max-w-[172px] min-w-0 text-right">
+      <span class="block truncate text-sm font-semibold tabular-nums" :class="directionColor">
+        {{ directionSign }}{{ displayAmount }}
+      </span>
+      <span v-if="!tx.successful" class="mt-0.5 block text-xs font-medium text-danger">Failed</span>
+      <span v-else class="mt-0.5 block text-xs text-text-muted">Completed</span>
+    </div>
+  </button>
 </template>

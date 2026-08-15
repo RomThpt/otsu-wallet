@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import type { NetworkConfig, CustomNetworkConfig, ChainType } from '@otsu/types'
+import { networkIndicatorClass } from '../../lib/network-appearance'
 
 const props = defineProps<{
   activeNetwork: string
@@ -43,29 +44,13 @@ const activeConfig = computed(() => {
 })
 
 const dotColor = computed(() => {
-  if (!activeConfig.value) return 'bg-text-muted'
-  return networkDotColor(activeConfig.value)
+  return networkIndicatorClass(activeConfig.value)
 })
 
 const chainBadge = computed(() => {
   if (!activeConfig.value) return null
   return activeConfig.value.chainType === 'evm' ? 'EVM' : null
 })
-
-function networkDotColor(config: NetworkConfig): string {
-  if (config.chainType === 'evm') return 'bg-accent'
-  switch (config.type) {
-    case 'mainnet':
-      return 'bg-success'
-    case 'testnet':
-    case 'devnet':
-      return 'bg-link'
-    case 'custom':
-      return 'bg-text-muted'
-    default:
-      return 'bg-text-muted'
-  }
-}
 
 watch(isOpen, (open) => {
   if (open) {
@@ -125,21 +110,18 @@ function flatIndex(groupIdx: number, itemIdx: number): number {
 <template>
   <div class="relative">
     <button
-      aria-label="Select network"
+      :aria-label="`Select network, current network ${activeConfig?.name ?? activeNetwork}`"
       aria-haspopup="listbox"
       :aria-expanded="isOpen"
-      class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-colors"
-      :class="{
-        'bg-bg-subtle text-success':
-          activeConfig?.chainType === 'xrpl' && activeConfig?.type === 'mainnet',
-        'bg-bg-subtle text-warning': activeConfig?.chainType === 'evm',
-        'bg-bg-subtle text-accent':
-          activeConfig?.chainType === 'xrpl' && activeConfig?.type !== 'mainnet',
-      }"
+      class="flex h-10 max-w-[104px] items-center gap-1.5 rounded-full bg-bg-subtle px-3 text-xs font-medium text-text shadow-card ring-1 ring-border/70 transition-all active:scale-[0.98]"
       @click="isOpen = !isOpen"
     >
-      <span class="w-2 h-2 rounded-full shrink-0" :class="dotColor" />
-      {{ activeConfig?.name ?? activeNetwork }}
+      <span
+        data-testid="active-network-indicator"
+        class="h-2 w-2 shrink-0 rounded-full"
+        :class="dotColor"
+      />
+      <span class="min-w-0 truncate">{{ activeConfig?.name ?? activeNetwork }}</span>
       <span
         v-if="chainBadge"
         class="px-1 py-0.5 rounded text-[9px] font-semibold bg-accent/10 text-accent"
@@ -163,7 +145,7 @@ function flatIndex(groupIdx: number, itemIdx: number): number {
       role="listbox"
       aria-label="Networks"
       tabindex="-1"
-      class="absolute top-full left-0 mt-1 w-56 bg-bg-subtle rounded-lg shadow-lg border border-border z-50 max-h-80 overflow-y-auto outline-none"
+      class="absolute top-full right-0 z-50 mt-2 max-h-80 w-56 overflow-y-auto rounded-[20px] border border-border bg-bg-subtle p-1 shadow-lg outline-none"
       @keydown="handleKeydown"
     >
       <div
@@ -180,7 +162,7 @@ function flatIndex(groupIdx: number, itemIdx: number): number {
           :key="config.id"
           role="option"
           :aria-selected="config.id === activeNetwork"
-          class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left text-sm transition-colors"
+          class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-text transition-colors"
           :class="{
             'bg-bg-hover': config.id === activeNetwork,
             'hover:bg-bg-hover': config.id !== activeNetwork,
@@ -188,7 +170,11 @@ function flatIndex(groupIdx: number, itemIdx: number): number {
           }"
           @click="selectNetwork(config.id)"
         >
-          <span class="w-2 h-2 rounded-full shrink-0" :class="networkDotColor(config)" />
+          <span
+            data-testid="network-indicator"
+            class="h-2 w-2 shrink-0 rounded-full"
+            :class="networkIndicatorClass(config)"
+          />
           <span class="flex-1 truncate">{{ config.name }}</span>
           <span
             v-if="config.chainType === 'evm'"

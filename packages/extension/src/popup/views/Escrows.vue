@@ -7,13 +7,12 @@ import { useWalletStore } from '../../stores/wallet'
 import Button from '../../components/common/Button.vue'
 import Input from '../../components/common/Input.vue'
 import Skeleton from '../../components/common/Skeleton.vue'
-import { useToast } from '../../composables/useToast'
+import SuccessAnimation from '../../components/common/SuccessAnimation.vue'
 
 const RIPPLE_EPOCH = 946684800
 
 const router = useRouter()
 const wallet = useWalletStore()
-const toast = useToast()
 const loading = ref(false)
 const listLoading = ref(false)
 const error = ref('')
@@ -90,7 +89,6 @@ async function createEscrow() {
     if (response.success && response.data) {
       txHash.value = response.data.hash
       step.value = 'result'
-      toast.success('Escrow created')
       await wallet.fetchAccountEscrows()
     } else {
       error.value = response.error ?? 'Failed to create escrow'
@@ -110,13 +108,12 @@ async function finishEscrow(owner: string, seq: number) {
       payload: { owner, offerSequence: seq },
     })
     if (response.success) {
-      toast.success('Escrow finished')
       await wallet.fetchAccountEscrows()
     } else {
-      toast.error(response.error ?? 'Failed')
+      error.value = response.error ?? 'Failed to finish escrow'
     }
   } catch (e) {
-    toast.error((e as Error).message)
+    error.value = (e as Error).message
   } finally {
     loading.value = false
   }
@@ -130,13 +127,12 @@ async function cancelEscrow(owner: string, seq: number) {
       payload: { owner, offerSequence: seq },
     })
     if (response.success) {
-      toast.success('Escrow cancelled')
       await wallet.fetchAccountEscrows()
     } else {
-      toast.error(response.error ?? 'Failed')
+      error.value = response.error ?? 'Failed to cancel escrow'
     }
   } catch (e) {
-    toast.error((e as Error).message)
+    error.value = (e as Error).message
   } finally {
     loading.value = false
   }
@@ -160,6 +156,7 @@ async function cancelEscrow(owner: string, seq: number) {
     </div>
 
     <div class="flex-1 overflow-y-auto p-4 space-y-4">
+      <p v-if="error" class="form-error" role="alert">{{ error }}</p>
       <!-- Pending Escrows List -->
       <div>
         <h3 class="text-sm font-bold mb-2">Pending Escrows</h3>
@@ -245,27 +242,14 @@ async function cancelEscrow(owner: string, seq: number) {
           hint="Time after which the escrow can be cancelled"
         />
 
-        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
-
         <Button block :loading="loading" :disabled="!destination || !amount" @click="createEscrow">
           Create Escrow
         </Button>
       </template>
 
       <template v-else>
-        <div class="text-center py-8">
-          <div
-            class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-bg-subtle mb-4"
-          >
-            <svg class="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
+        <div class="animate-slide-up py-8 text-center" role="status" aria-live="polite">
+          <SuccessAnimation class="mb-3" />
           <h3 class="text-lg font-bold">Escrow Created</h3>
           <p class="mt-2 text-xs text-text-muted font-mono break-all">{{ txHash }}</p>
         </div>

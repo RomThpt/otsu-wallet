@@ -1,4 +1,4 @@
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 
 type Theme = 'light' | 'dark' | 'system'
 
@@ -11,14 +11,17 @@ function getSystemTheme(): 'light' | 'dark' {
 }
 
 function applyTheme(theme: Theme): void {
+  const resolvedTheme = theme === 'system' ? getSystemTheme() : theme
   const el = document.documentElement.classList
-  el.remove('dark')
-  if (theme === 'dark') {
-    el.add('dark')
-  }
+  el.toggle('dark', resolvedTheme === 'dark')
 }
 
 export function useTheme() {
+  let systemThemeQuery: MediaQueryList | null = null
+  const handleSystemThemeChange = () => {
+    if (currentTheme.value === 'system') applyTheme('system')
+  }
+
   onMounted(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
     if (stored) {
@@ -26,12 +29,11 @@ export function useTheme() {
     }
     applyTheme(currentTheme.value)
 
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      if (currentTheme.value === 'system') {
-        applyTheme('system')
-      }
-    })
+    systemThemeQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    systemThemeQuery.addEventListener('change', handleSystemThemeChange)
   })
+
+  onUnmounted(() => systemThemeQuery?.removeEventListener('change', handleSystemThemeChange))
 
   watch(currentTheme, (theme) => {
     localStorage.setItem(STORAGE_KEY, theme)

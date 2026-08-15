@@ -2,15 +2,12 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import type { Account, ChainType } from '@otsu/types'
 import AccountTypeIcon from './AccountTypeIcon.vue'
-import { useToast } from '../../composables/useToast'
-
-const toast = useToast()
-
 const props = defineProps<{
   accounts: Account[]
   activeAccount: string | null
   loading?: boolean
   chainType?: ChainType
+  prominent?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -22,6 +19,7 @@ const emit = defineEmits<{
 const isOpen = ref(false)
 const focusedIndex = ref(-1)
 const dropdownRef = ref<HTMLElement | null>(null)
+const copiedAddress = ref<string | null>(null)
 
 const filteredAccounts = computed(() => {
   if (!props.chainType) return props.accounts
@@ -47,9 +45,12 @@ function truncate(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
-function copyAddress(address: string): void {
-  navigator.clipboard.writeText(address)
-  toast.success('Address copied')
+async function copyAddress(address: string): Promise<void> {
+  await navigator.clipboard.writeText(address)
+  copiedAddress.value = address
+  window.setTimeout(() => {
+    if (copiedAddress.value === address) copiedAddress.value = null
+  }, 1500)
 }
 
 function selectAccount(address: string): void {
@@ -102,20 +103,38 @@ function chainIcon(account: Account): string | null {
 <template>
   <div class="relative">
     <button
-      aria-label="Select account"
+      :aria-label="active ? `Select account, current account ${active.label}` : 'Select account'"
       aria-haspopup="listbox"
       :aria-expanded="isOpen"
-      class="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-bg-hover transition-colors text-left"
+      class="flex items-center rounded-2xl text-left transition-colors hover:bg-bg-hover active:bg-bg-hover"
+      :class="prominent ? 'h-14 gap-2.5 px-0.5 pr-2' : 'h-11 gap-2 px-2'"
       @click="isOpen = !isOpen"
     >
       <template v-if="active">
-        <AccountTypeIcon :type="active.type" />
+        <span
+          v-if="prominent"
+          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-bg-subtle text-[36px] leading-none text-text shadow-card ring-1 ring-border/60"
+          aria-hidden="true"
+        >
+          O
+        </span>
+        <AccountTypeIcon v-else :type="active.type" />
         <div class="min-w-0">
-          <p class="text-xs font-medium truncate max-w-[140px]">{{ active.label }}</p>
-          <p class="text-[11px] text-text-muted font-mono">{{ truncate(active.address) }}</p>
+          <p
+            class="max-w-[92px] truncate"
+            :class="prominent ? 'text-base leading-5' : 'text-[13px] font-semibold'"
+          >
+            {{ active.label }}
+          </p>
+          <p
+            class="font-mono text-text-muted"
+            :class="prominent ? 'mt-0.5 text-[11px]' : 'text-[11px]'"
+          >
+            {{ truncate(active.address) }}
+          </p>
         </div>
         <span
-          v-if="active.chainType === 'evm'"
+          v-if="active.chainType === 'evm' && !prominent"
           class="px-1 py-0.5 rounded text-[9px] font-semibold bg-accent/10 text-accent"
         >
           EVM
@@ -141,7 +160,7 @@ function chainIcon(account: Account): string | null {
       role="listbox"
       aria-label="Accounts"
       tabindex="-1"
-      class="absolute top-full right-0 mt-1 w-72 bg-bg-subtle rounded-lg shadow-lg border border-border z-50 max-h-80 overflow-y-auto outline-none"
+      class="absolute top-full left-0 z-50 mt-2 max-h-80 w-72 overflow-y-auto rounded-[20px] border border-border bg-bg-subtle p-1 shadow-lg outline-none"
       @keydown="handleKeydown"
     >
       <div class="p-1">
@@ -175,9 +194,13 @@ function chainIcon(account: Account): string | null {
               }}</span>
               <button
                 class="text-text-muted hover:text-text shrink-0"
+                :aria-label="copiedAddress === account.address ? 'Address copied' : 'Copy address'"
                 @click.stop="copyAddress(account.address)"
               >
-                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span v-if="copiedAddress === account.address" class="text-[9px] text-success">
+                  Copied
+                </span>
+                <svg v-else class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"

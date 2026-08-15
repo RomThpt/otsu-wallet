@@ -2,11 +2,10 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '../../stores/wallet'
-import { useToast } from '../../composables/useToast'
+import { networkIndicatorClass } from '../../lib/network-appearance'
 
 const router = useRouter()
 const wallet = useWalletStore()
-const toast = useToast()
 
 onMounted(async () => {
   await wallet.fetchNetworks()
@@ -15,26 +14,11 @@ onMounted(async () => {
 async function handleSwitch(networkId: string) {
   await wallet.switchNetwork(networkId)
   await Promise.all([wallet.fetchBalance(), wallet.fetchXrpPrice()])
-  toast.success('Network switched')
 }
 
 async function handleRemove(networkId: string) {
   const ok = await wallet.removeCustomNetwork(networkId)
   if (ok) {
-    toast.success('Network removed')
-  }
-}
-
-function networkDotColor(type: string, isCustom: boolean): string {
-  if (isCustom) return 'bg-text-muted'
-  switch (type) {
-    case 'mainnet':
-      return 'bg-success'
-    case 'testnet':
-    case 'devnet':
-      return 'bg-link'
-    default:
-      return 'bg-text-muted'
   }
 }
 </script>
@@ -76,12 +60,9 @@ function networkDotColor(type: string, isCustom: boolean): string {
         class="w-full flex items-center gap-3 px-4 py-3 hover:bg-bg-hover transition-colors"
         @click="handleSwitch(config.id)"
       >
-        <span
-          class="w-2.5 h-2.5 rounded-full shrink-0"
-          :class="networkDotColor(config.type, false)"
-        />
+        <span class="h-2.5 w-2.5 shrink-0 rounded-full" :class="networkIndicatorClass(config)" />
         <div class="flex-1 min-w-0 text-left">
-          <p class="text-sm font-medium">{{ config.name }}</p>
+          <p class="text-sm font-medium text-text">{{ config.name }}</p>
           <p class="text-xs text-text-muted truncate">{{ config.url }}</p>
         </div>
         <svg
@@ -114,9 +95,12 @@ function networkDotColor(type: string, isCustom: boolean): string {
             class="flex items-center gap-3 flex-1 min-w-0 text-left"
             @click="handleSwitch(config.id)"
           >
-            <span class="w-2.5 h-2.5 rounded-full bg-text-muted shrink-0" />
+            <span
+              class="h-2.5 w-2.5 shrink-0 rounded-full"
+              :class="networkIndicatorClass(config)"
+            />
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium">{{ config.name }}</p>
+              <p class="text-sm font-medium text-text">{{ config.name }}</p>
               <p class="text-xs text-text-muted truncate">{{ config.url }}</p>
             </div>
             <svg

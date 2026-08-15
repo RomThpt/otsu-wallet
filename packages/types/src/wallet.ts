@@ -1,4 +1,5 @@
 import type { ChainType } from './network'
+import type { HardwareAccountMetadata } from './storage'
 
 export type AccountType = 'hd' | 'imported' | 'hardware' | 'multisig'
 
@@ -7,9 +8,23 @@ export interface Account {
   label: string
   type: AccountType
   derivationPath?: string
-  publicKey: string
+  publicKey?: string
   index?: number
   chainType: ChainType
+  seedSourceId?: string
+  hardware?: HardwareAccountMetadata
+}
+
+export interface HardwareAccountCandidate {
+  provider: import('./storage').HardwareWalletProvider
+  address: string
+  publicKey?: string
+  derivationPath: string
+  chainType: ChainType
+  index: number
+  deviceId?: string
+  model?: string
+  label?: string
 }
 
 export type NetworkId = 'mainnet' | 'testnet' | 'devnet' | 'alphanet' | string

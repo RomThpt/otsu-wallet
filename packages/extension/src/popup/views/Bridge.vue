@@ -5,10 +5,8 @@ import type { BridgeEstimate } from '@otsu/types'
 import Button from '../../components/common/Button.vue'
 import Card from '../../components/common/Card.vue'
 import BridgeStatusTracker from '../../components/bridge/BridgeStatusTracker.vue'
-import { useToast } from '../../composables/useToast'
 
 const wallet = useWalletStore()
-const toast = useToast()
 
 const direction = ref<'xrpl-to-evm' | 'evm-to-xrpl'>('xrpl-to-evm')
 const amount = ref('')
@@ -58,7 +56,6 @@ async function fetchEstimate() {
     step.value = 'confirm'
   } catch (e) {
     error.value = (e as Error).message
-    toast.error(error.value)
   } finally {
     estimating.value = false
   }
@@ -76,15 +73,12 @@ async function executeBridge() {
     })
     if (tx) {
       step.value = 'result'
-      toast.success('Bridge transfer initiated')
     } else {
       error.value = 'Bridge transfer failed'
-      toast.error(error.value)
       step.value = 'form'
     }
   } catch (e) {
     error.value = (e as Error).message
-    toast.error(error.value)
     step.value = 'form'
   } finally {
     loading.value = false
@@ -156,19 +150,19 @@ onMounted(async () => {
       </Card>
 
       <!-- Amount -->
-      <div>
-        <label class="text-sm font-medium text-text">Amount (XRP)</label>
+      <div class="form-field">
+        <label class="form-label">Amount (XRP)</label>
         <input
           v-model="amount"
           type="number"
           step="0.000001"
           min="0"
           placeholder="0.000000"
-          class="mt-1.5 block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg-subtle text-text focus:outline-none focus:ring-2 focus:ring-link"
+          class="form-control"
         />
       </div>
 
-      <p v-if="error" class="text-xs text-danger">{{ error }}</p>
+      <p v-if="error" class="form-error">{{ error }}</p>
 
       <Button block :disabled="!canBridge" :loading="estimating" @click="fetchEstimate">
         Get Estimate

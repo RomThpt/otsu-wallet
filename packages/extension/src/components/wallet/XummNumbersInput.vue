@@ -32,8 +32,8 @@ function handleInput(index: number, event: Event) {
 </script>
 
 <template>
-  <div>
-    <label class="block text-sm font-medium text-text mb-2"> Xumm Secret Numbers </label>
+  <fieldset>
+    <legend class="form-label mb-2">Xumm Secret Numbers</legend>
     <div class="space-y-2">
       <div v-for="(_, i) in 8" :key="i" class="flex items-center gap-2">
         <span class="text-xs text-text-muted w-4 text-right">{{ i + 1 }}</span>
@@ -42,10 +42,9 @@ function handleInput(index: number, event: Event) {
           type="text"
           inputmode="numeric"
           maxlength="6"
-          class="block w-full rounded-lg border px-3 py-1.5 text-sm font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-link"
+          class="form-control h-10 text-center font-mono tracking-widest"
           :class="{
-            'border-border bg-bg text-text': validations[i] === null || validations[i] === true,
-            'border-danger bg-bg-subtle text-danger': validations[i] === false,
+            'form-control-error': validations[i] === false,
           }"
           placeholder="000000"
           @input="handleInput(i, $event)"
@@ -55,5 +54,5 @@ function handleInput(index: number, event: Event) {
         <span v-else class="w-4" />
       </div>
     </div>
-  </div>
+  </fieldset>
 </template>

@@ -5,17 +5,22 @@ export type ExtensionMessageType =
   | 'LOCK'
   | 'GET_BALANCE'
   | 'SEND_PAYMENT'
+  | 'SIMULATE_PAYMENT'
   | 'SWITCH_NETWORK'
   | 'REQUEST_FAUCET'
   | 'GET_ACCOUNTS'
   | 'ADD_ACCOUNT'
   | 'SIGN_TRANSACTION'
   | 'IMPORT_ACCOUNT'
+  | 'IMPORT_SEED'
+  | 'ADD_HARDWARE_ACCOUNTS'
   | 'SET_ACTIVE_ACCOUNT'
   | 'UPDATE_ACCOUNT_LABEL'
   | 'GET_TOKENS'
+  | 'GET_OWNED_ASSETS'
   | 'SET_TRUSTLINE'
   | 'REMOVE_TRUSTLINE'
+  | 'GET_SWAP_QUOTE'
   | 'SEND_TOKEN_PAYMENT'
   | 'GET_TRANSACTION_HISTORY'
   | 'GET_XRP_PRICE'
@@ -65,6 +70,8 @@ export type ExtensionMessageType =
   | 'EVM_CALL_CONTRACT'
   | 'EVM_ESTIMATE_GAS'
   | 'EVM_ADD_TOKEN'
+  | 'PREPARE_TRANSACTION'
+  | 'CONFIRM_TRANSACTION'
   | 'BRIDGE_ESTIMATE'
   | 'BRIDGE_TRANSFER'
   | 'BRIDGE_STATUS'
@@ -110,6 +117,11 @@ export interface SendPaymentPayload {
   memos?: Array<{ type?: string; data: string }>
 }
 
+export interface SimulatePaymentPayload extends SendPaymentPayload {
+  currency?: string
+  issuer?: string
+}
+
 export interface SwitchNetworkPayload {
   networkId: string
 }
@@ -119,6 +131,15 @@ export interface ImportAccountPayload {
   value: string
   label?: string
   mnemonicIndex?: number
+}
+
+export interface ImportSeedPayload {
+  mnemonic: string
+  label?: string
+}
+
+export interface AddHardwareAccountsPayload {
+  accounts: import('./wallet').HardwareAccountCandidate[]
 }
 
 export interface SetActiveAccountPayload {
@@ -157,6 +178,7 @@ export interface GetTransactionHistoryPayload {
 
 export interface DeriveMoreAccountsPayload {
   count: number
+  seedSourceId?: string
 }
 
 export interface ProviderRequestPayload {
@@ -290,6 +312,8 @@ export interface ExportMnemonicPayload {
   method?: 'password' | 'passkey'
   password?: string
   passkeyKey?: string
+  address?: string
+  seedSourceId?: string
 }
 
 export interface AddCustomNetworkPayload {
@@ -321,6 +345,95 @@ export interface EvmSendTransactionPayload {
   value?: string
   data?: string
   gasLimit?: string
+}
+
+export type TransactionIntent =
+  | {
+      chainType: 'xrpl'
+      kind: 'payment'
+      destination: string
+      amount: string
+      currency?: string
+      issuer?: string
+      destinationTag?: number
+      memos?: Array<{ type?: string; data: string }>
+    }
+  | {
+      chainType: 'xrpl'
+      kind: 'trustline'
+      action: 'add' | 'remove'
+      currency: string
+      issuer: string
+      limit?: string
+    }
+  | {
+      chainType: 'xrpl'
+      kind: 'mpt-authorization'
+      action: 'authorize' | 'unauthorize'
+      issuanceId: string
+    }
+  | {
+      chainType: 'xrpl'
+      kind: 'swap'
+      quoteId: string
+    }
+  | {
+      chainType: 'evm'
+      kind: 'transaction'
+      to: string
+      value?: string
+      data?: string
+      gasLimit?: string
+    }
+
+export interface PrepareTransactionPayload {
+  intent: TransactionIntent
+}
+
+export interface HardwareEvmSignature {
+  r: string
+  s: string
+  v: number | string
+}
+
+export interface ConfirmTransactionPayload {
+  reviewId: string
+  externalSignature?: HardwareEvmSignature
+  externalSignedTransaction?: string
+}
+
+export interface TransactionReview {
+  reviewId: string
+  chainType: 'xrpl' | 'evm'
+  account: string
+  network: string
+  expiresAt: number
+  transactionType: string
+  destination?: string
+  amount?: string
+  asset?: string
+  networkFee: string
+  simulation: {
+    success: boolean
+    engineResult?: string
+    engineResultMessage?: string
+    balanceChanges?: import('./simulation').BalanceChange[]
+    objectsCreated?: number
+    objectsDeleted?: number
+    returnData?: string
+    error?: string
+  }
+  unsignedSerialized?: string
+  deviceTransaction?: Record<string, unknown>
+  hardwareProvider?: import('./storage').HardwareWalletProvider
+  derivationPath?: string
+  title: string
+  description?: string
+  details: Array<{
+    label: string
+    value: string
+    monospace?: boolean
+  }>
 }
 
 export interface EvmGetTokensPayload {

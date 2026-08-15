@@ -5,12 +5,10 @@ import { useWalletStore } from '../../stores/wallet'
 import { DROPS_PER_XRP, NETWORKS } from '@otsu/constants'
 import Card from '../../components/common/Card.vue'
 import Button from '../../components/common/Button.vue'
-import { useToast } from '../../composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
 const wallet = useWalletStore()
-const toast = useToast()
 const hash = route.params.hash as string
 
 const tx = computed(() => wallet.transactions.find((t) => t.hash === hash))
@@ -51,7 +49,6 @@ function copyHash() {
   if (!tx.value) return
   navigator.clipboard.writeText(tx.value.hash)
   copied.value = true
-  toast.success('Hash copied')
   setTimeout(() => {
     copied.value = false
   }, 2000)

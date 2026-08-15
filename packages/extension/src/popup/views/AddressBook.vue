@@ -134,7 +134,7 @@ loadContacts()
           v-model="searchQuery"
           type="text"
           placeholder="Search contacts..."
-          class="block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg text-text focus:outline-none focus:ring-2 focus:ring-link"
+          class="form-control"
         />
       </div>
 

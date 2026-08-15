@@ -2,6 +2,7 @@ export type {
   Account,
   AccountLabels,
   AccountType,
+  HardwareAccountCandidate,
   AuthMethod,
   NetworkId,
   WalletMetadata,
@@ -17,7 +18,15 @@ export type {
   NetworkConfig,
 } from './network'
 
-export type { EncryptedVault, SessionState, VaultAccount, VaultData } from './storage'
+export type {
+  EncryptedVault,
+  SessionState,
+  VaultAccount,
+  VaultData,
+  VaultSeedSource,
+  HardwareAccountMetadata,
+  HardwareWalletProvider,
+} from './storage'
 
 export type {
   AcceptNftOfferPayload,
@@ -42,6 +51,8 @@ export type {
   GetSigningRequestPayload,
   GetTransactionHistoryPayload,
   ImportAccountPayload,
+  ImportSeedPayload,
+  AddHardwareAccountsPayload,
   MintNftPayload,
   ProviderEventPayload,
   ProviderRequestPayload,
@@ -49,6 +60,7 @@ export type {
   RevokePermissionPayload,
   SellNftPayload,
   SendPaymentPayload,
+  SimulatePaymentPayload,
   SendTokenPaymentPayload,
   SetActiveAccountPayload,
   SetSettingsPayload,
@@ -70,6 +82,11 @@ export type {
   EvmCallContractPayload,
   EvmEstimateGasPayload,
   EvmAddTokenPayload,
+  TransactionIntent,
+  PrepareTransactionPayload,
+  ConfirmTransactionPayload,
+  TransactionReview,
+  HardwareEvmSignature,
   BridgeEstimatePayload,
   BridgeTransferPayload,
   BridgeStatusPayload,
@@ -77,7 +94,14 @@ export type {
   IdentityLinkWalletPayload,
 } from './messages'
 
-export type { TokenBalance, TokenMetadata, TrustlineParams } from './token'
+export type {
+  OwnedXrplAsset,
+  TokenBalance,
+  TokenMetadata,
+  TrustlineParams,
+  XrplAsset,
+  XrplAssetAmount,
+} from './token'
 
 export type {
   TransactionAmount,
@@ -89,6 +113,7 @@ export type {
 
 export type {
   CachedAccountData,
+  CachedBalance,
   CachedNftMetadata,
   CachedPrice,
   CachedTokenMetadata,
@@ -111,6 +136,8 @@ export type {
   OrderBook,
   CreateDexOfferParams,
   CancelDexOfferParams,
+  SwapQuote,
+  SwapQuoteRequest,
 } from './dex'
 
 export type {

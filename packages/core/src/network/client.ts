@@ -195,6 +195,7 @@ export class XrplClient {
     takerGets: unknown,
     takerPays: unknown,
     limit = 10,
+    taker?: string,
   ): Promise<Record<string, unknown>[]> {
     await this.ensureConnected()
     await this.rateLimiter.consume()
@@ -205,6 +206,7 @@ export class XrplClient {
       taker_gets: takerGets,
       taker_pays: takerPays,
       limit,
+      ...(taker ? { taker } : {}),
     } as any)
 
     return ((response.result as Record<string, unknown>).offers ?? []) as Record<string, unknown>[]

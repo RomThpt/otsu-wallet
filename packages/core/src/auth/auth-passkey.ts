@@ -165,6 +165,13 @@ export async function getPasskeyDecryptionKey(): Promise<string> {
  * Runs in background context -- decrypted data stays in background.
  */
 export async function decryptPasskeyVault(key: string): Promise<VaultData> {
+  const result = await decryptPasskeyVaultWithMetadata(key)
+  return result.vaultData
+}
+
+export async function decryptPasskeyVaultWithMetadata(
+  key: string,
+): Promise<{ vaultData: VaultData; credentialId: string }> {
   const localResult = await chrome.storage.local.get(PASSKEY_VAULT_KEY)
   const stored: PasskeyVaultRecord | undefined = localResult[PASSKEY_VAULT_KEY]
   if (!stored) {
@@ -181,7 +188,10 @@ export async function decryptPasskeyVault(key: string): Promise<VaultData> {
       key,
     )
 
-    return JSON.parse(plaintext) as VaultData
+    return {
+      vaultData: JSON.parse(plaintext) as VaultData,
+      credentialId: stored.credentialId,
+    }
   } catch {
     throw new OtsuError(
       ErrorCodes.INVALID_PASSWORD,
@@ -193,6 +203,10 @@ export async function decryptPasskeyVault(key: string): Promise<VaultData> {
 export async function hasPasskey(): Promise<boolean> {
   const result = await chrome.storage.local.get(PASSKEY_VAULT_KEY)
   return result[PASSKEY_VAULT_KEY] !== undefined
+}
+
+export async function destroyPasskeyVault(): Promise<void> {
+  await chrome.storage.local.remove(PASSKEY_VAULT_KEY)
 }
 
 function bufferToBase64url(buffer: Uint8Array): string {

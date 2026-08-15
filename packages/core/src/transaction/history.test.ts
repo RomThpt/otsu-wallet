@@ -55,6 +55,55 @@ describe('TransactionHistoryClient', () => {
       expect(tx!.successful).toBe(true)
     })
 
+    it('parses an API v2 XRP payment from DeliverMax and delivered_amount', () => {
+      const client = new TransactionHistoryClient(createMockClient())
+      const tx = client.parseTransaction(
+        {
+          tx_json: {
+            TransactionType: 'Payment',
+            Account: VIEWER,
+            Destination: OTHER,
+            DeliverMax: '12000000',
+            Fee: '12',
+            Sequence: 19683463,
+            ledger_index: 19848458,
+            date: 839856382,
+          },
+          hash: '7C5E678A21FBB644F98A0589E64E8E07200A6D7DB3375620E9AF60090D7C69DE',
+          meta: {
+            TransactionResult: 'tesSUCCESS',
+            delivered_amount: '12000000',
+          },
+        },
+        VIEWER,
+      )
+
+      expect(tx?.direction).toBe('sent')
+      expect(tx?.hash).toBe('7C5E678A21FBB644F98A0589E64E8E07200A6D7DB3375620E9AF60090D7C69DE')
+      expect(tx?.amount).toEqual({ currency: 'XRP', value: '12000000' })
+    })
+
+    it('uses the actual delivered token amount for partial API v2 payments', () => {
+      const client = new TransactionHistoryClient(createMockClient())
+      const tx = client.parseTransaction(
+        {
+          tx_json: {
+            TransactionType: 'Payment',
+            Account: VIEWER,
+            Destination: OTHER,
+            DeliverMax: { currency: 'USD', issuer: 'rIssuer', value: '100' },
+          },
+          meta: {
+            TransactionResult: 'tesSUCCESS',
+            delivered_amount: { currency: 'USD', issuer: 'rIssuer', value: '42.5' },
+          },
+        },
+        VIEWER,
+      )
+
+      expect(tx?.amount).toEqual({ currency: 'USD', issuer: 'rIssuer', value: '42.5' })
+    })
+
     it('parses XRP payment received', () => {
       const client = new TransactionHistoryClient(createMockClient())
       const entry = makePaymentEntry({

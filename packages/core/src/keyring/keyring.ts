@@ -12,11 +12,14 @@ export class Keyring {
   load(accounts: VaultAccount[]): void {
     this.accounts.clear()
     for (const account of accounts) {
-      this.accounts.set(account.address, account)
+      if (account.privateKey && account.publicKey) this.accounts.set(account.address, account)
     }
   }
 
   addAccount(account: VaultAccount): void {
+    if (!account.privateKey || !account.publicKey) {
+      throw new Error('Software account key pair is required')
+    }
     this.accounts.set(account.address, account)
   }
 
@@ -37,6 +40,9 @@ export class Keyring {
     if (!account) {
       throw new OtsuError(ErrorCodes.INVALID_ADDRESS, `Account not found: ${address}`)
     }
+    if (!account.publicKey) {
+      throw new OtsuError(ErrorCodes.INVALID_ADDRESS, `Account public key not found: ${address}`)
+    }
     return account.publicKey
   }
 
@@ -46,6 +52,9 @@ export class Keyring {
       throw new OtsuError(ErrorCodes.SIGNING_ERROR, `Account not found: ${address}`)
     }
 
+    if (!account.privateKey || !account.publicKey) {
+      throw new OtsuError(ErrorCodes.SIGNING_ERROR, 'Account must be signed by its hardware wallet')
+    }
     const wallet = new Wallet(account.publicKey, account.privateKey)
     return wallet.sign(transaction)
   }
@@ -56,6 +65,9 @@ export class Keyring {
       throw new OtsuError(ErrorCodes.SIGNING_ERROR, `Account not found: ${address}`)
     }
 
+    if (!account.privateKey || !account.publicKey) {
+      throw new OtsuError(ErrorCodes.SIGNING_ERROR, 'Account must be signed by its hardware wallet')
+    }
     const privateKeyHex = account.privateKey.startsWith('00')
       ? account.privateKey.slice(2)
       : account.privateKey

@@ -28,47 +28,52 @@ const deltaClass = computed(() => (delta: string) => {
       <p class="text-xs text-danger mt-1">{{ result.error }}</p>
     </div>
 
-    <!-- Balance Changes Table -->
+    <!-- Balance Changes -->
     <template v-if="result.balanceChanges.length > 0">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="text-xs text-text-muted border-b border-border">
-            <th class="text-left py-1.5 font-medium">Currency</th>
-            <th class="text-right py-1.5 font-medium">Before</th>
-            <th class="text-right py-1.5 font-medium">After</th>
-            <th class="text-right py-1.5 font-medium">Change</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="change in result.balanceChanges"
-            :key="`${change.currency}-${change.issuer ?? 'native'}`"
-            class="border-b border-border last:border-0"
-          >
-            <td class="py-1.5 text-text font-medium">
+      <div class="space-y-2">
+        <div
+          v-for="change in result.balanceChanges"
+          :key="`${change.currency}-${change.issuer ?? 'native'}`"
+          class="rounded-xl bg-bg-hover/70 px-3 py-2.5"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 text-sm font-semibold text-text">
               {{ change.currency }}
-              <span v-if="change.issuer" class="text-[10px] text-text-muted font-mono block">
+              <span
+                v-if="change.issuer"
+                class="block truncate text-[10px] font-mono text-text-muted"
+              >
                 {{ change.issuer.slice(0, 8) }}...
               </span>
-            </td>
-            <td class="py-1.5 text-right text-text-muted font-mono">
-              {{ change.before }}
-            </td>
-            <td class="py-1.5 text-right text-text-muted font-mono">
-              {{ change.after }}
-            </td>
-            <td class="py-1.5 text-right font-mono font-medium" :class="deltaClass(change.delta)">
+            </div>
+            <span
+              class="shrink-0 text-sm font-semibold tabular-nums"
+              :class="deltaClass(change.delta)"
+            >
               {{ formatDelta(change.delta) }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </span>
+          </div>
+          <p class="mt-1 text-xs tabular-nums text-text-muted">
+            {{ change.before }} → {{ change.after }}
+          </p>
+        </div>
+      </div>
     </template>
+
+    <div
+      v-if="result.success"
+      class="flex items-center gap-2 rounded-xl border border-success/25 bg-success/10 px-3 py-2 text-xs font-medium text-success"
+    >
+      <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+      Simulated successfully on the current ledger
+    </div>
 
     <!-- Fee -->
     <div class="flex justify-between items-center text-sm py-1.5 border-t border-border">
       <span class="text-text-muted">Fee</span>
-      <span class="text-text font-mono">{{ result.fee }} drops</span>
+      <span class="text-text font-mono">{{ result.fee }} XRP</span>
     </div>
 
     <!-- Objects Created -->

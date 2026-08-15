@@ -5,25 +5,40 @@ import { ErrorCodes } from '@otsu/constants'
 vi.mock('./auth-password', () => ({
   setupPassword: vi.fn(),
   unlockWithPassword: vi.fn(),
+  updatePasswordVault: vi.fn(),
   vaultExists: vi.fn().mockResolvedValue(true),
+  destroyVault: vi.fn(),
 }))
 
 vi.mock('./auth-passkey', () => ({
   storePasskeyVault: vi.fn(),
-  decryptPasskeyVault: vi.fn(),
+  decryptPasskeyVaultWithMetadata: vi.fn(),
   hasPasskey: vi.fn().mockResolvedValue(false),
+  destroyPasskeyVault: vi.fn(),
 }))
 
 vi.mock('../storage/session', () => ({
-  SessionManager: vi.fn().mockImplementation(() => ({
-    isUnlocked: false,
-    unlock: vi.fn(),
-    lock: vi.fn(),
-    setAutoLockMinutes: vi.fn(),
-  })),
+  SessionManager: vi.fn().mockImplementation(() => {
+    const session = {
+      isUnlocked: false,
+      unlock: vi.fn(() => {
+        session.isUnlocked = true
+      }),
+      lock: vi.fn(() => {
+        session.isUnlocked = false
+      }),
+      setAutoLockMinutes: vi.fn(),
+    }
+    return session
+  }),
 }))
 
-import { unlockWithPassword } from './auth-password'
+import { destroyVault, unlockWithPassword } from './auth-password'
+import {
+  decryptPasskeyVaultWithMetadata,
+  destroyPasskeyVault,
+  storePasskeyVault,
+} from './auth-passkey'
 import { AuthManager } from './auth-manager'
 
 const mockVaultData: VaultData = {
@@ -44,7 +59,31 @@ describe('AuthManager', () => {
 
   beforeEach(() => {
     vi.mocked(unlockWithPassword).mockReset()
+    vi.mocked(decryptPasskeyVaultWithMetadata).mockReset()
+    vi.mocked(storePasskeyVault).mockReset()
+    vi.mocked(destroyVault).mockReset()
+    vi.mocked(destroyPasskeyVault).mockReset()
     auth = new AuthManager()
+  })
+
+  it('preserves passkey credential metadata when updating after a fresh unlock', async () => {
+    vi.mocked(decryptPasskeyVaultWithMetadata).mockResolvedValue({
+      vaultData: mockVaultData,
+      credentialId: 'credential-123',
+    })
+
+    await auth.unlock('passkey', undefined, 'prf-key')
+    const updated = { ...mockVaultData, schemaVersion: 2 as const }
+    await auth.updateVaultData(updated)
+
+    expect(storePasskeyVault).toHaveBeenCalledWith(updated, 'credential-123', 'prf-key')
+  })
+
+  it('removes both password and passkey vaults on reset', async () => {
+    await auth.reset()
+
+    expect(destroyVault).toHaveBeenCalledOnce()
+    expect(destroyPasskeyVault).toHaveBeenCalledOnce()
   })
 
   it('unlock succeeds with valid password', async () => {

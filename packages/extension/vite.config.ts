@@ -4,6 +4,8 @@ import webExtension from 'vite-plugin-web-extension'
 import { resolve } from 'path'
 import { readdir, rename, mkdir, copyFile } from 'fs/promises'
 
+const requiredIconAssets = ['icon-16.png', 'icon-48.png', 'icon-128.png'] as const
+
 function renameUnderscoreFiles(): Plugin {
   return {
     name: 'rename-underscore-files',
@@ -13,48 +15,49 @@ function renameUnderscoreFiles(): Plugin {
       order: 'post',
       async handler() {
         const distDir = resolve(__dirname, 'dist')
-        try {
-          const files = await readdir(distDir)
-          for (const file of files) {
-            if (file.startsWith('_')) {
-              const newName = file.replace(/^_/, 'x')
-              await rename(resolve(distDir, file), resolve(distDir, newName))
-              // Update references in all JS/HTML files
-              for (const f of await readdir(distDir)) {
-                if (f.endsWith('.js') || f.endsWith('.html')) {
-                  const { readFile, writeFile } = await import('fs/promises')
-                  const content = await readFile(resolve(distDir, f), 'utf-8')
-                  if (content.includes(file)) {
-                    await writeFile(resolve(distDir, f), content.replaceAll(file, newName))
-                  }
+        const files = await readdir(distDir)
+        for (const file of files) {
+          if (file.startsWith('_')) {
+            const newName = file.replace(/^_/, 'x')
+            await rename(resolve(distDir, file), resolve(distDir, newName))
+            // Update references in all JS/HTML files
+            for (const f of await readdir(distDir)) {
+              if (f.endsWith('.js') || f.endsWith('.html')) {
+                const { readFile, writeFile } = await import('fs/promises')
+                const content = await readFile(resolve(distDir, f), 'utf-8')
+                if (content.includes(file)) {
+                  await writeFile(resolve(distDir, f), content.replaceAll(file, newName))
                 }
               }
             }
           }
-          // Copy icon assets to dist
-          const srcAssets = resolve(__dirname, 'src/assets')
-          const distAssets = resolve(distDir, 'assets')
-          try {
-            await mkdir(distAssets, { recursive: true })
-            const assets = await readdir(srcAssets)
-            for (const asset of assets) {
-              await copyFile(resolve(srcAssets, asset), resolve(distAssets, asset))
-            }
-          } catch {
-            // assets may not exist
-          }
-        } catch {
-          // dist may not exist yet
         }
+
+        const srcAssets = resolve(__dirname, 'src/assets')
+        const distAssets = resolve(distDir, 'assets')
+        await mkdir(distAssets, { recursive: true })
+        await Promise.all(
+          requiredIconAssets.map((asset) =>
+            copyFile(resolve(srcAssets, asset), resolve(distAssets, asset)),
+          ),
+        )
       },
     },
   }
 }
 
-const manifestFile =
-  process.env.BROWSER === 'firefox' ? 'manifest.firefox.json' : 'manifest.json'
+const manifestFile = process.env.BROWSER === 'firefox' ? 'manifest.firefox.json' : 'manifest.json'
+const ledgerEntry = resolve(
+  __dirname,
+  process.env.BROWSER === 'firefox'
+    ? 'src/lib/ledger-loader.firefox.ts'
+    : 'src/lib/ledger-loader.ts',
+)
 
 export default defineConfig({
+  define: {
+    __LEDGER_SUPPORTED__: JSON.stringify(process.env.BROWSER !== 'firefox'),
+  },
   root: resolve(__dirname, 'src'),
   plugins: [
     vue(),
@@ -97,6 +100,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      '@ledger': ledgerEntry,
     },
   },
   build: {

@@ -12,6 +12,16 @@ export * from './identity/index'
 export { xrplDropsToEvmWei, evmWeiToXrplDrops, formatEvmXrp } from './utils/decimals'
 export {
   parseEther as evmParseEther,
+  parseUnits as evmParseUnits,
+  isAddress as isEvmAddress,
   Contract as EvmContract,
   JsonRpcProvider as EvmJsonRpcProvider,
+  Signature as EvmSignature,
+  Transaction as EvmTransaction,
+  getBytes as evmGetBytes,
 } from 'ethers'
+export {
+  decode as decodeXrplTransaction,
+  encode as encodeXrplTransaction,
+  isValidClassicAddress as isValidXrplAddress,
+} from '@xrpl-commons/xrpl'

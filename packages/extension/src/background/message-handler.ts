@@ -4,8 +4,11 @@ import type {
   CreateWalletPayload,
   UnlockPayload,
   SendPaymentPayload,
+  SimulatePaymentPayload,
   SwitchNetworkPayload,
   ImportAccountPayload,
+  ImportSeedPayload,
+  AddHardwareAccountsPayload,
   SetActiveAccountPayload,
   UpdateAccountLabelPayload,
   SetTrustlinePayload,
@@ -51,6 +54,9 @@ import type {
   BridgeTransferPayload,
   BridgeStatusPayload,
   IdentityLinkWalletPayload,
+  PrepareTransactionPayload,
+  ConfirmTransactionPayload,
+  SwapQuoteRequest,
 } from '@otsu/types'
 import { WalletController } from './controllers/wallet'
 import { ProviderController } from './controllers/provider'
@@ -110,6 +116,24 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
         return { success: true, data: { hash } }
       }
 
+      case 'SIMULATE_PAYMENT': {
+        const payload = message.payload as SimulatePaymentPayload
+        const simulation = await controller.simulatePayment(payload)
+        return { success: true, data: simulation }
+      }
+
+      case 'PREPARE_TRANSACTION': {
+        const payload = message.payload as PrepareTransactionPayload
+        const review = await controller.prepareTransactionReview(payload)
+        return { success: true, data: review }
+      }
+
+      case 'CONFIRM_TRANSACTION': {
+        const payload = message.payload as ConfirmTransactionPayload
+        const hash = await controller.confirmTransactionReview(payload)
+        return { success: true, data: { hash } }
+      }
+
       case 'SWITCH_NETWORK': {
         const payload = message.payload as SwitchNetworkPayload
         await controller.switchNetwork(payload.networkId)
@@ -131,6 +155,18 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
         return { success: true, data: account }
       }
 
+      case 'IMPORT_SEED': {
+        const payload = message.payload as ImportSeedPayload
+        const accounts = await controller.importSeed(payload.mnemonic, payload.label)
+        return { success: true, data: accounts }
+      }
+
+      case 'ADD_HARDWARE_ACCOUNTS': {
+        const payload = message.payload as AddHardwareAccountsPayload
+        const accounts = await controller.addHardwareAccounts(payload.accounts)
+        return { success: true, data: accounts }
+      }
+
       case 'SET_ACTIVE_ACCOUNT': {
         const payload = message.payload as SetActiveAccountPayload
         await controller.setActiveAccount(payload.address)
@@ -146,6 +182,11 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
       case 'GET_TOKENS': {
         const result = await controller.getTokens()
         return { success: true, data: result }
+      }
+
+      case 'GET_OWNED_ASSETS': {
+        const assets = await controller.getOwnedAssets()
+        return { success: true, data: assets }
       }
 
       case 'SET_TRUSTLINE': {
@@ -179,7 +220,7 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
 
       case 'DERIVE_MORE_ACCOUNTS': {
         const payload = message.payload as DeriveMoreAccountsPayload
-        const accounts = await controller.deriveMoreAccounts(payload.count)
+        const accounts = await controller.deriveMoreAccounts(payload.count, payload.seedSourceId)
         return { success: true, data: accounts }
       }
 
@@ -260,6 +301,11 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
       case 'GET_ACCOUNT_OFFERS': {
         const offers = await controller.getAccountOffers()
         return { success: true, data: offers }
+      }
+
+      case 'GET_SWAP_QUOTE': {
+        const quote = await controller.getSwapQuote(message.payload as SwapQuoteRequest)
+        return { success: true, data: quote }
       }
 
       // --- Phase 4 Advanced message types ---
@@ -394,6 +440,8 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
           payload.method ?? 'password',
           payload.password,
           payload.passkeyKey,
+          payload.address,
+          payload.seedSourceId,
         )
         return { success: true, data: { mnemonic } }
       }

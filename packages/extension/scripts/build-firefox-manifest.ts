@@ -19,7 +19,13 @@ if (manifest.background?.service_worker) {
 manifest.browser_specific_settings = {
   gecko: {
     id: 'otsu-wallet@otsu.dev',
-    strict_min_version: '109.0',
+    strict_min_version: '140.0',
+    data_collection_permissions: {
+      required: ['personallyIdentifyingInfo', 'financialAndPaymentInfo', 'authenticationInfo'],
+    },
+  },
+  gecko_android: {
+    strict_min_version: '142.0',
   },
 }
 

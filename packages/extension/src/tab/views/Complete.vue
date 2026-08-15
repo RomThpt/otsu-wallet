@@ -1,18 +1,15 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import SuccessAnimation from '../../components/common/SuccessAnimation.vue'
+</script>
 
 <template>
   <div class="flex min-h-screen items-center justify-center">
-    <div class="w-full max-w-md space-y-6 p-8 text-center">
-      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
-        <svg class="h-8 w-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M5 13l4 4L19 7"
-          />
-        </svg>
-      </div>
+    <div
+      class="w-full max-w-md animate-slide-up space-y-6 p-8 text-center"
+      role="status"
+      aria-live="polite"
+    >
+      <SuccessAnimation kind="wallet" size="hero" />
 
       <div>
         <h2 class="text-2xl font-bold">Wallet Created</h2>

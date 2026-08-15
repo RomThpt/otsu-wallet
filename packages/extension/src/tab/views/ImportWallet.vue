@@ -7,6 +7,8 @@ import Input from '../../components/common/Input.vue'
 import Card from '../../components/common/Card.vue'
 import MnemonicInput from '../../components/wallet/MnemonicInput.vue'
 import XummNumbersInput from '../../components/wallet/XummNumbersInput.vue'
+import SuccessAnimation from '../../components/common/SuccessAnimation.vue'
+import type { WalletState } from '@otsu/types'
 
 const router = useRouter()
 
@@ -21,29 +23,22 @@ const confirmPassword = ref('')
 const loading = ref(false)
 const error = ref('')
 const hasExistingWallet = ref(false)
-const resetConfirmText = ref('')
 
 onMounted(async () => {
   const response = await sendMessage<boolean>({ type: 'HAS_WALLET' })
   if (response.success && response.data) {
     hasExistingWallet.value = true
-    step.value = 'existing-wallet'
+    await checkExistingWalletUnlocked()
   }
 })
 
-async function handleResetWallet() {
-  if (resetConfirmText.value !== 'RESET') return
+async function checkExistingWalletUnlocked() {
   loading.value = true
   error.value = ''
   try {
-    const response = await sendMessage({ type: 'RESET_WALLET' })
-    if (!response.success) {
-      error.value = response.error ?? 'Reset failed'
-      return
-    }
-    hasExistingWallet.value = false
-    resetConfirmText.value = ''
-    step.value = 'format'
+    const response = await sendMessage<WalletState>({ type: 'GET_STATE' })
+    step.value =
+      response.success && response.data && !response.data.locked ? 'format' : 'existing-wallet'
   } catch (e) {
     error.value = (e as Error).message
   } finally {
@@ -76,15 +71,32 @@ function proceedToAuth() {
     return
   }
   error.value = ''
-  step.value = 'auth'
+  if (hasExistingWallet.value) void handleImport()
+  else step.value = 'auth'
 }
 
 async function handleImport() {
-  if (!passwordValid.value) return
+  if (!hasExistingWallet.value && !passwordValid.value) return
   loading.value = true
   error.value = ''
 
   try {
+    if (hasExistingWallet.value) {
+      const importResponse = await sendMessage({
+        type: format.value === 'mnemonic' ? 'IMPORT_SEED' : 'IMPORT_ACCOUNT',
+        payload:
+          format.value === 'mnemonic'
+            ? { mnemonic: inputValue.value.trim() }
+            : { format: format.value, value: inputValue.value.trim() },
+      })
+      if (!importResponse.success) {
+        error.value = importResponse.error ?? 'Import failed'
+        return
+      }
+      step.value = 'complete'
+      return
+    }
+
     // Create the wallet with password
     const createResponse = await sendMessage({
       type: 'CREATE_WALLET',
@@ -129,39 +141,31 @@ async function handleImport() {
   <div class="flex min-h-screen items-center justify-center">
     <div class="w-full max-w-md space-y-6 p-8">
       <div class="text-center">
-        <h1 class="text-3xl font-bold">Import Wallet</h1>
-        <p class="mt-2 text-text-muted">Restore an existing XRPL wallet</p>
+        <h1 class="text-3xl font-bold">{{ hasExistingWallet ? 'Add Wallet' : 'Import Wallet' }}</h1>
+        <p class="mt-2 text-text-muted">
+          {{
+            hasExistingWallet
+              ? 'Add another account without replacing your wallet'
+              : 'Restore an existing XRPL wallet'
+          }}
+        </p>
       </div>
 
-      <!-- Step 0: Existing Wallet Warning -->
+      <!-- Existing wallet must be unlocked before its encrypted vault can change. -->
       <template v-if="step === 'existing-wallet'">
-        <Card class="border-danger/30">
-          <p class="font-medium text-sm text-danger">A wallet already exists in this extension</p>
+        <Card>
+          <p class="font-medium text-sm">Unlock Otsu to add another wallet</p>
           <p class="text-xs text-text-muted mt-2">
-            Importing a new wallet will permanently delete the existing one. Make sure you have
-            backed up its recovery phrase first &mdash; this action cannot be undone.
+            Open the extension popup and unlock your wallet, then return here. Your existing
+            accounts and recovery phrases will remain unchanged.
           </p>
         </Card>
-
-        <div class="space-y-2">
-          <p class="text-xs text-text-muted">
-            Type <span class="font-mono font-bold">RESET</span> to confirm:
-          </p>
-          <Input v-model="resetConfirmText" placeholder="RESET" />
-        </div>
 
         <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
         <div class="flex gap-3">
           <Button variant="secondary" block @click="router.push('/')">Cancel</Button>
-          <Button
-            block
-            :disabled="resetConfirmText !== 'RESET'"
-            :loading="loading"
-            @click="handleResetWallet"
-          >
-            Reset and Import
-          </Button>
+          <Button block :loading="loading" @click="checkExistingWalletUnlocked">Check again</Button>
         </div>
       </template>
 
@@ -210,7 +214,9 @@ async function handleImport() {
 
         <div class="flex gap-3">
           <Button variant="secondary" block @click="step = 'format'">Back</Button>
-          <Button block @click="proceedToAuth">Continue</Button>
+          <Button :loading="loading" block @click="proceedToAuth">
+            {{ hasExistingWallet ? 'Add Wallet' : 'Continue' }}
+          </Button>
         </div>
       </template>
 
@@ -243,19 +249,8 @@ async function handleImport() {
 
       <!-- Step 4: Complete -->
       <template v-else>
-        <div class="text-center py-8">
-          <div
-            class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10 mb-4"
-          >
-            <svg class="h-8 w-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
+        <div class="animate-slide-up py-8 text-center" role="status" aria-live="polite">
+          <SuccessAnimation kind="wallet" size="hero" />
           <h2 class="text-xl font-bold">Wallet Imported</h2>
           <p class="mt-2 text-text-muted">You can close this tab and use the extension popup.</p>
         </div>

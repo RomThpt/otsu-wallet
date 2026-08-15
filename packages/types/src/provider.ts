@@ -41,7 +41,7 @@ export interface SigningRequest {
   origin: string
   favicon?: string
   title?: string
-  method: 'signTransaction' | 'signAndSubmit' | 'signMessage' | 'connect'
+  method: 'signTransaction' | 'signAndSubmit' | 'signMessage' | 'contractCall' | 'connect'
   params?: unknown
   createdAt: number
 }

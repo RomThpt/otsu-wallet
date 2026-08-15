@@ -19,6 +19,12 @@ import type {
   Erc20Token,
   BridgeTransaction,
   BridgeEstimate,
+  CachedBalance,
+  SimulatePaymentPayload,
+  SimulationResult,
+  TransactionIntent,
+  TransactionReview,
+  HardwareEvmSignature,
 } from '@otsu/types'
 import { performPasskeyRegistration, getPasskeyDecryptionKey } from '@otsu/core'
 import { sendMessage } from '../lib/messaging'
@@ -74,6 +80,30 @@ export const useWalletStore = defineStore('wallet', () => {
     }
   }
 
+  async function hydrateCachedData(): Promise<void> {
+    if (isEvmNetwork.value || !activeAccount.value) return
+
+    const requestedAccount = activeAccount.value
+    const requestedNetwork = network.value
+
+    const response = await sendMessage<{
+      balance: CachedBalance | null
+      tokens: TokenBalance[] | null
+      transactions: TransactionRecord[] | null
+      price: string | null
+      lastUpdated: number | null
+    }>({ type: 'GET_CACHED_DATA' })
+
+    if (!response.success || !response.data) return
+    if (activeAccount.value !== requestedAccount || network.value !== requestedNetwork) return
+
+    if (response.data.balance) balance.value = response.data.balance
+    if (response.data.tokens) tokens.value = response.data.tokens
+    if (response.data.transactions) transactions.value = response.data.transactions
+    if (response.data.price) xrpPrice.value = response.data.price
+    cachedAt.value = response.data.lastUpdated
+  }
+
   async function unlock(method: AuthMethod, password?: string): Promise<boolean> {
     loading.value = true
     try {
@@ -81,13 +111,17 @@ export const useWalletStore = defineStore('wallet', () => {
       if (method === 'passkey') {
         passkeyKey = await getPasskeyDecryptionKey()
       }
-      const response = await sendMessage({
+      const response = await sendMessage<WalletState>({
         type: 'UNLOCK',
         payload: { method, password, passkeyKey },
       })
-      if (response.success) {
+      if (response.success && response.data) {
+        accounts.value = response.data.accounts
+        activeAccount.value = response.data.activeAccount
+        network.value = response.data.network
+        authMethod.value = response.data.authMethod ?? 'password'
+        await hydrateCachedData()
         locked.value = false
-        await fetchState()
         return true
       }
       return false
@@ -109,10 +143,17 @@ export const useWalletStore = defineStore('wallet', () => {
   }
 
   async function fetchBalance(): Promise<void> {
+    const requestedAccount = activeAccount.value
+    const requestedNetwork = network.value
     const response = await sendMessage<{ available: string; total: string; reserved: string }>({
       type: 'GET_BALANCE',
     })
-    if (response.success && response.data) {
+    if (
+      response.success &&
+      response.data &&
+      activeAccount.value === requestedAccount &&
+      network.value === requestedNetwork
+    ) {
       balance.value = response.data
     }
   }
@@ -176,7 +217,7 @@ export const useWalletStore = defineStore('wallet', () => {
       })
       if (response.success && response.data) {
         accounts.value.push(response.data)
-        activeAccount.value = response.data.address
+        if (currentChainType.value === 'xrpl') activeAccount.value = response.data.address
         return true
       }
       return false
@@ -269,6 +310,43 @@ export const useWalletStore = defineStore('wallet', () => {
     } finally {
       loading.value = false
     }
+  }
+
+  async function simulatePayment(params: SimulatePaymentPayload): Promise<SimulationResult> {
+    const response = await sendMessage<SimulationResult>({
+      type: 'SIMULATE_PAYMENT',
+      payload: params,
+    })
+    if (!response.success || !response.data) {
+      throw new Error(response.error ?? 'Transaction simulation failed')
+    }
+    return response.data
+  }
+
+  async function prepareTransaction(intent: TransactionIntent): Promise<TransactionReview> {
+    const response = await sendMessage<TransactionReview>({
+      type: 'PREPARE_TRANSACTION',
+      payload: { intent },
+    })
+    if (!response.success || !response.data) {
+      throw new Error(response.error ?? 'Could not prepare transaction review')
+    }
+    return response.data
+  }
+
+  async function confirmTransaction(
+    reviewId: string,
+    externalSignature?: HardwareEvmSignature,
+    externalSignedTransaction?: string,
+  ): Promise<string> {
+    const response = await sendMessage<{ hash: string }>({
+      type: 'CONFIRM_TRANSACTION',
+      payload: { reviewId, externalSignature, externalSignedTransaction },
+    })
+    if (!response.success || !response.data) {
+      throw new Error(response.error ?? 'Transaction failed')
+    }
+    return response.data.hash
   }
 
   async function fetchTransactionHistory(marker?: unknown): Promise<void> {
@@ -398,7 +476,7 @@ export const useWalletStore = defineStore('wallet', () => {
     }
     const response = await sendMessage<{ mnemonic: string }>({
       type: 'EXPORT_MNEMONIC',
-      payload: { method, password, passkeyKey },
+      payload: { method, password, passkeyKey, address: activeAccount.value ?? undefined },
     })
     if (response.success && response.data) {
       return response.data.mnemonic
@@ -531,6 +609,7 @@ export const useWalletStore = defineStore('wallet', () => {
     evmTokens,
     bridgeTransactions,
     fetchState,
+    hydrateCachedData,
     unlock,
     lock,
     fetchBalance,
@@ -544,6 +623,9 @@ export const useWalletStore = defineStore('wallet', () => {
     setTrustline,
     removeTrustline,
     sendTokenPayment,
+    simulatePayment,
+    prepareTransaction,
+    confirmTransaction,
     fetchTransactionHistory,
     fetchXrpPrice,
     predefinedNetworks,

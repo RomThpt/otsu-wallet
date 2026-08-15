@@ -33,8 +33,9 @@ function truncateId(id: string): string {
 </script>
 
 <template>
-  <div
-    class="rounded-lg border border-border overflow-hidden hover:border-accent transition-colors cursor-pointer"
+  <button
+    type="button"
+    class="w-full overflow-hidden rounded-[20px] bg-bg-subtle text-left shadow-card transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.99]"
   >
     <div class="aspect-square bg-bg-subtle flex items-center justify-center">
       <img
@@ -60,11 +61,11 @@ function truncateId(id: string): string {
         />
       </svg>
     </div>
-    <div class="p-2">
-      <p class="text-xs font-medium truncate">{{ displayName }}</p>
-      <p v-if="nft.transferFee > 0" class="text-[10px] text-text-muted mt-0.5">
+    <div class="px-3 py-2.5">
+      <p class="truncate text-xs font-semibold">{{ displayName }}</p>
+      <p v-if="nft.transferFee > 0" class="mt-0.5 text-[10px] text-text-muted">
         Fee: {{ (nft.transferFee / 1000).toFixed(1) }}%
       </p>
     </div>
-  </div>
+  </button>
 </template>

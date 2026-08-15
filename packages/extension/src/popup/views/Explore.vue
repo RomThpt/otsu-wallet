@@ -27,21 +27,27 @@ const items = [
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <div class="px-4 py-3 border-b border-border">
-      <h2 class="text-sm font-bold">Explore</h2>
+  <div class="flex h-full flex-col">
+    <div class="px-4 pb-4 pt-3">
+      <h1 class="text-2xl font-semibold tracking-tight">Explore</h1>
+      <p class="mt-1 text-sm text-text-muted">Tools for the XRP Ledger.</p>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-3">
+    <div class="flex-1 overflow-y-auto px-4 pb-5">
       <div class="grid grid-cols-2 gap-3">
         <button
           v-for="item in items"
           :key="item.path"
-          class="flex flex-col items-start p-3.5 rounded-lg border border-border hover:border-accent hover:bg-bg-subtle transition-colors text-left"
+          class="flex min-h-[112px] flex-col items-start rounded-[20px] bg-bg-subtle p-4 text-left shadow-card transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.99]"
           @click="router.push(item.path)"
         >
-          <p class="text-sm font-medium">{{ item.label }}</p>
-          <p class="text-xs text-text-muted mt-1 leading-tight">{{ item.description }}</p>
+          <span
+            class="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-bg-hover text-sm font-semibold text-text-muted"
+          >
+            {{ item.label.slice(0, 1) }}
+          </span>
+          <p class="text-sm font-semibold">{{ item.label }}</p>
+          <p class="mt-1 text-xs leading-5 text-text-muted">{{ item.description }}</p>
         </button>
       </div>
     </div>

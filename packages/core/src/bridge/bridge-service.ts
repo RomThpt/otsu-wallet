@@ -1,4 +1,3 @@
-import { AxelarQueryAPI, Environment } from '@axelar-network/axelarjs-sdk'
 import type { BridgeDirection, BridgeEstimate, BridgeStatus, BridgeTransaction } from '@otsu/types'
 import { AXELAR_GATEWAY, BRIDGE_POLL_INTERVAL_MS, BRIDGE_TIMEOUT_MS } from '@otsu/constants'
 import { xrplDropsToEvmWei, evmWeiToXrplDrops } from '../utils/decimals'
@@ -11,17 +10,39 @@ const AXELARSCAN_API = {
 } as const
 
 const DEFAULT_GAS_LIMIT = '250000'
+const AXELAR_GMP_API = {
+  mainnet: 'https://api.gmp.axelarscan.io',
+  testnet: 'https://testnet.api.gmp.axelarscan.io',
+} as const
+
+interface AxelarFeeToken {
+  decimals: number
+  gas_price: string | number
+}
+
+interface AxelarFeeResult {
+  source_base_fee_string: string
+  source_token: AxelarFeeToken
+  execute_gas_multiplier: number
+}
+
+function decimalToAtomic(value: string | number, decimals: number): bigint {
+  const normalized = String(value).trim()
+  const match = normalized.match(/^(\d+)(?:\.(\d+))?$/)
+  if (!match || !Number.isInteger(decimals) || decimals < 0 || decimals > 36) {
+    throw new Error('Axelar returned invalid fee data')
+  }
+  const fraction = match[2] ?? ''
+  const numerator = BigInt(`${match[1]}${fraction}`)
+  return (numerator * 10n ** BigInt(decimals)) / 10n ** BigInt(fraction.length)
+}
 
 export class BridgeService {
-  private axelarQuery: AxelarQueryAPI
   private env: AxelarEnvironment
   private transactions = new Map<string, BridgeTransaction>()
 
   constructor(env: AxelarEnvironment = 'testnet') {
     this.env = env
-    this.axelarQuery = new AxelarQueryAPI({
-      environment: env === 'mainnet' ? Environment.MAINNET : Environment.TESTNET,
-    })
   }
 
   get gatewayAddresses() {
@@ -32,9 +53,30 @@ export class BridgeService {
     const sourceChain = direction === 'xrpl-to-evm' ? 'xrpl' : 'xrpl-evm'
     const destChain = direction === 'xrpl-to-evm' ? 'xrpl-evm' : 'xrpl'
 
-    const fee = await this.axelarQuery.estimateGasFee(sourceChain, destChain, DEFAULT_GAS_LIMIT)
-
-    const feeStr = typeof fee === 'string' ? fee : fee.toString()
+    const response = await fetch(AXELAR_GMP_API[this.env], {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method: 'getFees', sourceChain, destinationChain: destChain }),
+    })
+    if (!response.ok) throw new Error(`Axelar fee request failed (${response.status})`)
+    const payload = (await response.json()) as { result?: Partial<AxelarFeeResult> }
+    const result = payload.result
+    if (
+      !result?.source_base_fee_string ||
+      !result.source_token ||
+      typeof result.execute_gas_multiplier !== 'number'
+    ) {
+      throw new Error('Axelar returned incomplete fee data')
+    }
+    const baseFee = decimalToAtomic(result.source_base_fee_string, result.source_token.decimals)
+    const executionFee =
+      BigInt(DEFAULT_GAS_LIMIT) *
+      decimalToAtomic(result.source_token.gas_price, result.source_token.decimals)
+    const multiplier =
+      result.execute_gas_multiplier > 1
+        ? BigInt(Math.round(result.execute_gas_multiplier * 10_000))
+        : 10_000n
+    const feeStr = (baseFee + (executionFee * multiplier) / 10_000n).toString()
 
     let destinationAmount: string
     if (direction === 'xrpl-to-evm') {

@@ -2,13 +2,11 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '../../stores/wallet'
-import { useToast } from '../../composables/useToast'
 import Button from '../../components/common/Button.vue'
 import Input from '../../components/common/Input.vue'
 
 const router = useRouter()
 const wallet = useWalletStore()
-const toast = useToast()
 
 const name = ref('')
 const url = ref('')
@@ -17,6 +15,7 @@ const faucetUrl = ref('')
 const testing = ref(false)
 const testResult = ref<'success' | 'error' | null>(null)
 const saving = ref(false)
+const error = ref('')
 
 const isValidUrl = computed(() => /^wss?:\/\/.+/.test(url.value))
 
@@ -25,6 +24,7 @@ const canSave = computed(() => name.value.trim().length > 0 && isValidUrl.value)
 async function testConnection() {
   testing.value = true
   testResult.value = null
+  error.value = ''
 
   try {
     const ws = new WebSocket(url.value)
@@ -47,14 +47,8 @@ async function testConnection() {
     })
 
     testResult.value = result ? 'success' : 'error'
-    if (result) {
-      toast.success('Connection successful')
-    } else {
-      toast.error('Connection failed')
-    }
   } catch {
     testResult.value = 'error'
-    toast.error('Connection failed')
   } finally {
     testing.value = false
   }
@@ -63,6 +57,7 @@ async function testConnection() {
 async function handleSave() {
   if (!canSave.value) return
   saving.value = true
+  error.value = ''
 
   try {
     const ok = await wallet.addCustomNetwork({
@@ -73,13 +68,12 @@ async function handleSave() {
     })
 
     if (ok) {
-      toast.success('Network added')
       router.back()
     } else {
-      toast.error('Failed to add network')
+      error.value = 'Failed to add network'
     }
   } catch (e) {
-    toast.error((e as Error).message)
+    error.value = (e as Error).message
   } finally {
     saving.value = false
   }
@@ -130,6 +124,8 @@ async function handleSave() {
         <span v-if="testResult === 'success'" class="text-xs text-success"> Connected </span>
         <span v-else-if="testResult === 'error'" class="text-xs text-danger"> Failed </span>
       </div>
+
+      <p v-if="error" class="form-error" role="alert">{{ error }}</p>
 
       <Button block :disabled="!canSave" :loading="saving" @click="handleSave">
         Save Network

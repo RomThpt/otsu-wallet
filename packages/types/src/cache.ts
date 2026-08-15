@@ -2,9 +2,15 @@ import type { TokenBalance, TokenMetadata } from './token'
 import type { NftBalance, NftMetadata } from './nft'
 import type { TransactionRecord } from './transaction'
 
+export interface CachedBalance {
+  available: string
+  total: string
+  reserved: string
+}
+
 export interface CachedAccountData {
   address: string
-  balance?: string
+  balance?: CachedBalance
   tokens?: TokenBalance[]
   nfts?: NftBalance[]
   transactions?: TransactionRecord[]

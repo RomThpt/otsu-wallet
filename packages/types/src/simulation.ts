@@ -17,6 +17,8 @@ export interface RiskWarning {
 
 export interface SimulationResult {
   success: boolean
+  engineResult?: string
+  engineResultMessage?: string
   balanceChanges: BalanceChange[]
   fee: string
   objectsCreated: number

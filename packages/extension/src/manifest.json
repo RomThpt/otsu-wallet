@@ -33,7 +33,13 @@
     "storage",
     "alarms",
     "tabs",
-    "identity"
+    "identity",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://connect.trezor.io/9/*",
+    "https://api.gmp.axelarscan.io/*",
+    "https://testnet.api.gmp.axelarscan.io/*"
   ],
   "protocol_handlers": [
     {

@@ -7,11 +7,12 @@ export class EvmKeyring {
   load(accounts: VaultAccount[]): void {
     this.accounts.clear()
     for (const account of accounts) {
-      this.accounts.set(account.address.toLowerCase(), account)
+      if (account.privateKey) this.accounts.set(account.address.toLowerCase(), account)
     }
   }
 
   addAccount(account: VaultAccount): void {
+    if (!account.privateKey) throw new Error('Software account private key is required')
     this.accounts.set(account.address.toLowerCase(), account)
   }
 
@@ -56,6 +57,7 @@ export class EvmKeyring {
     if (!account) {
       throw new Error(`EVM account not found: ${address}`)
     }
+    if (!account.privateKey) throw new Error('Account must be signed by its hardware wallet')
     return new Wallet(account.privateKey)
   }
 }

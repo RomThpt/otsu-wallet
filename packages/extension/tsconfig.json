@@ -3,6 +3,10 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@ledger": ["src/lib/ledger-loader.ts"]
+    },
     "jsx": "preserve",
     "jsxImportSource": "vue",
     "types": ["chrome"]

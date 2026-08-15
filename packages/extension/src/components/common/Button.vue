@@ -12,14 +12,16 @@ defineProps<{
   <button
     :disabled="disabled || loading"
     :class="[
-      'inline-flex items-center justify-center rounded-xl font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-link focus:ring-offset-1 focus:ring-offset-bg disabled:opacity-50 disabled:cursor-not-allowed',
+      'inline-flex items-center justify-center rounded-full font-semibold transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-link focus:ring-offset-2 focus:ring-offset-bg disabled:cursor-not-allowed disabled:opacity-50',
       {
         'w-full': block,
-        'px-3 py-1.5 text-sm': size === 'sm',
-        'px-4 py-2 text-sm': size === 'md' || !size,
-        'px-6 py-3 text-base': size === 'lg',
-        'bg-accent text-accent-fg hover:opacity-90 shadow-card': variant === 'primary' || !variant,
-        'bg-transparent border border-border text-text hover:bg-bg-hover': variant === 'secondary',
+        'h-9 px-3.5 text-sm': size === 'sm',
+        'h-11 px-5 text-sm': size === 'md' || !size,
+        'h-12 px-6 text-base': size === 'lg',
+        'bg-accent text-accent-fg shadow-card hover:brightness-95':
+          variant === 'primary' || !variant,
+        'border border-border bg-bg-subtle text-text shadow-sm hover:bg-bg-hover':
+          variant === 'secondary',
         'bg-danger text-white hover:opacity-90': variant === 'danger',
         'bg-transparent text-text-muted hover:bg-bg-hover hover:text-text': variant === 'ghost',
       },

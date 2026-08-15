@@ -7,13 +7,12 @@ import { useWalletStore } from '../../stores/wallet'
 import Button from '../../components/common/Button.vue'
 import Input from '../../components/common/Input.vue'
 import Skeleton from '../../components/common/Skeleton.vue'
-import { useToast } from '../../composables/useToast'
+import SuccessAnimation from '../../components/common/SuccessAnimation.vue'
 
 const RIPPLE_EPOCH = 946684800
 
 const router = useRouter()
 const wallet = useWalletStore()
-const toast = useToast()
 const loading = ref(false)
 const listLoading = ref(false)
 const error = ref('')
@@ -71,7 +70,6 @@ async function createCheck() {
     if (response.success && response.data) {
       txHash.value = response.data.hash
       step.value = 'result'
-      toast.success('Check created')
       await wallet.fetchAccountChecks()
     } else {
       error.value = response.error ?? 'Failed'
@@ -103,7 +101,6 @@ async function cashCheck() {
     if (response.success && response.data) {
       txHash.value = response.data.hash
       step.value = 'result'
-      toast.success('Check cashed')
       await wallet.fetchAccountChecks()
     } else {
       error.value = response.error ?? 'Failed'
@@ -123,13 +120,12 @@ async function cancelCheck(id: string) {
       payload: { checkID: id },
     })
     if (response.success) {
-      toast.success('Check cancelled')
       await wallet.fetchAccountChecks()
     } else {
-      toast.error(response.error ?? 'Failed')
+      error.value = response.error ?? 'Failed to cancel check'
     }
   } catch (e) {
-    toast.error((e as Error).message)
+    error.value = (e as Error).message
   } finally {
     loading.value = false
   }
@@ -158,6 +154,7 @@ function cashFromList(id: string) {
     </div>
 
     <div class="flex-1 overflow-y-auto p-4 space-y-4">
+      <p v-if="error" class="form-error" role="alert">{{ error }}</p>
       <!-- Pending Checks List -->
       <div>
         <h3 class="text-sm font-bold mb-2">Pending Checks</h3>
@@ -240,7 +237,6 @@ function cashFromList(id: string) {
         <template v-if="step === 'create'">
           <Input v-model="destination" label="Destination" placeholder="rAddress..." />
           <Input v-model="sendMaxAmount" label="Max Amount (XRP)" placeholder="0.000000" />
-          <p v-if="error" class="text-xs text-danger">{{ error }}</p>
           <Button
             block
             :loading="loading"
@@ -260,7 +256,6 @@ function cashFromList(id: string) {
             placeholder="Exact amount to cash"
             hint="Leave empty to cash full amount"
           />
-          <p v-if="error" class="text-xs text-danger">{{ error }}</p>
           <Button block :loading="loading" :disabled="!checkID" @click="cashCheck">
             Cash Check
           </Button>
@@ -269,19 +264,8 @@ function cashFromList(id: string) {
 
       <!-- Result -->
       <template v-if="step === 'result'">
-        <div class="text-center py-8">
-          <div
-            class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-bg-subtle mb-4"
-          >
-            <svg class="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
+        <div class="animate-slide-up py-8 text-center" role="status" aria-live="polite">
+          <SuccessAnimation class="mb-3" />
           <h3 class="text-lg font-bold">Success</h3>
           <p class="mt-2 text-xs text-text-muted font-mono break-all">{{ txHash }}</p>
         </div>

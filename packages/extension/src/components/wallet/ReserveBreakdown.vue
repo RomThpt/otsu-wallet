@@ -30,21 +30,20 @@ const usdTotal = computed(() => {
 </script>
 
 <template>
-  <div class="text-center">
-    <p class="text-sm text-text-muted">Total Balance</p>
-    <p class="text-2xl font-bold mt-1">{{ totalXrp }}</p>
-    <p class="text-sm text-text-muted">XRP</p>
-    <p v-if="usdTotal" class="text-sm text-text-muted mt-1">~${{ usdTotal }} USD</p>
-  </div>
+  <p class="mt-2 text-4xl font-semibold tracking-tight">
+    {{ totalXrp }}
+    <span class="text-base font-normal text-text-muted">XRP</span>
+  </p>
+  <p v-if="usdTotal" class="mt-1 text-sm text-text-muted">~${{ usdTotal }} USD</p>
 
-  <div class="mt-3 grid grid-cols-2 gap-4 text-sm">
+  <div class="mt-5 grid grid-cols-2 gap-5 border-t border-border pt-4 text-sm">
     <div>
-      <p class="text-text-muted">Available</p>
-      <p class="font-medium">{{ availableXrp }} XRP</p>
+      <p class="text-[11px] font-medium uppercase tracking-wider text-text-muted">Available</p>
+      <p class="mt-1 font-medium">{{ availableXrp }} XRP</p>
     </div>
     <div>
-      <p class="text-text-muted">Reserved</p>
-      <p class="font-medium">{{ reservedXrp }} XRP</p>
+      <p class="text-[11px] font-medium uppercase tracking-wider text-text-muted">Reserved</p>
+      <p class="mt-1 font-medium">{{ reservedXrp }} XRP</p>
     </div>
   </div>
 </template>

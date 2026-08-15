@@ -153,14 +153,14 @@ async function handleBurn() {
             step="0.000001"
             min="0"
             placeholder="Price in XRP"
-            class="block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg text-text focus:outline-none focus:ring-2 focus:ring-link"
+            class="form-control"
           />
           <Button size="sm" block :loading="nftStore.loading" @click="handleSell">
             Create Sell Offer
           </Button>
         </div>
 
-        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
+        <p v-if="error" class="form-error">{{ error }}</p>
 
         <!-- Sell Offers -->
         <div v-if="nftStore.sellOffers.length > 0">

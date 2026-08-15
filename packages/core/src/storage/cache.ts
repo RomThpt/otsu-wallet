@@ -6,6 +6,7 @@ import type {
   NftMetadata,
   ContractInfo,
   BridgeTransaction,
+  CachedBalance,
 } from '@otsu/types'
 
 export interface CacheStorage {
@@ -42,11 +43,15 @@ export class WalletCache {
     await next
   }
 
-  async getCachedBalance(address: string): Promise<string | null> {
-    return this.storage.get<string>(accountKey(address, 'balance'))
+  async getCachedBalance(address: string): Promise<CachedBalance | null> {
+    const cached = await this.storage.get<CachedBalance | string>(accountKey(address, 'balance'))
+    if (typeof cached === 'string') {
+      return { total: cached, available: '', reserved: '' }
+    }
+    return cached
   }
 
-  async setCachedBalance(address: string, balance: string): Promise<void> {
+  async setCachedBalance(address: string, balance: CachedBalance): Promise<void> {
     await this.storage.set(accountKey(address, 'balance'), balance)
     await this.touchAccount(address)
   }

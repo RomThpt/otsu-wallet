@@ -31,6 +31,11 @@ const routes = [
     name: 'import',
     component: () => import('./views/ImportWallet.vue'),
   },
+  {
+    path: '/hardware',
+    name: 'hardware',
+    component: () => import('./views/HardwareWallet.vue'),
+  },
 ]
 
 export const router = createRouter({

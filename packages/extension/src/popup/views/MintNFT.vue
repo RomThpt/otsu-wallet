@@ -5,6 +5,7 @@ import { useNftStore } from '../../stores/nft'
 import { NFT_FLAGS } from '@otsu/constants'
 import Button from '../../components/common/Button.vue'
 import Input from '../../components/common/Input.vue'
+import SuccessAnimation from '../../components/common/SuccessAnimation.vue'
 
 const router = useRouter()
 const nftStore = useNftStore()
@@ -78,31 +79,31 @@ async function executeMint() {
           hint="Group identifier for collections"
         />
 
-        <div>
-          <label class="text-sm font-medium text-text">Transfer Fee (%)</label>
+        <div class="form-field">
+          <label class="form-label">Transfer Fee (%)</label>
           <input
             v-model="transferFee"
             type="range"
             min="0"
             max="50"
             step="0.1"
-            class="mt-1 block w-full"
+            class="form-range block w-full"
           />
           <p class="text-xs text-text-muted mt-1">{{ transferFee }}%</p>
         </div>
 
         <div class="space-y-2">
           <label class="flex items-center gap-2">
-            <input v-model="transferable" type="checkbox" class="rounded border-border" />
+            <input v-model="transferable" type="checkbox" class="form-checkbox" />
             <span class="text-sm">Transferable</span>
           </label>
           <label class="flex items-center gap-2">
-            <input v-model="burnable" type="checkbox" class="rounded border-border" />
+            <input v-model="burnable" type="checkbox" class="form-checkbox" />
             <span class="text-sm">Burnable</span>
           </label>
         </div>
 
-        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
+        <p v-if="error" class="form-error">{{ error }}</p>
 
         <Button block :disabled="!uri" @click="confirmMint">Review</Button>
       </template>
@@ -139,19 +140,8 @@ async function executeMint() {
 
       <!-- Result Step -->
       <template v-else>
-        <div class="text-center py-8">
-          <div
-            class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-bg-subtle mb-4"
-          >
-            <svg class="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
+        <div class="animate-slide-up py-8 text-center" role="status" aria-live="polite">
+          <SuccessAnimation class="mb-3" kind="collectible" />
           <h3 class="text-lg font-bold">NFT Minted</h3>
           <p class="mt-2 text-xs text-text-muted font-mono break-all">{{ txHash }}</p>
         </div>

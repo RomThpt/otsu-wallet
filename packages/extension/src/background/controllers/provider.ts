@@ -7,6 +7,7 @@ import type {
   WalletSettings,
   SimulationResult,
   RiskWarning,
+  ContractCallParams,
 } from '@otsu/types'
 import {
   SIGNING_TIMEOUT_MS,
@@ -15,8 +16,8 @@ import {
   ErrorCodes,
   OtsuError,
 } from '@otsu/constants'
-import { TransactionSimulator } from '../services/simulator'
 import { RiskScanner } from '../services/risk-scanner'
+import { buildContractCall } from '@otsu/core'
 import type { WalletController } from './wallet'
 
 const PERMISSIONS_STORAGE_KEY = 'otsu-permissions'
@@ -27,12 +28,15 @@ interface PendingRequest {
   resolve: (value: OtsuProviderResponse) => void
   reject: (reason: Error) => void
   timeoutId: ReturnType<typeof setTimeout>
+  preparedTransaction?: Record<string, unknown>
+  expectedAccount?: string
+  expectedNetwork?: string
+  expectedContextVersion?: number
 }
 
 export class ProviderController {
   private pendingRequests = new Map<string, PendingRequest>()
   private permissions = new Map<string, DAppPermission>()
-  private simulator = new TransactionSimulator()
   private riskScanner = new RiskScanner()
   private initialized = false
   private signingKey: CryptoKey | null = null
@@ -133,7 +137,20 @@ export class ProviderController {
         return true
       }
 
-      const sender = this.wallet.getState().activeAccount
+      const state = this.wallet.getState()
+      if (state.locked) throw new OtsuError(ErrorCodes.SIGNING_ERROR, 'Wallet is locked')
+      if (
+        pending.expectedAccount !== state.activeAccount ||
+        pending.expectedNetwork !== state.network ||
+        (pending.expectedContextVersion !== undefined &&
+          pending.expectedContextVersion !== this.wallet.getSigningContextVersion())
+      ) {
+        throw new OtsuError(
+          ErrorCodes.SIGNING_ERROR,
+          'Account or network changed. Review the request again.',
+        )
+      }
+      const sender = pending.expectedAccount
       if (!sender) throw new OtsuError(ErrorCodes.SIGNING_ERROR, 'No active account')
 
       const keyring = this.wallet.getKeyring()
@@ -146,28 +163,20 @@ export class ProviderController {
         return true
       }
 
-      const tx = request.params as Record<string, unknown>
-      const client = this.wallet.getClient()
-
-      tx.Account = sender
-      const prepared = await client.prepareTransaction(tx)
-      const signed = keyring.sign(sender, prepared as never)
-
-      if (request.method === 'signAndSubmit') {
-        const result = await client.submitTransaction(signed.tx_blob)
-        pending.resolve({
-          id: request.id,
-          result: {
-            tx_blob: signed.tx_blob,
-            hash: (result.result.tx_json?.hash as string) ?? signed.hash,
-          },
-        })
-      } else {
-        pending.resolve({
-          id: request.id,
-          result: { tx_blob: signed.tx_blob, hash: signed.hash },
-        })
+      if (!pending.preparedTransaction) {
+        throw new OtsuError(
+          ErrorCodes.SIGNING_ERROR,
+          'The transaction was not successfully simulated',
+        )
       }
+      const signed = await this.wallet.signExternalXrplTransaction(
+        pending.preparedTransaction,
+        request.method === 'signAndSubmit' || request.method === 'contractCall',
+      )
+      pending.resolve({
+        id: request.id,
+        result: { tx_blob: signed.txBlob, hash: signed.hash },
+      })
     } catch (error) {
       pending.resolve({
         id: pending.request.id,
@@ -413,22 +422,37 @@ export class ProviderController {
   // --- Signing flow ---
 
   private async initiateSigningFlow(request: OtsuProviderRequest): Promise<OtsuProviderResponse> {
+    const permission = this.permissions.get(request.origin!)
+    const state = this.wallet.getState()
+    const account = state.accounts.find((item) => item.address === permission?.address)
+    if (account?.type === 'hardware') {
+      return {
+        id: request.id,
+        error:
+          'Hardware wallet signing is not available for dApp requests yet. Use the Otsu transaction screen.',
+      }
+    }
     const signingRequest: SigningRequest = {
       id: request.id,
       origin: request.origin!,
       favicon: request.favicon,
       title: request.title,
-      method: request.method as 'signTransaction' | 'signAndSubmit',
+      method: request.method as SigningRequest['method'],
       params: request.params,
       createdAt: Date.now(),
     }
 
-    return this.openSigningWindow(signingRequest)
+    return this.openSigningWindow(signingRequest, undefined, {
+      account: permission?.address,
+      network: state.network,
+      contextVersion: this.wallet.getSigningContextVersion(),
+    })
   }
 
   private openSigningWindow(
     signingRequest: SigningRequest,
     onApprove?: () => Promise<OtsuProviderResponse>,
+    context?: { account?: string; network?: string; contextVersion?: number },
   ): Promise<OtsuProviderResponse> {
     return new Promise<OtsuProviderResponse>(async (resolve, reject) => {
       const timeoutId = setTimeout(() => {
@@ -459,6 +483,9 @@ export class ProviderController {
           : resolve,
         reject,
         timeoutId,
+        expectedAccount: context?.account,
+        expectedNetwork: context?.network,
+        expectedContextVersion: context?.contextVersion,
       }
 
       this.pendingRequests.set(signingRequest.id, pending)
@@ -467,24 +494,36 @@ export class ProviderController {
       let simulation: SimulationResult | undefined
       let warnings: RiskWarning[] | undefined
 
-      if (signingRequest.method !== 'connect' && signingRequest.params) {
-        const tx = signingRequest.params as Record<string, unknown>
+      if (
+        (signingRequest.method === 'signTransaction' ||
+          signingRequest.method === 'signAndSubmit' ||
+          signingRequest.method === 'contractCall') &&
+        signingRequest.params
+      ) {
+        const permission = this.permissions.get(signingRequest.origin)
+        let tx = signingRequest.params as Record<string, unknown>
         try {
-          const balance = await this.wallet.getBalance()
-          simulation = this.simulator.simulate(tx, balance.total)
-        } catch {
+          if (!permission) throw new Error('dApp permission expired')
+          if (signingRequest.method === 'contractCall') {
+            tx = buildContractCall(permission.address, signingRequest.params as ContractCallParams)
+          }
+          const prepared = await this.wallet.prepareExternalXrplTransaction(tx, permission.address)
+          pending.preparedTransaction = prepared.transaction
+          signingRequest.params = prepared.transaction
+          simulation = prepared.simulation
+        } catch (cause) {
           simulation = {
             success: false,
             balanceChanges: [],
             fee: '0',
             objectsCreated: 0,
             objectsDeleted: 0,
-            error: 'Failed to simulate transaction',
+            error: (cause as Error).message || 'Failed to simulate transaction',
           }
         }
 
         warnings = this.riskScanner.scan({
-          tx,
+          tx: pending.preparedTransaction ?? tx,
           origin: signingRequest.origin,
         })
       }

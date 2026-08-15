@@ -36,12 +36,16 @@ async function loadMore() {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <div class="px-4 py-3 border-b border-border">
-      <h2 class="text-sm font-bold">Transaction History</h2>
+  <div class="flex h-full flex-col px-4 pb-5">
+    <div class="pb-4 pt-3">
+      <h1 class="text-2xl font-semibold tracking-tight">Activity</h1>
+      <p class="mt-1 text-sm text-text-muted">Your recent XRPL transactions.</p>
     </div>
 
-    <div v-if="loading && wallet.transactions.length === 0" class="flex-1 divide-y divide-border">
+    <div
+      v-if="loading && wallet.transactions.length === 0"
+      class="flex-1 overflow-hidden rounded-[20px] bg-bg-subtle"
+    >
       <div v-for="i in 4" :key="i" class="px-4 py-3 flex items-center gap-3">
         <Skeleton variant="circle" width="28px" height="28px" />
         <div class="flex-1 space-y-2">
@@ -59,12 +63,12 @@ async function loadMore() {
       <p class="text-sm text-text-muted">No transactions yet</p>
     </div>
 
-    <div v-else class="flex-1 overflow-y-auto divide-y divide-border">
+    <div v-else class="flex-1 overflow-y-auto rounded-[20px] bg-bg-subtle shadow-card">
       <TransactionItem
         v-for="tx in wallet.transactions"
         :key="tx.hash"
         :tx="tx"
-        class="cursor-pointer"
+        class="cursor-pointer border-b border-border/70 last:border-0"
         @click="router.push('/history/' + tx.hash)"
       />
 

@@ -1,64 +1,146 @@
+@font-face {
+  font-family: 'Ubuntu Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/ubuntu-mono-regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Ubuntu Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/ubuntu-mono-regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Ubuntu Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../assets/fonts/ubuntu-mono-bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Ubuntu Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/ubuntu-mono-bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono Variable';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2')
+    format('woff2-variations');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Light -- cool navy shadows, warm ivory/peach highlights */
-    --bg: 247 236 214;
-    --bg-subtle: 243 210 165;
-    --bg-hover: 234 201 144;
-    --text: 30 46 111;
-    --text-muted: 93 115 168;
-    --border: 217 192 158;
-    --accent: 240 112 50;
-    --accent-fg: 30 46 111;
-    --link: 69 105 183;
-    --success: 46 139 132;
-    --warning: 210 157 68;
-    --danger: 180 69 43;
-    --card-shadow: 0 1px 2px rgba(30,46,111,0.06), 0 4px 12px rgba(30,46,111,0.08);
+    color-scheme: light;
+    --bg: 250 250 249;
+    --bg-subtle: 255 255 255;
+    --bg-hover: 245 245 244;
+    --text: 28 28 30;
+    --text-muted: 113 113 122;
+    --border: 231 229 228;
+    --accent: 0 122 255;
+    --accent-fg: 255 255 255;
+    --link: 0 102 204;
+    --success: 36 138 61;
+    --warning: 179 86 0;
+    --danger: 215 0 21;
+    --card-shadow: 0 1px 2px rgba(28, 28, 30, 0.04), 0 8px 24px rgba(28, 28, 30, 0.05);
   }
 
   .dark {
-    /* Dark -- deep ultramarine/navy shadows, warm burnt-orange highlights */
-    --bg: 12 18 38;
-    --bg-subtle: 26 39 82;
-    --bg-hover: 35 66 122;
-    --text: 246 224 188;
-    --text-muted: 157 170 214;
-    --border: 56 74 143;
-    --accent: 240 112 50;
-    --accent-fg: 15 24 48;
-    --link: 141 165 232;
-    --success: 79 176 166;
-    --warning: 232 169 79;
-    --danger: 224 106 75;
-    --card-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 16px rgba(0,0,0,0.35);
+    color-scheme: dark;
+    --bg: 15 15 16;
+    --bg-subtle: 28 28 30;
+    --bg-hover: 44 44 46;
+    --text: 245 245 247;
+    --text-muted: 161 161 170;
+    --border: 58 58 60;
+    --accent: 10 132 255;
+    --accent-fg: 255 255 255;
+    --link: 64 156 255;
+    --success: 48 209 88;
+    --warning: 255 159 10;
+    --danger: 255 69 58;
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 10px 28px rgba(0, 0, 0, 0.28);
   }
 
   body {
-    @apply m-0 p-0 antialiased;
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    @apply m-0 p-0 font-sans antialiased;
     background-color: rgb(var(--bg));
     color: rgb(var(--text));
   }
 
-  /* Film grain / screenprint texture -- subtle noise over the whole UI */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    pointer-events: none;
-    opacity: 0.05;
-    mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  code,
+  pre,
+  .font-mono {
+    font-variant-ligatures: none;
+  }
+}
+
+@layer components {
+  .form-field {
+    @apply space-y-2;
   }
 
-  .dark body::after {
-    opacity: 0.07;
-    mix-blend-mode: overlay;
+  .form-label {
+    @apply block text-[13px] font-medium leading-5 text-text;
+    letter-spacing: -0.01em;
+  }
+
+  .form-control,
+  .form-select,
+  .form-textarea {
+    @apply block w-full border border-border bg-bg-subtle px-3.5 text-sm text-text shadow-sm outline-none transition duration-150 placeholder:text-text-muted/60 hover:border-text-muted/50 focus:border-accent focus:ring-4 focus:ring-accent/10 disabled:cursor-not-allowed disabled:bg-bg-hover disabled:text-text-muted disabled:opacity-70;
+    border-radius: 14px;
+  }
+
+  .form-control,
+  .form-select {
+    @apply h-11;
+  }
+
+  .form-textarea {
+    @apply min-h-28 resize-y py-3 leading-6;
+  }
+
+  .form-control-error {
+    @apply border-danger focus:border-danger focus:ring-danger/10;
+  }
+
+  .form-help,
+  .form-error {
+    @apply text-xs leading-5;
+  }
+
+  .form-help {
+    @apply text-text-muted;
+  }
+
+  .form-error {
+    @apply text-danger;
+  }
+
+  .form-checkbox {
+    @apply h-4 w-4 rounded border-border bg-bg-subtle;
+    accent-color: rgb(var(--accent));
+  }
+
+  .form-range {
+    accent-color: rgb(var(--accent));
   }
 }
 
@@ -70,4 +152,15 @@
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

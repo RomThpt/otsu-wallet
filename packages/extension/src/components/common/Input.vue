@@ -1,5 +1,7 @@
 <script setup lang="ts">
-defineProps<{
+import { computed, useId } from 'vue'
+
+const props = defineProps<{
   label?: string
   error?: string
   hint?: string
@@ -9,25 +11,27 @@ defineProps<{
 }>()
 
 const model = defineModel<string>()
+const inputId = useId()
+const messageId = computed(() => (props.error || props.hint ? `${inputId}-message` : undefined))
 </script>
 
 <template>
-  <div class="space-y-1">
-    <label v-if="label" class="block text-sm font-medium text-text">
+  <div class="form-field">
+    <label v-if="label" :for="inputId" class="form-label">
       {{ label }}
     </label>
     <input
+      :id="inputId"
       v-model="model"
       :type="type ?? 'text'"
       :placeholder="placeholder"
       :disabled="disabled"
-      :class="[
-        'block w-full rounded-xl border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-link',
-        error ? 'border-danger text-danger' : 'border-border text-text bg-bg-subtle',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
-      ]"
+      :aria-invalid="error ? 'true' : undefined"
+      :aria-describedby="messageId"
+      class="form-control"
+      :class="{ 'form-control-error': error }"
     />
-    <p v-if="error" class="text-xs text-danger">{{ error }}</p>
-    <p v-else-if="hint" class="text-xs text-text-muted">{{ hint }}</p>
+    <p v-if="error" :id="messageId" class="form-error">{{ error }}</p>
+    <p v-else-if="hint" :id="messageId" class="form-help">{{ hint }}</p>
   </div>
 </template>

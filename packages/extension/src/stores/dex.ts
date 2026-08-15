@@ -1,6 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { OrderBook, DexOffer, CreateDexOfferParams } from '@otsu/types'
+import type {
+  CreateDexOfferParams,
+  DexOffer,
+  OrderBook,
+  OwnedXrplAsset,
+  SwapQuote,
+  SwapQuoteRequest,
+} from '@otsu/types'
 import { sendMessage } from '../lib/messaging'
 
 export const useDexStore = defineStore('dex', () => {
@@ -12,6 +19,38 @@ export const useDexStore = defineStore('dex', () => {
     issuer: 'rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B',
   })
   const loading = ref(false)
+  const ownedAssets = ref<OwnedXrplAsset[]>([])
+  const swapQuote = ref<SwapQuote | null>(null)
+  const error = ref('')
+
+  async function fetchOwnedAssets(): Promise<void> {
+    loading.value = true
+    error.value = ''
+    try {
+      const response = await sendMessage<OwnedXrplAsset[]>({ type: 'GET_OWNED_ASSETS' })
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Could not load assets')
+      }
+      ownedAssets.value = response.data
+    } catch (cause) {
+      error.value = (cause as Error).message
+      throw cause
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchSwapQuote(request: SwapQuoteRequest): Promise<SwapQuote> {
+    error.value = ''
+    const response = await sendMessage<SwapQuote>({ type: 'GET_SWAP_QUOTE', payload: request })
+    if (!response.success || !response.data) {
+      const message = response.error || 'Could not quote this swap'
+      error.value = message
+      throw new Error(message)
+    }
+    swapQuote.value = response.data
+    return response.data
+  }
 
   async function fetchOrderBook(): Promise<void> {
     loading.value = true
@@ -67,6 +106,11 @@ export const useDexStore = defineStore('dex', () => {
     baseCurrency,
     quoteCurrency,
     loading,
+    ownedAssets,
+    swapQuote,
+    error,
+    fetchOwnedAssets,
+    fetchSwapQuote,
     fetchOrderBook,
     fetchAccountOffers,
     createOffer,

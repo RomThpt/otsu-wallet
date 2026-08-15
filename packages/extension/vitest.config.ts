@@ -5,6 +5,7 @@ import { resolve } from 'path'
 const root = resolve(__dirname)
 
 export default defineConfig({
+  define: { __LEDGER_SUPPORTED__: true },
   plugins: [vue()],
   test: {
     globals: true,
@@ -16,6 +17,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      '@ledger': resolve(__dirname, 'src/lib/ledger-loader.ts'),
     },
   },
 })

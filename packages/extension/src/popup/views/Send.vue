@@ -3,16 +3,17 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useWalletStore } from '../../stores/wallet'
 import { DROPS_PER_XRP } from '@otsu/constants'
-import { sendMessage } from '../../lib/messaging'
+import type { TransactionIntent, TransactionReview } from '@otsu/types'
+import { EvmContract, evmParseUnits } from '@otsu/core'
 import { parseXrplUri } from '../../lib/uri-parser'
 import Button from '../../components/common/Button.vue'
 import Input from '../../components/common/Input.vue'
-import Card from '../../components/common/Card.vue'
 import AddressInput from '../../components/common/AddressInput.vue'
-import { useToast } from '../../composables/useToast'
+import TransactionReviewView from '../../components/security/TransactionReview.vue'
+import SuccessAnimation from '../../components/common/SuccessAnimation.vue'
+import { confirmOnHardware } from '../../lib/hardware-review'
 
 const router = useRouter()
-const toast = useToast()
 const route = useRoute()
 const wallet = useWalletStore()
 
@@ -25,7 +26,7 @@ const step = ref<'form' | 'confirm' | 'result'>('form')
 const loading = ref(false)
 const error = ref('')
 const txHash = ref('')
-const estimatedGas = ref<string | null>(null)
+const review = ref<TransactionReview | null>(null)
 
 const isEvm = computed(() => wallet.isEvmNetwork)
 
@@ -147,29 +148,71 @@ function setMax() {
   }
 }
 
-async function confirmSend() {
-  if (!canSend.value) return
-  error.value = ''
-
-  if (isEvm.value) {
-    try {
-      const gas = await wallet.estimateEvmGas({
-        to: destination.value,
-        value: isToken.value ? undefined : amount.value,
-      })
-      estimatedGas.value = gas
-    } catch {
-      estimatedGas.value = null
+function buildTransactionIntent(): TransactionIntent {
+  if (!isEvm.value) {
+    const [currency, issuer] = isToken.value ? selectedCurrency.value.split(':') : []
+    return {
+      chainType: 'xrpl',
+      kind: 'payment',
+      destination: destination.value,
+      amount: isToken.value ? amount.value : amountDrops.value,
+      currency,
+      issuer,
+      destinationTag: destinationTag.value ? Number(destinationTag.value) : undefined,
+      memos: memo.value ? [{ type: 'text/plain', data: memo.value }] : undefined,
     }
   }
 
-  step.value = 'confirm'
+  if (isToken.value) {
+    const contractAddress = selectedCurrency.value.replace('erc20:', '')
+    const token = wallet.evmTokens.find(
+      (item) => item.contractAddress.toLowerCase() === contractAddress.toLowerCase(),
+    )
+    if (!token) throw new Error('Selected token is not available')
+    const contract = new EvmContract(contractAddress, [
+      'function transfer(address recipient, uint256 amount) returns (bool)',
+    ])
+    return {
+      chainType: 'evm',
+      kind: 'transaction',
+      to: contractAddress,
+      value: '0',
+      data: contract.interface.encodeFunctionData('transfer', [
+        destination.value,
+        evmParseUnits(amount.value, token.decimals),
+      ]),
+    }
+  }
+
+  return {
+    chainType: 'evm',
+    kind: 'transaction',
+    to: destination.value,
+    value: amount.value,
+  }
+}
+
+async function confirmSend() {
+  if (!canSend.value) return
+  error.value = ''
+  loading.value = true
+
+  try {
+    review.value = await wallet.prepareTransaction(buildTransactionIntent())
+    if (!review.value.simulation.success) {
+      throw new Error(review.value.simulation.error ?? 'Transaction simulation failed')
+    }
+    step.value = 'confirm'
+  } catch (e) {
+    error.value = (e as Error).message
+  } finally {
+    loading.value = false
+  }
 }
 
 async function executeSend() {
   if (destinationTag.value && !isValidTag(destinationTag.value)) {
     error.value = 'Destination tag must be an integer between 0 and 4294967295'
-    toast.error(error.value)
     step.value = 'form'
     return
   }
@@ -178,66 +221,18 @@ async function executeSend() {
   error.value = ''
 
   try {
-    if (isEvm.value) {
-      const hash = await wallet.sendEvmTransaction({
-        to: destination.value,
-        value: isToken.value ? undefined : amount.value,
-      })
-      if (hash) {
-        txHash.value = hash
-        step.value = 'result'
-        toast.success('Transaction sent successfully')
-        await wallet.fetchEvmBalance()
-      } else {
-        error.value = 'Transaction failed'
-        toast.error('Transaction failed')
-        step.value = 'form'
-      }
-    } else if (isToken.value) {
-      const [currency, issuer] = selectedCurrency.value.split(':')
-      const hash = await wallet.sendTokenPayment({
-        destination: destination.value,
-        currency,
-        issuer,
-        value: amount.value,
-        destinationTag: destinationTag.value ? Number(destinationTag.value) : undefined,
-        memos: memo.value ? [{ type: 'text/plain', data: memo.value }] : undefined,
-      })
-      if (hash) {
-        txHash.value = hash
-        step.value = 'result'
-        toast.success('Transaction sent successfully')
-        await wallet.fetchBalance()
-      } else {
-        error.value = 'Transaction failed'
-        toast.error('Transaction failed')
-        step.value = 'form'
-      }
-    } else {
-      const response = await sendMessage<{ hash: string }>({
-        type: 'SEND_PAYMENT',
-        payload: {
-          destination: destination.value,
-          amount: amountDrops.value,
-          destinationTag: destinationTag.value ? Number(destinationTag.value) : undefined,
-          memos: memo.value ? [{ type: 'text/plain', data: memo.value }] : undefined,
-        },
-      })
-
-      if (response.success && response.data) {
-        txHash.value = response.data.hash
-        step.value = 'result'
-        toast.success('Transaction sent successfully')
-        await wallet.fetchBalance()
-      } else {
-        error.value = response.error ?? 'Transaction failed'
-        toast.error(error.value)
-        step.value = 'form'
-      }
-    }
+    if (!review.value) throw new Error('Transaction review expired. Review it again.')
+    const { externalSignature, externalSignedTransaction } = await confirmOnHardware(review.value)
+    txHash.value = await wallet.confirmTransaction(
+      review.value.reviewId,
+      externalSignature,
+      externalSignedTransaction,
+    )
+    step.value = 'result'
+    if (isEvm.value) await wallet.fetchEvmBalance()
+    else await wallet.fetchBalance()
   } catch (e) {
     error.value = (e as Error).message
-    toast.error(error.value)
     step.value = 'form'
   } finally {
     loading.value = false
@@ -252,12 +247,9 @@ async function executeSend() {
       <h2 class="text-lg font-bold">Send {{ isToken ? selectedCurrency.split(':')[0] : 'XRP' }}</h2>
 
       <!-- Currency selector -->
-      <div v-if="currencyOptions.length > 1">
-        <label class="text-sm font-medium text-text">Currency</label>
-        <select
-          v-model="selectedCurrency"
-          class="mt-1.5 block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg-subtle text-text focus:outline-none focus:ring-2 focus:ring-link"
-        >
+      <div v-if="currencyOptions.length > 1" class="form-field">
+        <label class="form-label">Currency</label>
+        <select v-model="selectedCurrency" class="form-select">
           <option v-for="opt in currencyOptions" :key="opt.value" :value="opt.value">
             {{ opt.label }}
           </option>
@@ -279,9 +271,9 @@ async function executeSend() {
         "
       />
 
-      <div>
-        <div class="flex items-center justify-between mb-1">
-          <label class="text-sm font-medium text-text"> Amount {{ isToken ? '' : '(XRP)' }} </label>
+      <div class="form-field">
+        <div class="flex items-center justify-between">
+          <label class="form-label"> Amount {{ isToken ? '' : '(XRP)' }} </label>
           <button class="text-xs text-accent" @click="setMax">Max</button>
         </div>
         <input
@@ -290,7 +282,7 @@ async function executeSend() {
           :step="isEvm ? '0.000000000000000001' : '0.000001'"
           min="0"
           :placeholder="isEvm ? '0.000000000000000000' : '0.000000'"
-          class="block w-full rounded-lg border border-border px-3 py-2 text-sm bg-bg-subtle text-text focus:outline-none focus:ring-2 focus:ring-link"
+          class="form-control"
         />
       </div>
 
@@ -313,70 +305,34 @@ async function executeSend() {
 
       <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
-      <Button block :disabled="!canSend" @click="confirmSend"> Review </Button>
+      <Button block :disabled="!canSend" :loading="loading" @click="confirmSend"> Review </Button>
     </template>
 
     <!-- Confirm Step -->
     <template v-else-if="step === 'confirm'">
-      <h2 class="text-lg font-bold">Confirm Transaction</h2>
-
-      <Card>
-        <div class="space-y-4 text-sm">
-          <div class="flex justify-between">
-            <span class="text-text-muted">To</span>
-            <span class="font-mono text-xs"
-              >{{ destination.slice(0, 10) }}...{{ destination.slice(-6) }}</span
-            >
-          </div>
-          <div class="flex justify-between">
-            <span class="text-text-muted">Amount</span>
-            <span class="font-medium">
-              {{ amount }} {{ isToken ? selectedCurrency.split(':')[0] : 'XRP' }}
-            </span>
-          </div>
-          <div v-if="!isEvm && destinationTag" class="flex justify-between">
-            <span class="text-text-muted">Tag</span>
-            <span>{{ destinationTag }}</span>
-          </div>
-          <div v-if="!isEvm && memo" class="flex justify-between">
-            <span class="text-text-muted">Memo</span>
-            <span class="text-xs text-right break-all ml-4">{{ memo }}</span>
-          </div>
-          <div v-if="isEvm && estimatedGas" class="flex justify-between">
-            <span class="text-text-muted">Est. Gas</span>
-            <span class="text-xs">{{ estimatedGas }}</span>
-          </div>
-          <div v-if="isEvm" class="flex justify-between">
-            <span class="text-text-muted">Network</span>
-            <span class="text-xs">EVM Sidechain</span>
-          </div>
-        </div>
-      </Card>
+      <TransactionReviewView v-if="review" :review="review" />
 
       <p v-if="error" class="text-xs text-danger">{{ error }}</p>
 
       <div class="flex gap-3">
         <Button variant="secondary" block @click="step = 'form'">Back</Button>
-        <Button block :loading="loading" @click="executeSend">Send</Button>
+        <Button
+          block
+          :loading="loading"
+          :disabled="!review?.simulation.success"
+          @click="executeSend"
+        >
+          Send
+        </Button>
       </div>
     </template>
 
     <!-- Result Step -->
     <template v-else>
-      <div class="text-center py-8">
-        <div
-          class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-bg-subtle mb-4"
-        >
-          <svg class="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </div>
+      <div class="animate-slide-up py-8 text-center" role="status" aria-live="polite">
+        <SuccessAnimation class="mb-3" kind="transaction" />
         <h2 class="text-lg font-bold">Transaction Sent</h2>
+        <p class="mt-1 text-sm text-text-muted">Your transfer was submitted successfully.</p>
         <p class="mt-2 text-xs text-text-muted font-mono break-all">{{ txHash }}</p>
       </div>
 

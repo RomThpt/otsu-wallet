@@ -2,6 +2,7 @@ import { Buffer } from 'buffer'
 globalThis.Buffer = Buffer
 
 import browser from 'webextension-polyfill'
+import type { Runtime } from 'webextension-polyfill'
 import type { ExtensionMessage } from '@otsu/types'
 import {
   handleMessage,
@@ -30,8 +31,13 @@ setupAutoLock(() => {
   handleMessage({ type: 'LOCK' })
 })
 
-browser.runtime.onMessage.addListener((message: unknown) => {
+browser.runtime.onMessage.addListener((message: unknown, sender: Runtime.MessageSender) => {
   const msg = message as ExtensionMessage
+  const extensionOrigin = browser.runtime.getURL('')
+  const fromExtensionPage = Boolean(sender.url?.startsWith(extensionOrigin))
+  if (!fromExtensionPage && msg.type !== 'PROVIDER_REQUEST') {
+    return Promise.resolve({ success: false, error: 'Privileged wallet message rejected' })
+  }
 
   if (msg.type === 'UNLOCK') {
     resetAutoLock()

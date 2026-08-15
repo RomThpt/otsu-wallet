@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDexStore } from '../../stores/dex'
-import { DROPS_PER_XRP } from '@otsu/constants'
+import type { XrplAssetAmount } from '@otsu/types'
 import Button from '../../components/common/Button.vue'
 
 const router = useRouter()
@@ -19,10 +19,14 @@ onMounted(async () => {
   }
 })
 
-function formatAmount(val: string | { currency: string; value: string }): string {
+function formatAmount(val: XrplAssetAmount): string {
   if (typeof val === 'string') {
-    return `${(Number(val) / DROPS_PER_XRP).toFixed(6)} XRP`
+    const padded = val.padStart(7, '0')
+    const whole = padded.slice(0, -6)
+    const fraction = padded.slice(-6).replace(/0+$/, '')
+    return `${whole}${fraction ? `.${fraction}` : ''} XRP`
   }
+  if ('mpt_issuance_id' in val) return `${val.value} MPT ${val.mpt_issuance_id.slice(0, 6)}`
   return `${val.value} ${val.currency}`
 }
 

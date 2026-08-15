@@ -5,9 +5,11 @@ import type { TokenBalance, TransactionRecord } from '@otsu/types'
 
 describe('WalletCache', () => {
   let cache: WalletCache
+  let storage: MemoryCacheStorage
 
   beforeEach(() => {
-    cache = new WalletCache(new MemoryCacheStorage())
+    storage = new MemoryCacheStorage()
+    cache = new WalletCache(storage)
   })
 
   const address = 'rTestAddress123456789'
@@ -18,8 +20,18 @@ describe('WalletCache', () => {
     })
 
     it('roundtrips cached balance', async () => {
-      await cache.setCachedBalance(address, '1000000')
-      expect(await cache.getCachedBalance(address)).toBe('1000000')
+      const balance = { total: '1000000', available: '800000', reserved: '200000' }
+      await cache.setCachedBalance(address, balance)
+      expect(await cache.getCachedBalance(address)).toEqual(balance)
+    })
+
+    it('migrates a legacy total-only cached balance', async () => {
+      await storage.set(`otsu-cache:${address}:balance`, '1000000')
+      expect(await cache.getCachedBalance(address)).toEqual({
+        total: '1000000',
+        available: '',
+        reserved: '',
+      })
     })
   })
 
@@ -114,7 +126,11 @@ describe('WalletCache', () => {
 
   describe('cache invalidation', () => {
     it('clears account cache', async () => {
-      await cache.setCachedBalance(address, '1000000')
+      await cache.setCachedBalance(address, {
+        total: '1000000',
+        available: '800000',
+        reserved: '200000',
+      })
       await cache.setCachedTokens(address, [])
       await cache.clearAccountCache(address)
       expect(await cache.getCachedBalance(address)).toBeNull()
@@ -122,7 +138,11 @@ describe('WalletCache', () => {
     })
 
     it('clears all cache', async () => {
-      await cache.setCachedBalance(address, '1000000')
+      await cache.setCachedBalance(address, {
+        total: '1000000',
+        available: '800000',
+        reserved: '200000',
+      })
       await cache.setCachedPrice('0.55')
       await cache.clearAllCache()
       expect(await cache.getCachedBalance(address)).toBeNull()
@@ -132,7 +152,11 @@ describe('WalletCache', () => {
 
   describe('lastUpdated', () => {
     it('tracks last updated timestamp', async () => {
-      await cache.setCachedBalance(address, '1000000')
+      await cache.setCachedBalance(address, {
+        total: '1000000',
+        available: '800000',
+        reserved: '200000',
+      })
       const updated = await cache.getLastUpdated(address)
       expect(updated).toBeGreaterThan(0)
     })

@@ -23,27 +23,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <div class="flex items-center justify-between px-4 py-3 border-b border-border">
-      <div class="flex items-center gap-2">
-        <button class="p-1 rounded hover:bg-bg-hover" @click="router.push('/explore')">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-        <h2 class="text-sm font-bold">NFTs</h2>
+  <div class="flex h-full flex-col px-4 pb-5">
+    <div class="flex items-center justify-between pb-4 pt-3">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight">NFTs</h1>
+        <p class="mt-1 text-sm text-text-muted">Your collection on the XRP Ledger.</p>
       </div>
       <Button size="sm" @click="router.push('/explore/nfts/mint')">Mint</Button>
     </div>
 
-    <div v-if="loading" class="flex-1 p-3">
+    <div v-if="loading" class="flex-1">
       <div class="grid grid-cols-2 gap-3">
-        <div v-for="i in 4" :key="i" class="rounded-lg border border-border overflow-hidden">
+        <div v-for="i in 4" :key="i" class="overflow-hidden rounded-[20px] bg-bg-subtle">
           <Skeleton variant="rect" height="140px" />
           <div class="p-2 space-y-1">
             <Skeleton variant="text" width="70%" height="12px" />
@@ -60,7 +51,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-else class="flex-1 overflow-y-auto p-3">
+    <div v-else class="flex-1 overflow-y-auto">
       <div class="grid grid-cols-2 gap-3">
         <NFTCard
           v-for="nft in nftStore.nfts"

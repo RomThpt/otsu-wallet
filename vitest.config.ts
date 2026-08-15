@@ -10,6 +10,7 @@ export default defineConfig({
       '**/dist/**',
       'packages/extension/src/components/**/*.test.ts',
       'packages/extension/src/popup/**/*.test.ts',
+      'packages/extension/src/tab/**/*.test.ts',
     ],
     setupFiles: ['./test-setup.ts'],
     coverage: {

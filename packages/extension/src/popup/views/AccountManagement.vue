@@ -4,14 +4,14 @@ import { useRouter } from 'vue-router'
 import { useWalletStore } from '../../stores/wallet'
 import AccountTypeIcon from '../../components/wallet/AccountTypeIcon.vue'
 import Button from '../../components/common/Button.vue'
-import { useToast } from '../../composables/useToast'
 
 const router = useRouter()
 const wallet = useWalletStore()
-const toast = useToast()
 const loading = ref(false)
 const editingAddress = ref<string | null>(null)
 const editLabel = ref('')
+const feedback = ref('')
+const error = ref('')
 
 function truncate(addr: string): string {
   if (!addr) return ''
@@ -26,7 +26,7 @@ function startEdit(address: string, currentLabel: string) {
 async function saveLabel(address: string) {
   if (editLabel.value.trim()) {
     await wallet.updateAccountLabel(address, editLabel.value.trim())
-    toast.success('Label updated')
+    feedback.value = 'Label updated'
   }
   editingAddress.value = null
 }
@@ -40,25 +40,38 @@ async function handleSelect(address: string) {
 
 async function handleDerive() {
   loading.value = true
+  feedback.value = ''
+  error.value = ''
   try {
     await wallet.deriveMoreAccounts(1)
-    toast.success('Account derived')
+    feedback.value = 'Account derived'
   } catch (e) {
-    toast.error((e as Error).message)
+    error.value = (e as Error).message
   } finally {
     loading.value = false
   }
 }
 
-function copyAddress(address: string, event: Event) {
+async function copyAddress(address: string, event: Event) {
   event.stopPropagation()
-  navigator.clipboard.writeText(address)
-  toast.success('Address copied')
+  error.value = ''
+  try {
+    await navigator.clipboard.writeText(address)
+    feedback.value = 'Address copied'
+  } catch {
+    error.value = 'Could not copy address'
+  }
 }
 
 function openImport() {
   chrome.tabs.create({
     url: chrome.runtime.getURL('tab.html#/import'),
+  })
+}
+
+function openHardwareWallet() {
+  chrome.tabs.create({
+    url: chrome.runtime.getURL('tab.html#/hardware'),
   })
 }
 </script>
@@ -96,7 +109,7 @@ function openImport() {
             <template v-if="editingAddress === account.address">
               <input
                 v-model="editLabel"
-                class="text-sm font-medium bg-transparent border-b border-accent focus:outline-none w-full"
+                class="form-control h-8 w-full rounded-[10px] px-2 text-sm font-medium"
                 @click.stop
                 @keyup.enter="saveLabel(account.address)"
                 @blur="saveLabel(account.address)"
@@ -141,8 +154,11 @@ function openImport() {
     </div>
 
     <div class="p-4 space-y-2 border-t border-border">
+      <p v-if="feedback" class="text-xs text-success" role="status">{{ feedback }}</p>
+      <p v-if="error" class="form-error" role="alert">{{ error }}</p>
       <Button block :loading="loading" @click="handleDerive"> Derive New Account </Button>
       <Button variant="secondary" block @click="openImport"> Import Account </Button>
+      <Button variant="ghost" block @click="openHardwareWallet"> Connect Hardware Wallet </Button>
     </div>
   </div>
 </template>
