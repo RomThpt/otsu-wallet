@@ -76,4 +76,47 @@ describe('ImportWallet existing vault flow', () => {
     expect(wrapper.find('textarea').exists()).toBe(true)
     expect(wrapper.find('[data-testid="success-animation"]').exists()).toBe(false)
   })
+
+  it('creates a fresh raw-secret wallet atomically', async () => {
+    mocks.sendMessage.mockImplementation(async (message: { type: string }) => {
+      if (message.type === 'HAS_WALLET') return { success: true, data: false }
+      if (message.type === 'CREATE_IMPORTED_WALLET') return { success: true, data: {} }
+      return { success: false, error: `Unexpected ${message.type}` }
+    })
+    const wrapper = mount(ImportWallet)
+    await flushPromises()
+    await wrapper
+      .findAll('[data-testid="import-format"]')
+      .find((card) => card.text().includes('Secret Key'))!
+      .trigger('click')
+    await wrapper.get('input[type="password"]').setValue('sn259rEFXrQrWyx3Q7XneWcwV6dfL')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().trim() === 'Continue')!
+      .trigger('click')
+    const passwordInputs = wrapper.findAll('input[type="password"]')
+    await passwordInputs[0].setValue('test-password')
+    await passwordInputs[1].setValue('test-password')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().trim() === 'Import Wallet')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(mocks.sendMessage).toHaveBeenCalledWith({
+      type: 'CREATE_IMPORTED_WALLET',
+      payload: {
+        format: 'secret_key',
+        value: 'sn259rEFXrQrWyx3Q7XneWcwV6dfL',
+        authMethod: 'password',
+        password: 'test-password',
+        credentialId: undefined,
+        prfKey: undefined,
+      },
+    })
+    expect(mocks.sendMessage).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'CREATE_WALLET' }),
+    )
+    expect(wrapper.text()).toContain('Wallet Imported')
+  })
 })

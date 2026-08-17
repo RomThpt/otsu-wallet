@@ -430,6 +430,44 @@ describe('WalletController integration', () => {
     })
   })
 
+  describe('fresh imported wallets', () => {
+    it('validates a raw secret before creating the vault', async () => {
+      const controller = createController()
+
+      await expect(
+        controller.createImportedWallet(
+          { format: 'secret_key', value: 'not-a-secret' },
+          'password',
+          TEST_PASSWORD,
+        ),
+      ).rejects.toThrow()
+
+      expect(vaultStore.data).toBeNull()
+      expect(controller.getState().accounts).toEqual([])
+      await expect(controller.hasWallet()).resolves.toBe(false)
+    })
+
+    it('creates a vault containing only the imported account', async () => {
+      const controller = createController()
+      const account = await controller.createImportedWallet(
+        { format: 'secret_key', value: 'sn259rEFXrQrWyx3Q7XneWcwV6dfL' },
+        'password',
+        TEST_PASSWORD,
+      )
+
+      expect(account.type).toBe('imported')
+      expect(controller.getState().accounts).toEqual([account])
+      expect(controller.getState().activeAccount).toBe(account.address)
+      expect(vaultStore.data?.accounts).toHaveLength(1)
+      expect(vaultStore.data?.seedSources).toEqual([])
+
+      controller.lock()
+      const restored = await controller.unlock('password', TEST_PASSWORD)
+      expect(restored.accounts).toHaveLength(1)
+      expect(restored.accounts[0].address).toBe(account.address)
+    })
+  })
+
   // -------------------------------------------------------------------------
   describe('full lifecycle: create -> lock -> unlock', () => {
     it('creates a wallet, returns the same mnemonic and an XRPL address', async () => {

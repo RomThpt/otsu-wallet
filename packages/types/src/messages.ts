@@ -1,6 +1,7 @@
 export type ExtensionMessageType =
   | 'GET_STATE'
   | 'CREATE_WALLET'
+  | 'CREATE_IMPORTED_WALLET'
   | 'UNLOCK'
   | 'LOCK'
   | 'GET_BALANCE'
@@ -100,6 +101,16 @@ export interface CreateWalletPayload {
   mnemonic: string
   password?: string
   authMethod: 'password' | 'passkey'
+  credentialId?: string
+  prfKey?: string
+}
+
+export interface CreateImportedWalletPayload {
+  format: Exclude<ImportAccountPayload['format'], 'mnemonic'>
+  value: string
+  label?: string
+  authMethod: 'password' | 'passkey'
+  password?: string
   credentialId?: string
   prfKey?: string
 }

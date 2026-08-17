@@ -4,11 +4,12 @@ import { useRouter } from 'vue-router'
 import { sendMessage } from '../../lib/messaging'
 import Button from '../../components/common/Button.vue'
 import Input from '../../components/common/Input.vue'
-import Card from '../../components/common/Card.vue'
 import MnemonicInput from '../../components/wallet/MnemonicInput.vue'
 import XummNumbersInput from '../../components/wallet/XummNumbersInput.vue'
 import SuccessAnimation from '../../components/common/SuccessAnimation.vue'
+import OnboardingShell from '../../components/onboarding/OnboardingShell.vue'
 import type { WalletState } from '@otsu/types'
+import { performPasskeyRegistration } from '@otsu/core'
 
 const router = useRouter()
 
@@ -23,8 +24,16 @@ const confirmPassword = ref('')
 const loading = ref(false)
 const error = ref('')
 const hasExistingWallet = ref(false)
+const passkeySupported = ref(false)
 
 onMounted(async () => {
+  try {
+    passkeySupported.value =
+      !!window.PublicKeyCredential &&
+      (await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())
+  } catch {
+    passkeySupported.value = false
+  }
   const response = await sendMessage<boolean>({ type: 'HAS_WALLET' })
   if (response.success && response.data) {
     hasExistingWallet.value = true
@@ -57,6 +66,14 @@ const formats = [
 const passwordValid = computed(
   () => password.value.length >= 8 && password.value === confirmPassword.value,
 )
+const selectedFormat = computed(() => formats.find((item) => item.id === format.value)!)
+const stepNumber = computed(() => {
+  if (step.value === 'format') return 1
+  if (step.value === 'input') return 2
+  if (step.value === 'auth') return 3
+  return undefined
+})
+const stepTotal = computed(() => (hasExistingWallet.value ? 2 : 3))
 
 function selectFormat(f: ImportFormat) {
   format.value = f
@@ -75,8 +92,8 @@ function proceedToAuth() {
   else step.value = 'auth'
 }
 
-async function handleImport() {
-  if (!hasExistingWallet.value && !passwordValid.value) return
+async function handleImport(authMethod: 'password' | 'passkey' = 'password') {
+  if (!hasExistingWallet.value && authMethod === 'password' && !passwordValid.value) return
   loading.value = true
   error.value = ''
 
@@ -97,35 +114,43 @@ async function handleImport() {
       return
     }
 
-    // Create the wallet with password
-    const createResponse = await sendMessage({
-      type: 'CREATE_WALLET',
-      payload: {
-        mnemonic: format.value === 'mnemonic' ? inputValue.value.trim() : undefined,
-        authMethod: 'password' as const,
-        password: password.value,
-      },
-    })
+    let credentialId: string | undefined
+    let prfKey: string | undefined
+    if (authMethod === 'passkey') {
+      if (!passkeySupported.value) throw new Error('Passkeys are not supported on this device')
+      const credential = await performPasskeyRegistration()
+      credentialId = credential.credentialId
+      prfKey = credential.prfKey
+    }
+
+    const createResponse = await sendMessage(
+      format.value === 'mnemonic'
+        ? {
+            type: 'CREATE_WALLET',
+            payload: {
+              mnemonic: inputValue.value.trim(),
+              authMethod,
+              password: authMethod === 'password' ? password.value : undefined,
+              credentialId,
+              prfKey,
+            },
+          }
+        : {
+            type: 'CREATE_IMPORTED_WALLET',
+            payload: {
+              format: format.value,
+              value: inputValue.value.trim(),
+              authMethod,
+              password: authMethod === 'password' ? password.value : undefined,
+              credentialId,
+              prfKey,
+            },
+          },
+    )
 
     if (!createResponse.success) {
       error.value = createResponse.error ?? 'Wallet creation failed'
       return
-    }
-
-    if (format.value !== 'mnemonic') {
-      // Import the specific account
-      const importResponse = await sendMessage({
-        type: 'IMPORT_ACCOUNT',
-        payload: {
-          format: format.value,
-          value: inputValue.value.trim(),
-        },
-      })
-
-      if (!importResponse.success) {
-        error.value = importResponse.error ?? 'Import failed'
-        return
-      }
     }
 
     step.value = 'complete'
@@ -135,126 +160,226 @@ async function handleImport() {
     loading.value = false
   }
 }
+
+function goBack() {
+  error.value = ''
+  if (step.value === 'input') step.value = 'format'
+  else if (step.value === 'auth') step.value = 'input'
+  else router.push('/')
+}
+
+function goToWallet() {
+  window.close()
+}
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center">
-    <div class="w-full max-w-md space-y-6 p-8">
-      <div class="text-center">
-        <h1 class="text-3xl font-bold">{{ hasExistingWallet ? 'Add Wallet' : 'Import Wallet' }}</h1>
-        <p class="mt-2 text-text-muted">
-          {{
-            hasExistingWallet
-              ? 'Add another account without replacing your wallet'
-              : 'Restore an existing XRPL wallet'
-          }}
-        </p>
-      </div>
-
-      <!-- Existing wallet must be unlocked before its encrypted vault can change. -->
+  <OnboardingShell
+    :step="stepNumber"
+    :total="stepTotal"
+    :show-back="step !== 'complete'"
+    wide
+    @back="goBack"
+  >
+    <div class="space-y-8">
       <template v-if="step === 'existing-wallet'">
-        <Card>
-          <p class="font-medium text-sm">Unlock Otsu to add another wallet</p>
-          <p class="text-xs text-text-muted mt-2">
+        <div class="space-y-4 text-center">
+          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100">
+            <svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" aria-hidden="true">
+              <path
+                d="M8 11V7a4 4 0 118 0v4m-9 0h10a2 2 0 012 2v6H5v-6a2 2 0 012-2z"
+                stroke="currentColor"
+                stroke-width="1.7"
+              />
+            </svg>
+          </div>
+          <h1 class="text-3xl font-bold tracking-tight">Unlock Otsu</h1>
+          <p class="mx-auto max-w-md text-zinc-600">
             Open the extension popup and unlock your wallet, then return here. Your existing
-            accounts and recovery phrases will remain unchanged.
+            accounts and recovery phrases stay unchanged.
           </p>
-        </Card>
-
-        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
-
+        </div>
+        <p v-if="error" class="text-center text-sm text-red-600" role="alert">{{ error }}</p>
         <div class="flex gap-3">
           <Button variant="secondary" block @click="router.push('/')">Cancel</Button>
-          <Button block :loading="loading" @click="checkExistingWalletUnlocked">Check again</Button>
+          <Button variant="ink" block :loading="loading" @click="checkExistingWalletUnlocked"
+            >Check again</Button
+          >
         </div>
       </template>
 
-      <!-- Step 1: Format Selection -->
       <template v-else-if="step === 'format'">
-        <div class="space-y-3">
-          <Card
+        <div class="text-center">
+          <h1 class="text-3xl font-bold tracking-tight">
+            {{ hasExistingWallet ? 'Add Wallet' : 'Import Wallet' }}
+          </h1>
+          <p class="mt-2 text-base text-zinc-600">
+            {{
+              hasExistingWallet
+                ? 'Choose the account you want to add.'
+                : 'Choose how you would like to import your wallet.'
+            }}
+          </p>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+          <button
             v-for="f in formats"
             :key="f.id"
-            class="cursor-pointer hover:border-accent transition-colors"
+            type="button"
+            data-testid="import-format"
+            class="cursor-pointer flex min-h-20 items-center gap-4 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-left transition hover:border-zinc-400 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
             @click="selectFormat(f.id)"
           >
-            <p class="font-medium text-sm">{{ f.name }}</p>
-            <p class="text-xs text-text-muted mt-0.5">{{ f.desc }}</p>
-          </Card>
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm"
+            >
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" aria-hidden="true">
+                <path
+                  v-if="f.id === 'mnemonic'"
+                  d="M5 7h14M5 12h9M5 17h12"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                />
+                <path
+                  v-else-if="f.id === 'xumm_secret_numbers'"
+                  d="M7 5v14M12 5v14M17 5v14M5 8h14M5 16h14"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                />
+                <path
+                  v-else
+                  d="M9.5 14.5l5-5m-1.5-2a3 3 0 114 4l-5.5 5.5H8v-3.5l1.5-1.5"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="block font-semibold text-zinc-950">{{ f.name }}</span>
+              <span class="mt-0.5 block text-sm text-zinc-500">{{ f.desc }}</span>
+            </span>
+            <svg
+              viewBox="0 0 24 24"
+              class="h-5 w-5 shrink-0 text-zinc-400"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 6l6 6-6 6"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
         </div>
-        <Button variant="secondary" block @click="router.push('/')">Back</Button>
       </template>
 
-      <!-- Step 2: Input -->
       <template v-else-if="step === 'input'">
-        <template v-if="format === 'mnemonic'">
-          <MnemonicInput v-model="inputValue" />
-        </template>
-        <template v-else-if="format === 'xumm_secret_numbers'">
-          <XummNumbersInput @update:value="inputValue = $event" />
-        </template>
-        <template v-else-if="format === 'secret_key' || format === 'family_seed'">
+        <div class="text-center">
+          <h1 class="text-3xl font-bold tracking-tight">Enter {{ selectedFormat.name }}</h1>
+          <p class="mt-2 text-base text-zinc-600">
+            Your credentials are processed locally and stored encrypted.
+          </p>
+        </div>
+        <div class="rounded-3xl border border-zinc-200 bg-zinc-50 p-5 sm:p-6">
+          <MnemonicInput v-if="format === 'mnemonic'" v-model="inputValue" />
+          <XummNumbersInput
+            v-else-if="format === 'xumm_secret_numbers'"
+            @update:value="inputValue = $event"
+          />
           <Input
+            v-else-if="format === 'secret_key' || format === 'family_seed'"
             v-model="inputValue"
             label="Secret Key"
             placeholder="sXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
             type="password"
           />
-        </template>
-        <template v-else>
           <Input
+            v-else
             v-model="inputValue"
             label="Private Key (Hex)"
             placeholder="00AABBCCDD..."
             type="password"
           />
-        </template>
-
-        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
-
+        </div>
+        <p v-if="error" class="text-center text-sm text-red-600" role="alert">{{ error }}</p>
         <div class="flex gap-3">
-          <Button variant="secondary" block @click="step = 'format'">Back</Button>
-          <Button :loading="loading" block @click="proceedToAuth">
+          <Button variant="secondary" block @click="goBack">Back</Button>
+          <Button variant="ink" :loading="loading" block @click="proceedToAuth">
             {{ hasExistingWallet ? 'Add Wallet' : 'Continue' }}
           </Button>
         </div>
       </template>
 
-      <!-- Step 3: Password Setup -->
       <template v-else-if="step === 'auth'">
-        <Input
-          v-model="password"
-          label="Set Password"
-          type="password"
-          placeholder="Minimum 8 characters"
-          :error="password && password.length < 8 ? 'Minimum 8 characters' : ''"
-        />
-        <Input
-          v-model="confirmPassword"
-          label="Confirm Password"
-          type="password"
-          placeholder="Repeat password"
-          :error="confirmPassword && password !== confirmPassword ? 'Passwords do not match' : ''"
-        />
-
-        <p v-if="error" class="text-xs text-danger">{{ error }}</p>
-
-        <div class="flex gap-3">
-          <Button variant="secondary" block @click="step = 'input'">Back</Button>
-          <Button block :disabled="!passwordValid" :loading="loading" @click="handleImport">
-            Import Wallet
-          </Button>
+        <div class="text-center">
+          <h1 class="text-3xl font-bold tracking-tight">Protect Your Wallet</h1>
+          <p class="mt-2 text-base text-zinc-600">Set the password you will use to unlock Otsu.</p>
         </div>
+        <div class="space-y-4 rounded-3xl border border-zinc-200 bg-zinc-50 p-5 sm:p-6">
+          <Input
+            v-model="password"
+            label="Password"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Minimum 8 characters"
+            :error="password && password.length < 8 ? 'Minimum 8 characters' : ''"
+          />
+          <Input
+            v-model="confirmPassword"
+            label="Confirm Password"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Repeat password"
+            :error="confirmPassword && password !== confirmPassword ? 'Passwords do not match' : ''"
+          />
+        </div>
+        <p v-if="error" class="text-center text-sm text-red-600" role="alert">{{ error }}</p>
+        <div class="flex gap-3">
+          <Button variant="secondary" block @click="goBack">Back</Button>
+          <Button
+            variant="ink"
+            block
+            :disabled="!passwordValid"
+            :loading="loading"
+            @click="handleImport()"
+            >Import Wallet</Button
+          >
+        </div>
+        <div class="flex items-center gap-4 text-sm text-zinc-500" aria-hidden="true">
+          <span class="h-px flex-1 bg-zinc-200" />
+          <span>or</span>
+          <span class="h-px flex-1 bg-zinc-200" />
+        </div>
+        <Button
+          variant="secondary"
+          size="lg"
+          block
+          :disabled="!passkeySupported"
+          :loading="loading"
+          @click="handleImport('passkey')"
+        >
+          Continue with Passkey
+        </Button>
       </template>
 
-      <!-- Step 4: Complete -->
       <template v-else>
-        <div class="animate-slide-up py-8 text-center" role="status" aria-live="polite">
-          <SuccessAnimation kind="wallet" size="hero" />
-          <h2 class="text-xl font-bold">Wallet Imported</h2>
-          <p class="mt-2 text-text-muted">You can close this tab and use the extension popup.</p>
+        <div class="animate-slide-up space-y-8 text-center">
+          <div role="status" aria-live="polite">
+            <SuccessAnimation kind="wallet" size="hero" />
+            <h1 class="mt-5 text-4xl font-bold tracking-tight">Wallet Imported</h1>
+            <p class="mt-2 text-zinc-600">Your wallet is ready to use.</p>
+          </div>
+          <Button variant="ink" size="lg" block @click="goToWallet">Go to Wallet</Button>
         </div>
       </template>
     </div>
-  </div>
+  </OnboardingShell>
 </template>

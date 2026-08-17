@@ -1,10 +1,5 @@
-<script setup lang="ts">
-import { useTheme } from '../composables/useTheme'
-useTheme()
-</script>
-
 <template>
-  <div class="min-h-screen bg-bg text-text">
+  <div class="min-h-screen bg-white text-zinc-950 [color-scheme:light]">
     <router-view />
   </div>
 </template>

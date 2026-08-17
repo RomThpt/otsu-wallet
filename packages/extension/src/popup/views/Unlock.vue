@@ -129,17 +129,17 @@ onUnmounted(() => {
 <template>
   <main
     data-testid="unlock-screen"
-    class="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-bg px-6 text-text"
+    class="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-white px-6 text-zinc-950"
   >
     <UnlockLandscape
-      class="pointer-events-none absolute inset-x-0 bottom-0 h-[116px] w-full text-text-muted"
+      class="pointer-events-none absolute inset-x-0 bottom-0 h-[116px] w-full text-zinc-400"
     />
 
     <div class="relative z-10 flex min-h-0 flex-1 flex-col">
       <header class="text-center" :class="showResetConfirm ? 'pt-10' : 'pt-[66px]'">
-        <OtsuMark class="mx-auto h-[62px] w-[62px] text-text" />
+        <OtsuMark class="mx-auto h-[62px] w-[62px] text-zinc-950" />
         <h1 class="mt-1 text-[30px] font-medium leading-none tracking-[-0.04em]">Otsu</h1>
-        <p class="mt-2 text-sm text-text-muted">
+        <p class="mt-2 text-sm text-zinc-500">
           {{ showResetConfirm ? 'Protect your recovery phrase' : 'Unlock your wallet' }}
         </p>
       </header>
@@ -150,15 +150,15 @@ onUnmounted(() => {
 
           <form class="space-y-3" novalidate @submit.prevent="handleUnlock">
             <div
-              class="flex h-12 items-center rounded-[18px] border bg-bg-subtle px-3.5 shadow-sm transition duration-150 focus-within:ring-4"
+              class="flex h-12 items-center rounded-[18px] border bg-white px-3.5 shadow-sm transition duration-150 focus-within:ring-4"
               :class="
                 error
-                  ? 'border-danger focus-within:border-danger focus-within:ring-danger/10'
-                  : 'border-border hover:border-text-muted/50 focus-within:border-text focus-within:ring-text/10'
+                  ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/10'
+                  : 'border-zinc-200 hover:border-zinc-400 focus-within:border-zinc-950 focus-within:ring-zinc-950/10'
               "
             >
               <svg
-                class="h-5 w-5 shrink-0 text-text-muted"
+                class="h-5 w-5 shrink-0 text-zinc-500"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -177,12 +177,12 @@ onUnmounted(() => {
                 spellcheck="false"
                 placeholder="Enter password"
                 :disabled="wallet.loading || lockoutSeconds > 0"
-                class="min-w-0 flex-1 bg-transparent px-3 text-sm text-text outline-none placeholder:text-text-muted/55 disabled:cursor-not-allowed"
+                class="min-w-0 flex-1 bg-transparent px-3 text-sm text-zinc-950 outline-none placeholder:text-zinc-400 disabled:cursor-not-allowed"
                 @input="error = ''"
               />
               <button
                 type="button"
-                class="-mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-bg-hover hover:text-text focus:outline-none focus:ring-2 focus:ring-text/30"
+                class="-mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus:outline-none focus:ring-2 focus:ring-zinc-950/30"
                 :aria-label="showPassword ? 'Hide password' : 'Show password'"
                 :aria-pressed="showPassword"
                 @click="showPassword = !showPassword"
@@ -223,7 +223,7 @@ onUnmounted(() => {
 
             <button
               type="submit"
-              class="relative flex h-12 w-full items-center justify-center rounded-[18px] bg-text px-5 text-sm font-semibold text-bg shadow-card transition-all duration-150 hover:opacity-90 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-text focus:ring-offset-2 focus:ring-offset-bg disabled:cursor-not-allowed disabled:opacity-50"
+              class="relative flex h-12 w-full items-center justify-center rounded-[18px] bg-zinc-950 px-5 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-black active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="wallet.loading || lockoutSeconds > 0"
             >
               <svg
@@ -268,29 +268,29 @@ onUnmounted(() => {
           </form>
 
           <div class="min-h-5 pt-1 text-center">
-            <p v-if="error" role="alert" aria-live="assertive" class="text-xs text-danger">
+            <p v-if="error" role="alert" aria-live="assertive" class="text-xs text-red-600">
               {{ error }}
             </p>
-            <p v-else-if="lockoutSeconds > 0" role="status" class="text-xs text-danger">
+            <p v-else-if="lockoutSeconds > 0" role="status" class="text-xs text-red-600">
               Too many attempts. Try again in {{ lockoutSeconds }}s
             </p>
           </div>
 
           <template v-if="passkeySupported">
             <div class="my-2 flex items-center gap-3" aria-hidden="true">
-              <div class="h-px flex-1 bg-border" />
-              <span class="text-xs text-text-muted">or</span>
-              <div class="h-px flex-1 bg-border" />
+              <div class="h-px flex-1 bg-zinc-200" />
+              <span class="text-xs text-zinc-500">or</span>
+              <div class="h-px flex-1 bg-zinc-200" />
             </div>
 
             <button
               type="button"
-              class="relative flex h-12 w-full items-center justify-center rounded-[18px] border border-border bg-bg-subtle px-5 text-sm font-semibold text-text shadow-sm transition-all duration-150 hover:bg-bg-hover active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-text/30 disabled:cursor-not-allowed disabled:opacity-50"
+              class="relative flex h-12 w-full items-center justify-center rounded-[18px] border border-zinc-200 bg-white px-5 text-sm font-semibold text-zinc-950 shadow-sm transition-all duration-150 hover:bg-zinc-50 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-zinc-950/30 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="wallet.loading || lockoutSeconds > 0"
               @click="handlePasskeyUnlock"
             >
               <svg
-                class="mr-2.5 h-5 w-5 text-text-muted"
+                class="mr-2.5 h-5 w-5 text-zinc-500"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -328,7 +328,7 @@ onUnmounted(() => {
 
           <button
             type="button"
-            class="mx-auto mt-5 block rounded-md text-xs text-text-muted underline-offset-4 transition-colors hover:text-text hover:underline focus:text-text focus:underline focus:outline-none focus:ring-2 focus:ring-text/30"
+            class="mx-auto mt-5 block rounded-md text-xs text-zinc-500 underline-offset-4 transition-colors hover:text-zinc-950 hover:underline focus:text-zinc-950 focus:underline focus:outline-none focus:ring-2 focus:ring-zinc-950/30"
             @click="openResetConfirm"
           >
             Forgot password? <span aria-hidden="true">•</span> Reset wallet
@@ -337,16 +337,16 @@ onUnmounted(() => {
       </template>
 
       <section v-else role="alertdialog" aria-labelledby="reset-title" class="mt-7">
-        <div class="rounded-[18px] border border-danger/25 bg-danger/5 p-4">
-          <h2 id="reset-title" class="text-sm font-semibold text-danger">Reset this wallet?</h2>
-          <p class="mt-2 text-xs leading-5 text-text-muted">
+        <div class="rounded-[18px] border border-red-200 bg-red-50 p-4">
+          <h2 id="reset-title" class="text-sm font-semibold text-red-600">Reset this wallet?</h2>
+          <p class="mt-2 text-xs leading-5 text-zinc-600">
             This permanently deletes every account stored in Otsu. You can only restore them with
             their recovery phrases.
           </p>
         </div>
 
-        <label for="reset-confirmation" class="mt-4 block text-xs text-text-muted">
-          Type <span class="font-mono font-bold text-text">{{ RESET_CONFIRM_PHRASE }}</span> to
+        <label for="reset-confirmation" class="mt-4 block text-xs text-zinc-500">
+          Type <span class="font-mono font-bold text-zinc-950">{{ RESET_CONFIRM_PHRASE }}</span> to
           confirm
         </label>
         <input
@@ -357,24 +357,24 @@ onUnmounted(() => {
           autocomplete="off"
           spellcheck="false"
           placeholder="Type RESET to confirm"
-          class="mt-2 h-12 w-full rounded-[18px] border border-border bg-bg-subtle px-4 text-sm text-text shadow-sm outline-none transition placeholder:text-text-muted/55 hover:border-text-muted/50 focus:border-danger focus:ring-4 focus:ring-danger/10"
+          class="mt-2 h-12 w-full rounded-[18px] border border-zinc-200 bg-white px-4 text-sm text-zinc-950 shadow-sm outline-none transition placeholder:text-zinc-400 hover:border-zinc-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
         />
 
-        <p v-if="resetError" role="alert" class="mt-2 text-center text-xs text-danger">
+        <p v-if="resetError" role="alert" class="mt-2 text-center text-xs text-red-600">
           {{ resetError }}
         </p>
 
         <div class="mt-4 grid grid-cols-2 gap-3">
           <button
             type="button"
-            class="h-11 rounded-full border border-border bg-bg-subtle text-sm font-semibold text-text transition hover:bg-bg-hover focus:outline-none focus:ring-2 focus:ring-text/30"
+            class="h-11 rounded-full border border-zinc-200 bg-white text-sm font-semibold text-zinc-950 transition hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-950/30"
             @click="cancelReset"
           >
             Cancel
           </button>
           <button
             type="button"
-            class="h-11 rounded-full bg-danger text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-danger focus:ring-offset-2 focus:ring-offset-bg disabled:cursor-not-allowed disabled:opacity-40"
+            class="h-11 rounded-full bg-red-600 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-40"
             :disabled="resetConfirmText !== RESET_CONFIRM_PHRASE"
             @click="handleReset"
           >
@@ -384,7 +384,7 @@ onUnmounted(() => {
       </section>
 
       <footer
-        class="mt-auto flex items-center justify-center gap-1.5 pb-4 pt-3 text-[11px] text-text-muted"
+        class="mt-auto flex items-center justify-center gap-1.5 pb-4 pt-3 text-[11px] text-zinc-500"
       >
         <svg
           class="h-3.5 w-3.5"

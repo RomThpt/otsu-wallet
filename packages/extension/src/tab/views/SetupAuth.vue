@@ -4,17 +4,15 @@ import { useRouter } from 'vue-router'
 import { useOnboardingStore } from '../../stores/onboarding'
 import Button from '../../components/common/Button.vue'
 import Input from '../../components/common/Input.vue'
-import Card from '../../components/common/Card.vue'
-import type { AuthMethod } from '@otsu/types'
+import OnboardingShell from '../../components/onboarding/OnboardingShell.vue'
 
 const router = useRouter()
 const store = useOnboardingStore()
 
-const selectedMethod = ref<AuthMethod>('password')
-const password = ref('')
+const password = ref(store.password)
 const confirmPassword = ref('')
 const error = ref('')
-const passkeySupported = ref(true)
+const passkeySupported = ref(false)
 
 onMounted(async () => {
   try {
@@ -27,11 +25,10 @@ onMounted(async () => {
 })
 
 const canSubmit = computed(() => {
-  if (selectedMethod.value === 'passkey') return true
   return password.value.length >= 8 && password.value === confirmPassword.value
 })
 
-async function setupPassword() {
+function setupPassword() {
   if (password.value.length < 8) {
     error.value = 'Password must be at least 8 characters'
     return
@@ -44,136 +41,125 @@ async function setupPassword() {
   error.value = ''
   store.setAuthMethod('password')
   store.password = password.value
-
-  const success = await store.createWallet()
-  if (success) {
-    router.push('/complete')
-  }
+  router.push('/recovery')
 }
 
-async function setupPasskey() {
+function setupPasskey() {
+  if (!passkeySupported.value) return
   error.value = ''
   store.setAuthMethod('passkey')
   store.password = ''
-
-  const success = await store.createWallet()
-  if (success) {
-    router.push('/complete')
-  }
-}
-
-async function handleSubmit() {
-  if (selectedMethod.value === 'password') {
-    await setupPassword()
-  } else {
-    await setupPasskey()
-  }
+  router.push('/recovery')
 }
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center">
-    <div class="w-full max-w-md space-y-6 p-8">
-      <div>
-        <h2 class="text-2xl font-bold">Secure Your Wallet</h2>
-        <p class="mt-2 text-sm text-text-muted">Choose how to protect your wallet.</p>
+  <OnboardingShell :step="1" @back="router.push('/')">
+    <div class="space-y-8">
+      <div class="space-y-4 text-center">
+        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100">
+          <svg
+            class="h-7 w-7"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.7"
+              d="M8 11V7a4 4 0 118 0v4m-9 0h10a2 2 0 012 2v6H5v-6a2 2 0 012-2z"
+            />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">Create Your Wallet</h1>
+          <p class="mt-2 text-base text-zinc-600">Set a password to protect your wallet.</p>
+        </div>
       </div>
 
-      <!-- Method selection -->
-      <div class="grid grid-cols-2 gap-3">
-        <button
-          class="rounded-lg border-2 p-4 text-left transition-colors"
-          :class="
-            selectedMethod === 'password'
-              ? 'border-accent bg-accent/10'
-              : 'border-border hover:border-accent'
-          "
-          @click="selectedMethod = 'password'"
-        >
-          <div class="flex items-center gap-2 mb-2">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
-            <span class="text-sm font-semibold">Password</span>
+      <form class="space-y-5" @submit.prevent="setupPassword">
+        <div class="rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
+          <div class="space-y-4">
+            <Input
+              v-model="password"
+              label="Password"
+              type="password"
+              autocomplete="new-password"
+              placeholder="At least 8 characters"
+            />
+            <Input
+              v-model="confirmPassword"
+              label="Confirm Password"
+              type="password"
+              autocomplete="new-password"
+              placeholder="Confirm your password"
+              :error="error"
+            />
+            <ul class="space-y-2 text-sm text-zinc-600" aria-label="Password requirements">
+              <li class="flex items-center gap-2" :class="password.length >= 8 && 'text-zinc-950'">
+                <span
+                  class="h-2 w-2 rounded-full border"
+                  :class="password.length >= 8 ? 'border-zinc-950 bg-zinc-950' : 'border-zinc-400'"
+                />
+                At least 8 characters
+              </li>
+              <li
+                class="flex items-center gap-2"
+                :class="confirmPassword && password === confirmPassword && 'text-zinc-950'"
+              >
+                <span
+                  class="h-2 w-2 rounded-full border"
+                  :class="
+                    confirmPassword && password === confirmPassword
+                      ? 'border-zinc-950 bg-zinc-950'
+                      : 'border-zinc-400'
+                  "
+                />
+                Passwords match
+              </li>
+            </ul>
           </div>
-          <p class="text-xs text-text-muted">Classic password protection</p>
-        </button>
-
-        <button
-          class="rounded-lg border-2 p-4 text-left transition-colors"
-          :class="[
-            selectedMethod === 'passkey'
-              ? 'border-accent bg-accent/10'
-              : 'border-border hover:border-accent',
-            !passkeySupported && 'opacity-50 cursor-not-allowed',
-          ]"
-          :disabled="!passkeySupported"
-          @click="passkeySupported && (selectedMethod = 'passkey')"
-        >
-          <div class="flex items-center gap-2 mb-2">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"
-              />
-            </svg>
-            <span class="text-sm font-semibold">Passkey</span>
-          </div>
-          <p class="text-xs text-text-muted">
-            {{ passkeySupported ? 'Biometric / device unlock' : 'Not supported on this device' }}
-          </p>
-        </button>
-      </div>
-
-      <!-- Password form -->
-      <Card v-if="selectedMethod === 'password'">
-        <div class="space-y-4">
-          <Input
-            v-model="password"
-            label="Password"
-            type="password"
-            placeholder="Enter a strong password"
-          />
-          <Input
-            v-model="confirmPassword"
-            label="Confirm Password"
-            type="password"
-            placeholder="Confirm your password"
-            :error="error"
-          />
         </div>
-      </Card>
-
-      <!-- Passkey info -->
-      <Card v-else>
-        <div class="space-y-3">
-          <p class="text-sm text-text">
-            Use your device's biometric authentication (fingerprint, face recognition) or screen
-            lock to secure your wallet.
-          </p>
-          <p class="text-xs text-text-muted">
-            Your browser will prompt you to register a passkey when you continue.
-          </p>
-        </div>
-      </Card>
-
-      <div class="flex gap-3">
-        <Button variant="secondary" block @click="router.push('/verify')"> Back </Button>
-        <Button block :loading="store.loading" :disabled="!canSubmit" @click="handleSubmit">
-          {{ selectedMethod === 'passkey' ? 'Register Passkey' : 'Create Wallet' }}
+        <Button type="submit" block size="lg" variant="ink" :disabled="!canSubmit">
+          Continue
         </Button>
+      </form>
+
+      <div class="flex items-center gap-4 text-sm text-zinc-500" aria-hidden="true">
+        <span class="h-px flex-1 bg-zinc-200" />
+        <span>or</span>
+        <span class="h-px flex-1 bg-zinc-200" />
       </div>
 
-      <p v-if="store.error" class="text-xs text-danger text-center">
+      <div>
+        <Button
+          block
+          size="lg"
+          variant="secondary"
+          :disabled="!passkeySupported"
+          @click="setupPasskey"
+        >
+          <svg viewBox="0 0 24 24" class="mr-3 h-5 w-5" fill="none" aria-hidden="true">
+            <circle cx="9" cy="9" r="4" stroke="currentColor" stroke-width="1.6" />
+            <path
+              d="M12 12l7 7m-3-3 2-2m-5-1 2-2"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+          </svg>
+          Continue with Passkey
+        </Button>
+        <p v-if="!passkeySupported" class="mt-2 text-center text-xs text-zinc-500">
+          Passkeys are not supported on this device.
+        </p>
+      </div>
+
+      <p v-if="store.error" class="text-center text-sm text-red-600" role="alert">
         {{ store.error }}
       </p>
     </div>
-  </div>
+  </OnboardingShell>
 </template>

@@ -41,6 +41,7 @@ export type {
   CreateDexOfferPayload,
   CreateEscrowPayload,
   CreateWalletPayload,
+  CreateImportedWalletPayload,
   DeriveMoreAccountsPayload,
   ExtensionMessage,
   ExtensionMessageType,

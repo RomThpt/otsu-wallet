@@ -2,6 +2,7 @@ import type {
   ExtensionMessage,
   ExtensionResponse,
   CreateWalletPayload,
+  CreateImportedWalletPayload,
   UnlockPayload,
   SendPaymentPayload,
   SimulatePaymentPayload,
@@ -89,6 +90,18 @@ export async function handleMessage(message: ExtensionMessage): Promise<Extensio
           payload.prfKey,
         )
         return { success: true, data: result }
+      }
+
+      case 'CREATE_IMPORTED_WALLET': {
+        const payload = message.payload as CreateImportedWalletPayload
+        const account = await controller.createImportedWallet(
+          { format: payload.format, value: payload.value, label: payload.label },
+          payload.authMethod,
+          payload.password,
+          payload.credentialId,
+          payload.prfKey,
+        )
+        return { success: true, data: account }
       }
 
       case 'UNLOCK': {

@@ -7,6 +7,7 @@ const props = defineProps<{
   hint?: string
   type?: string
   placeholder?: string
+  autocomplete?: string
   disabled?: boolean
 }>()
 
@@ -25,6 +26,7 @@ const messageId = computed(() => (props.error || props.hint ? `${inputId}-messag
       v-model="model"
       :type="type ?? 'text'"
       :placeholder="placeholder"
+      :autocomplete="autocomplete"
       :disabled="disabled"
       :aria-invalid="error ? 'true' : undefined"
       :aria-describedby="messageId"

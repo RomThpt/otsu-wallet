@@ -7,6 +7,11 @@ const routes = [
     component: () => import('./views/Welcome.vue'),
   },
   {
+    path: '/recovery',
+    name: 'recovery',
+    component: () => import('./views/RecoveryIntro.vue'),
+  },
+  {
     path: '/generate',
     name: 'generate',
     component: () => import('./views/GenerateMnemonic.vue'),

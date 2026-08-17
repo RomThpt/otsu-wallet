@@ -1,7 +1,8 @@
 <script setup lang="ts">
 defineProps<{
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'ink'
   size?: 'sm' | 'md' | 'lg'
+  type?: 'button' | 'submit' | 'reset'
   loading?: boolean
   disabled?: boolean
   block?: boolean
@@ -10,6 +11,7 @@ defineProps<{
 
 <template>
   <button
+    :type="type ?? 'button'"
     :disabled="disabled || loading"
     :class="[
       'inline-flex items-center justify-center rounded-full font-semibold transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-link focus:ring-offset-2 focus:ring-offset-bg disabled:cursor-not-allowed disabled:opacity-50',
@@ -23,6 +25,7 @@ defineProps<{
         'border border-border bg-bg-subtle text-text shadow-sm hover:bg-bg-hover':
           variant === 'secondary',
         'bg-danger text-white hover:opacity-90': variant === 'danger',
+        'bg-zinc-950 text-white shadow-card hover:bg-zinc-800': variant === 'ink',
         'bg-transparent text-text-muted hover:bg-bg-hover hover:text-text': variant === 'ghost',
       },
     ]"

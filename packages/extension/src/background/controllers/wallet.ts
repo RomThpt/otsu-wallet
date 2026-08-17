@@ -348,6 +348,59 @@ export class WalletController {
     return { mnemonic, address: account.address }
   }
 
+  async createImportedWallet(
+    payload: ImportPayload,
+    authMethod: AuthMethod,
+    password?: string,
+    credentialId?: string,
+    prfKey?: string,
+  ): Promise<Account> {
+    if (payload.format === 'mnemonic') {
+      throw new Error('Recovery phrases must use the seed import flow')
+    }
+    if (await this.auth.hasWallet()) {
+      throw new Error('A wallet already exists')
+    }
+
+    // Validate and derive before creating persistent storage. An invalid import
+    // must never leave behind an unrelated generated wallet.
+    const imported = coreImportAccount(payload)
+    const label = payload.label?.trim() || 'Imported Wallet'
+    const vaultAccount: VaultAccount = { ...importedToVaultAccount(imported), label }
+    const vaultData: VaultData = {
+      schemaVersion: VAULT_SCHEMA_VERSION,
+      seedSources: [],
+      accounts: [vaultAccount],
+    }
+
+    if (authMethod === 'passkey') {
+      if (!credentialId || !prfKey) throw new Error('Passkey credential required')
+      await this.auth.setup(vaultData, authMethod, undefined, { credentialId, prfKey })
+    } else {
+      await this.auth.setup(vaultData, authMethod, password)
+    }
+
+    this.keyring.load([vaultAccount])
+    this.evmKeyring.load([])
+    const account: Account = {
+      address: imported.address,
+      label,
+      type: imported.type,
+      derivationPath: imported.derivationPath,
+      publicKey: imported.publicKey,
+      index: imported.index,
+      chainType: 'xrpl',
+    }
+    this.state.accounts = [account]
+    this.state.activeAccount = account.address
+    this.state.locked = false
+    this.state.authMethod = authMethod
+
+    await this.persistState()
+    await this.cache.setAccountLabel(account.address, label)
+    return account
+  }
+
   async unlock(method: AuthMethod, password?: string, passkeyKey?: string): Promise<WalletState> {
     const persistedActiveAccount = this.state.activeAccount
     const unlockedData = await this.auth.unlock(method, password, passkeyKey)
