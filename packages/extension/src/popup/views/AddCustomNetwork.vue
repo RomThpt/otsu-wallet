@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { useWalletStore } from '../../stores/wallet'
 import Button from '../../components/common/Button.vue'
 import Input from '../../components/common/Input.vue'
+import SettingsPageShell from '../../components/settings/SettingsPageShell.vue'
+import SettingsSection from '../../components/settings/SettingsSection.vue'
 
 const router = useRouter()
 const wallet = useWalletStore()
@@ -68,7 +70,7 @@ async function handleSave() {
     })
 
     if (ok) {
-      router.back()
+      await router.replace('/settings/networks')
     } else {
       error.value = 'Failed to add network'
     }
@@ -81,55 +83,70 @@ async function handleSave() {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
-      <button class="p-1 rounded hover:bg-bg-hover transition-colors" @click="router.back()">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 19l-7-7 7-7"
+  <SettingsPageShell title="Add Network" back-to="/settings/networks" back-label="Back to Networks">
+    <form class="space-y-6 pt-2" @submit.prevent="handleSave">
+      <p class="px-1 text-sm leading-5 text-text-muted">
+        Connect Otsu to an XRPL-compatible WebSocket endpoint you trust.
+      </p>
+
+      <SettingsSection title="Network Details">
+        <div class="space-y-4 p-4">
+          <Input
+            v-model="name"
+            label="Network name"
+            autocomplete="off"
+            placeholder="My Private Ledger"
           />
-        </svg>
-      </button>
-      <h2 class="text-sm font-bold">Add Custom Network</h2>
-    </div>
+          <Input
+            v-model="url"
+            label="WebSocket URL"
+            autocomplete="url"
+            placeholder="wss://..."
+            hint="Secure wss:// endpoints are recommended."
+            :error="url && !isValidUrl ? 'Must start with wss:// or ws://' : ''"
+          />
+          <Input
+            v-model="explorerUrl"
+            type="url"
+            label="Explorer URL (optional)"
+            autocomplete="url"
+            placeholder="https://..."
+          />
+          <Input
+            v-model="faucetUrl"
+            type="url"
+            label="Faucet URL (optional)"
+            autocomplete="url"
+            placeholder="https://..."
+          />
+        </div>
+      </SettingsSection>
 
-    <div class="flex-1 overflow-y-auto p-4 space-y-4">
-      <Input v-model="name" label="Network Name" placeholder="e.g. My Private Ledger" />
+      <div class="space-y-3">
+        <div class="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            :disabled="!isValidUrl"
+            :loading="testing"
+            @click="testConnection"
+          >
+            Test Connection
+          </Button>
+          <p
+            v-if="testResult"
+            class="text-xs font-semibold"
+            :class="testResult === 'success' ? 'text-success' : 'text-danger'"
+            :role="testResult === 'error' ? 'alert' : 'status'"
+          >
+            {{ testResult === 'success' ? 'Connection successful' : 'Connection failed' }}
+          </p>
+        </div>
 
-      <div>
-        <Input
-          v-model="url"
-          label="RPC URL"
-          placeholder="wss://..."
-          :error="url && !isValidUrl ? 'Must start with wss:// or ws://' : ''"
-        />
-      </div>
-
-      <Input v-model="explorerUrl" label="Explorer URL (optional)" placeholder="https://..." />
-
-      <Input v-model="faucetUrl" label="Faucet URL (optional)" placeholder="https://..." />
-
-      <div class="flex items-center gap-2">
-        <Button
-          variant="secondary"
-          :disabled="!isValidUrl"
-          :loading="testing"
-          @click="testConnection"
-        >
-          Test Connection
+        <p v-if="error" class="form-error" role="alert">{{ error }}</p>
+        <Button type="submit" variant="ink" block :disabled="!canSave" :loading="saving">
+          Save Network
         </Button>
-        <span v-if="testResult === 'success'" class="text-xs text-success"> Connected </span>
-        <span v-else-if="testResult === 'error'" class="text-xs text-danger"> Failed </span>
       </div>
-
-      <p v-if="error" class="form-error" role="alert">{{ error }}</p>
-
-      <Button block :disabled="!canSave" :loading="saving" @click="handleSave">
-        Save Network
-      </Button>
-    </div>
-  </div>
+    </form>
+  </SettingsPageShell>
 </template>

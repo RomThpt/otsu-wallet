@@ -28,6 +28,10 @@ const portfolioRoutes = new Set([
 ])
 const showPortfolioBack = computed(() => portfolioRoutes.has(router.currentRoute.value.path))
 const isDashboard = computed(() => router.currentRoute.value.path === '/')
+const isSettingsFlow = computed(() => {
+  const path = router.currentRoute.value.path
+  return path === '/settings' || path.startsWith('/settings/') || path === '/address-book'
+})
 
 onMounted(async () => {
   try {
@@ -83,6 +87,7 @@ async function handleSwitchNetwork(networkId: string) {
 
     <template v-else>
       <header
+        v-if="!isSettingsFlow"
         class="relative z-10 flex shrink-0 items-center justify-between"
         :class="isDashboard ? 'h-[72px] px-4' : 'h-16 px-3'"
       >

@@ -6,6 +6,9 @@ import { useWalletStore } from '../../stores/wallet'
 import { useIdentityStore } from '../../stores/identity'
 import { useTheme } from '../../composables/useTheme'
 import Button from '../../components/common/Button.vue'
+import Input from '../../components/common/Input.vue'
+import SettingsPageShell from '../../components/settings/SettingsPageShell.vue'
+import SettingsSection from '../../components/settings/SettingsSection.vue'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
@@ -38,6 +41,29 @@ const THEME_OPTIONS = [
   { value: 'system' as const, label: 'System' },
 ]
 
+const SETTINGS_LINKS = [
+  {
+    title: 'Networks',
+    detail: 'RPC connections and custom networks',
+    path: '/settings/networks',
+  },
+  {
+    title: 'Address Book',
+    detail: 'Saved recipients and destination tags',
+    path: '/address-book',
+  },
+  {
+    title: 'Backup Seed Phrase',
+    detail: 'Reveal and secure your recovery phrase',
+    path: '/settings/backup',
+  },
+  {
+    title: 'Connected dApps',
+    detail: 'Review and revoke site permissions',
+    path: '/settings/dapps',
+  },
+]
+
 const blindSigning = computed(() => settingsStore.settings?.blindSigningEnabled ?? false)
 const autoLockMinutes = computed(() => settingsStore.settings?.autoLockMinutes ?? 15)
 const theme = computed(() => settingsStore.settings?.theme ?? 'system')
@@ -47,7 +73,10 @@ onMounted(async () => {
   try {
     await Promise.all([settingsStore.fetchSettings(), identity.fetchState()])
     passkeySupported.value =
-      typeof window !== 'undefined' && typeof window.PublicKeyCredential !== 'undefined'
+      typeof window !== 'undefined' &&
+      typeof window.PublicKeyCredential !== 'undefined' &&
+      typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function' &&
+      (await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())
   } catch (e) {
     error.value = (e as Error).message
   } finally {
@@ -170,304 +199,262 @@ async function handleUnlinkWallet() {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
-      <button class="p-1 rounded hover:bg-bg-hover transition-colors" @click="router.back()">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
-      </button>
-      <h2 class="text-sm font-bold">Settings</h2>
+  <SettingsPageShell title="Settings" back-to="/" back-label="Back to wallet">
+    <div v-if="loading" class="flex min-h-[420px] items-center justify-center" role="status">
+      <div class="h-6 w-6 animate-spin rounded-full border-2 border-text-muted/30 border-t-text" />
+      <span class="sr-only">Loading Settings</span>
     </div>
 
-    <div v-if="loading" class="flex-1 flex items-center justify-center">
-      <div class="animate-spin h-6 w-6 border-2 border-accent border-t-transparent rounded-full" />
-    </div>
+    <div v-else class="space-y-6 pt-2">
+      <p class="px-1 text-sm leading-5 text-text-muted">
+        Manage how Otsu looks, locks, and connects.
+      </p>
 
-    <div v-else class="flex-1 overflow-y-auto">
-      <!-- Blind Signing -->
-      <div class="px-4 py-3.5 border-b border-border">
-        <div class="flex items-center justify-between">
-          <div class="flex-1 mr-3">
-            <p class="text-sm font-medium">Blind Signing</p>
-            <p class="text-xs text-danger mt-0.5">
-              Allows signing transactions without full details. This is dangerous and may result in
-              loss of funds.
-            </p>
+      <SettingsSection title="Preferences">
+        <div class="flex min-h-16 items-center justify-between gap-4 px-4 py-3">
+          <div>
+            <p class="text-sm font-semibold">Auto-lock</p>
+            <p class="mt-0.5 text-xs text-text-muted">Lock after inactivity</p>
           </div>
-          <button
-            role="switch"
-            :aria-checked="blindSigning"
-            :class="[
-              'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-              blindSigning ? 'bg-accent' : 'bg-bg-hover',
-            ]"
-            @click="toggleBlindSigning"
+          <select
+            class="form-select !h-11 !w-32 !rounded-xl"
+            :value="autoLockMinutes"
+            aria-label="Auto-lock duration"
+            @change="setAutoLock(Number(($event.target as HTMLSelectElement).value))"
           >
-            <span
-              :class="[
-                'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform',
-                blindSigning ? 'translate-x-4' : 'translate-x-0',
-              ]"
-            />
-          </button>
+            <option v-for="option in AUTO_LOCK_OPTIONS" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
         </div>
-      </div>
-
-      <!-- Auto-Lock Duration -->
-      <div class="px-4 py-3.5 border-b border-border">
-        <p class="text-sm font-medium mb-2">Auto-Lock</p>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="option in AUTO_LOCK_OPTIONS"
-            :key="option.value"
-            :class="[
-              'px-3 py-1.5 text-xs rounded-md border transition-colors',
-              autoLockMinutes === option.value
-                ? 'border-accent bg-bg-subtle text-accent'
-                : 'border-border hover:bg-bg-hover',
-            ]"
-            @click="setAutoLock(option.value)"
+        <div class="px-4 py-3.5">
+          <p class="text-sm font-semibold">Theme</p>
+          <div
+            class="mt-3 grid grid-cols-3 rounded-2xl bg-bg-hover p-1"
+            role="group"
+            aria-label="Theme"
           >
-            {{ option.label }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Theme -->
-      <div class="px-4 py-3.5 border-b border-border">
-        <p class="text-sm font-medium mb-2">Theme</p>
-        <div class="flex gap-2">
-          <button
-            v-for="option in THEME_OPTIONS"
-            :key="option.value"
-            :class="[
-              'flex-1 px-3 py-2 text-xs rounded-md border transition-colors text-center',
-              theme === option.value
-                ? 'border-accent bg-bg-subtle text-accent'
-                : 'border-border hover:bg-bg-hover',
-            ]"
-            @click="setTheme(option.value)"
-          >
-            {{ option.label }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Security: Auth Method -->
-      <div class="px-4 py-3.5 border-b border-border">
-        <p class="text-sm font-medium mb-2">Security</p>
-        <p class="text-xs text-text-muted mb-2">Authentication method</p>
-        <div class="flex gap-2">
-          <button
-            :class="[
-              'flex-1 px-3 py-2 text-xs rounded-md border transition-colors text-center',
-              wallet.authMethod === 'password'
-                ? 'border-accent bg-bg-subtle text-accent'
-                : 'border-border hover:bg-bg-hover',
-            ]"
-            :disabled="changingAuth"
-            @click="switchToPassword"
-          >
-            Password
-          </button>
-          <button
-            :class="[
-              'flex-1 px-3 py-2 text-xs rounded-md border transition-colors text-center',
-              wallet.authMethod === 'passkey'
-                ? 'border-accent bg-bg-subtle text-accent'
-                : 'border-border hover:bg-bg-hover',
-            ]"
-            :disabled="changingAuth || !passkeySupported"
-            @click="switchToPasskey"
-          >
-            Passkey
-          </button>
-        </div>
-
-        <!-- Password fields when switching to password -->
-        <div v-if="showPasswordFields" class="mt-3 space-y-2">
-          <input
-            v-model="newPassword"
-            type="password"
-            placeholder="New password (min 8 chars)"
-            class="form-control"
-          />
-          <input
-            v-model="confirmPassword"
-            type="password"
-            placeholder="Confirm password"
-            class="form-control"
-          />
-          <div class="flex gap-2">
             <button
-              class="flex-1 px-3 py-1.5 text-xs rounded-md border border-border hover:bg-bg-hover transition-colors"
-              @click="cancelPasswordChange"
+              v-for="option in THEME_OPTIONS"
+              :key="option.value"
+              type="button"
+              class="min-h-11 rounded-xl px-2 text-xs font-semibold transition"
+              :class="
+                theme === option.value
+                  ? 'bg-text text-bg-subtle shadow-sm'
+                  : 'text-text-muted hover:text-text'
+              "
+              :aria-pressed="theme === option.value"
+              @click="setTheme(option.value)"
             >
-              Cancel
+              {{ option.label }}
             </button>
+          </div>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Security"
+        description="Control access to your wallet and transaction approvals."
+      >
+        <div class="px-4 py-3.5">
+          <p class="text-sm font-semibold">Authentication</p>
+          <div
+            class="mt-3 grid grid-cols-2 rounded-2xl bg-bg-hover p-1"
+            role="group"
+            aria-label="Authentication method"
+          >
             <button
-              class="flex-1 px-3 py-1.5 text-xs rounded-md bg-accent text-accent-fg hover:opacity-90 transition-colors"
+              type="button"
+              class="min-h-11 rounded-xl text-xs font-semibold transition disabled:opacity-50"
+              :class="
+                wallet.authMethod === 'password'
+                  ? 'bg-text text-bg-subtle shadow-sm'
+                  : 'text-text-muted hover:text-text'
+              "
+              :aria-pressed="wallet.authMethod === 'password'"
               :disabled="changingAuth"
               @click="switchToPassword"
             >
-              Confirm
+              Password
+            </button>
+            <button
+              type="button"
+              class="min-h-11 rounded-xl text-xs font-semibold transition disabled:opacity-50"
+              :class="
+                wallet.authMethod === 'passkey'
+                  ? 'bg-text text-bg-subtle shadow-sm'
+                  : 'text-text-muted hover:text-text'
+              "
+              :aria-pressed="wallet.authMethod === 'passkey'"
+              :disabled="changingAuth || !passkeySupported"
+              @click="switchToPasskey"
+            >
+              Passkey
             </button>
           </div>
-        </div>
 
-        <div v-if="changingAuth" class="mt-2 flex items-center gap-2">
-          <div
-            class="animate-spin h-3 w-3 border-2 border-accent border-t-transparent rounded-full"
-          />
-          <span class="text-xs text-text-muted">Switching...</span>
-        </div>
-
-        <p v-if="authError" class="mt-2 text-xs text-danger">{{ authError }}</p>
-
-        <p v-if="!passkeySupported" class="mt-1 text-xs text-text-muted">
-          Passkeys are not supported in this browser.
-        </p>
-      </div>
-
-      <!-- Identity -->
-      <div class="px-4 py-3.5 border-b border-border">
-        <p class="text-sm font-medium mb-2">Identity</p>
-
-        <template v-if="!identity.loggedIn">
-          <p class="text-xs text-text-muted mb-2">
-            Connect your xrp-identity account to link your wallet address to your profile.
-          </p>
-          <button
-            class="w-full px-3 py-2 text-xs rounded-md bg-accent text-accent-fg hover:opacity-90 transition-colors"
-            :disabled="identity.loading"
-            @click="handleIdentityLogin"
-          >
-            Connect Identity
-          </button>
-        </template>
-
-        <template v-else>
-          <div class="flex items-center gap-3 mb-3">
-            <img
-              v-if="identity.avatarUrl"
-              :src="identity.avatarUrl"
-              :alt="identity.displayName ?? ''"
-              class="h-8 w-8 rounded-full object-cover"
+          <div v-if="showPasswordFields" class="mt-4 space-y-3">
+            <Input
+              v-model="newPassword"
+              label="New password"
+              type="password"
+              autocomplete="new-password"
+              placeholder="At least 8 characters"
             />
-            <div
-              v-else
-              class="h-8 w-8 rounded-full bg-bg-subtle text-accent flex items-center justify-center text-xs font-medium"
-            >
-              {{ identity.initials }}
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium truncate">{{ identity.displayName }}</p>
-              <p v-if="identity.profile?.email" class="text-xs text-text-muted truncate">
-                {{ identity.profile.email }}
-              </p>
-            </div>
-          </div>
-
-          <!-- Wallet linking -->
-          <div v-if="identity.linkedAddress" class="mb-2">
-            <p class="text-xs text-text-muted mb-1">Linked wallet</p>
-            <div class="flex items-center justify-between">
-              <code class="text-xs font-mono truncate flex-1 mr-2">{{
-                identity.linkedAddress
-              }}</code>
-              <button
-                class="text-xs text-danger hover:opacity-80 whitespace-nowrap"
-                :disabled="identity.loading"
-                @click="handleUnlinkWallet"
+            <Input
+              v-model="confirmPassword"
+              label="Confirm password"
+              type="password"
+              autocomplete="new-password"
+              placeholder="Repeat password"
+            />
+            <div class="flex gap-2">
+              <Button variant="secondary" block @click="cancelPasswordChange">Cancel</Button>
+              <Button variant="ink" block :loading="changingAuth" @click="switchToPassword"
+                >Confirm</Button
               >
-                Unlink
-              </button>
             </div>
           </div>
-          <button
-            v-else
-            class="w-full px-3 py-1.5 text-xs rounded-md border border-accent text-accent hover:bg-bg-subtle transition-colors mb-2"
-            :disabled="identity.loading || !wallet.activeAccount"
-            @click="handleLinkWallet"
-          >
-            Link Current Wallet
-          </button>
 
-          <button
-            class="w-full px-3 py-1.5 text-xs rounded-md border border-border hover:bg-bg-hover transition-colors text-text-muted"
-            :disabled="identity.loading"
-            @click="handleIdentityLogout"
-          >
-            Disconnect
-          </button>
-        </template>
-
-        <div v-if="identity.loading" class="mt-2 flex items-center gap-2">
-          <div
-            class="animate-spin h-3 w-3 border-2 border-accent border-t-transparent rounded-full"
-          />
-          <span class="text-xs text-text-muted">Loading...</span>
+          <p v-if="changingAuth" class="mt-3 text-xs text-text-muted" role="status">
+            Updating authentication…
+          </p>
+          <p v-if="authError" class="mt-3 text-xs text-danger" role="alert">{{ authError }}</p>
+          <p v-if="!passkeySupported" class="mt-2 text-xs text-text-muted">
+            Passkeys are not supported on this device.
+          </p>
         </div>
 
-        <p v-if="identityError" class="mt-2 text-xs text-danger">{{ identityError }}</p>
-      </div>
+        <div class="flex items-center justify-between gap-4 px-4 py-3.5">
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold">Blind signing</p>
+            <p class="mt-0.5 text-xs leading-4 text-danger">
+              Sign transactions whose full effects cannot be decoded.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-label="Blind signing"
+            :aria-checked="blindSigning"
+            class="relative inline-flex h-11 w-14 shrink-0 items-center rounded-full p-1.5 transition focus:outline-none focus:ring-2 focus:ring-text focus:ring-offset-2 focus:ring-offset-bg-subtle"
+            :class="blindSigning ? 'bg-danger/10' : 'bg-bg-hover'"
+            @click="toggleBlindSigning"
+          >
+            <span
+              class="h-6 w-6 rounded-full shadow transition-transform"
+              :class="blindSigning ? 'translate-x-4 bg-danger' : 'bg-text-muted'"
+            />
+          </button>
+        </div>
+      </SettingsSection>
 
-      <!-- Networks -->
-      <button
-        class="w-full flex items-center justify-between px-4 py-3.5 border-b border-border hover:bg-bg-hover transition-colors"
-        @click="router.push('/settings/networks')"
-      >
-        <span class="text-sm font-medium">Networks</span>
-        <svg class="h-4 w-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
+      <SettingsSection title="Identity">
+        <div class="p-4">
+          <template v-if="!identity.loggedIn">
+            <p class="text-xs leading-5 text-text-muted">
+              Connect your xrp-identity profile and optionally link the current wallet address.
+            </p>
+            <Button
+              class="mt-3"
+              variant="ink"
+              block
+              :loading="identity.loading"
+              @click="handleIdentityLogin"
+              >Connect Identity</Button
+            >
+          </template>
+          <template v-else>
+            <div class="flex items-center gap-3">
+              <img
+                v-if="identity.avatarUrl"
+                :src="identity.avatarUrl"
+                :alt="identity.displayName ?? ''"
+                class="h-10 w-10 rounded-full object-cover"
+              />
+              <div
+                v-else
+                class="flex h-10 w-10 items-center justify-center rounded-full bg-bg-hover text-sm font-bold"
+              >
+                {{ identity.initials }}
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-semibold">{{ identity.displayName }}</p>
+                <p v-if="identity.profile?.email" class="truncate text-xs text-text-muted">
+                  {{ identity.profile.email }}
+                </p>
+              </div>
+            </div>
+            <div v-if="identity.linkedAddress" class="mt-3 rounded-xl bg-bg-hover p-3">
+              <p class="text-[11px] text-text-muted">Linked wallet</p>
+              <div class="mt-1 flex items-center gap-2">
+                <code class="min-w-0 flex-1 truncate text-xs">{{ identity.linkedAddress }}</code>
+                <button
+                  type="button"
+                  class="flex min-h-11 items-center rounded-xl px-2 text-xs font-semibold text-danger hover:bg-danger/10 focus:outline-none focus:ring-2 focus:ring-danger"
+                  :disabled="identity.loading"
+                  @click="handleUnlinkWallet"
+                >
+                  Unlink
+                </button>
+              </div>
+            </div>
+            <Button
+              v-else
+              class="mt-3"
+              variant="secondary"
+              block
+              :disabled="identity.loading || !wallet.activeAccount"
+              @click="handleLinkWallet"
+              >Link Current Wallet</Button
+            >
+            <Button
+              class="mt-2"
+              variant="ghost"
+              block
+              :disabled="identity.loading"
+              @click="handleIdentityLogout"
+              >Disconnect Identity</Button
+            >
+          </template>
+          <p v-if="identityError" class="mt-3 text-xs text-danger" role="alert">
+            {{ identityError }}
+          </p>
+        </div>
+      </SettingsSection>
 
-      <!-- Address Book -->
-      <button
-        class="w-full flex items-center justify-between px-4 py-3.5 border-b border-border hover:bg-bg-hover transition-colors"
-        @click="router.push('/address-book')"
-      >
-        <span class="text-sm font-medium">Address Book</span>
-        <svg class="h-4 w-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
+      <SettingsSection title="Wallet">
+        <button
+          v-for="item in SETTINGS_LINKS"
+          :key="item.path"
+          type="button"
+          class="flex min-h-[68px] w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-bg-hover focus:outline-none focus:ring-2 focus:ring-inset focus:ring-text"
+          @click="router.push(item.path)"
+        >
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm font-semibold">{{ item.title }}</span>
+            <span class="mt-0.5 block text-xs text-text-muted">{{ item.detail }}</span>
+          </span>
+          <svg
+            viewBox="0 0 24 24"
+            class="h-4 w-4 shrink-0 text-text-muted"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M9 6l6 6-6 6"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </SettingsSection>
 
-      <!-- Backup Seed Phrase -->
-      <button
-        class="w-full flex items-center justify-between px-4 py-3.5 border-b border-border hover:bg-bg-hover transition-colors"
-        @click="router.push('/settings/backup')"
-      >
-        <span class="text-sm font-medium">Backup Seed Phrase</span>
-        <svg class="h-4 w-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-
-      <!-- Connected dApps -->
-      <button
-        class="w-full flex items-center justify-between px-4 py-3.5 border-b border-border hover:bg-bg-hover transition-colors"
-        @click="router.push('/settings/dapps')"
-      >
-        <span class="text-sm font-medium">Connected dApps</span>
-        <svg class="h-4 w-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-
-      <!-- Lock Wallet -->
-      <div class="p-4">
-        <Button variant="danger" block @click="handleLock"> Lock Wallet </Button>
-      </div>
+      <Button variant="danger" block @click="handleLock">Lock Wallet</Button>
+      <p v-if="error" class="text-center text-xs text-danger" role="alert">{{ error }}</p>
     </div>
-
-    <p v-if="error" class="px-4 py-2 text-xs text-danger">{{ error }}</p>
-  </div>
+  </SettingsPageShell>
 </template>

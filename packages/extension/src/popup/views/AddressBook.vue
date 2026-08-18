@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
 import Button from '../../components/common/Button.vue'
 import Input from '../../components/common/Input.vue'
-
-const router = useRouter()
+import SettingsPageShell from '../../components/settings/SettingsPageShell.vue'
+import SettingsSection from '../../components/settings/SettingsSection.vue'
 
 interface Contact {
   name: string
@@ -69,8 +68,9 @@ function addContact() {
   resetForm()
 }
 
-function editContact(index: number) {
-  const contact = contacts.value[index]
+function editContact(contact: Contact) {
+  const index = contacts.value.indexOf(contact)
+  if (index < 0) return
   newName.value = contact.name
   newAddress.value = contact.address
   newTag.value = contact.tag ?? ''
@@ -79,8 +79,9 @@ function editContact(index: number) {
   showForm.value = true
 }
 
-function deleteContact(index: number) {
-  if (!confirm(`Delete ${contacts.value[index].name}?`)) return
+function deleteContact(contact: Contact) {
+  const index = contacts.value.indexOf(contact)
+  if (index < 0 || !confirm(`Delete ${contact.name}?`)) return
   contacts.value.splice(index, 1)
   saveContacts()
 }
@@ -94,96 +95,151 @@ function resetForm() {
   showForm.value = false
 }
 
-loadContacts()
+onMounted(loadContacts)
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <div class="flex items-center justify-between px-4 py-3 border-b border-border">
-      <div class="flex items-center gap-2">
-        <button aria-label="Back" class="p-1 rounded hover:bg-bg-hover" @click="router.back()">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-        <h2 class="text-sm font-bold">Address Book</h2>
-      </div>
-      <Button size="sm" @click="showForm = !showForm">{{ showForm ? 'Cancel' : 'Add' }}</Button>
-    </div>
+  <SettingsPageShell title="Address Book" back-to="/settings" back-label="Back to Settings">
+    <template #action>
+      <Button
+        :variant="showForm ? 'secondary' : 'ink'"
+        @click="showForm ? resetForm() : (showForm = true)"
+      >
+        {{ showForm ? 'Cancel' : 'Add' }}
+      </Button>
+    </template>
 
-    <div class="flex-1 overflow-y-auto">
-      <!-- Add/Edit form -->
-      <div v-if="showForm" class="p-4 space-y-2 border-b border-border">
-        <Input v-model="newName" label="Name" placeholder="Contact name" />
-        <Input v-model="newAddress" label="Address" placeholder="rAddress..." />
-        <Input v-model="newTag" label="Destination Tag (optional)" placeholder="e.g. 12345" />
-        <Input v-model="newNotes" label="Notes (optional)" placeholder="..." />
-        <Button size="sm" block :disabled="!newName || !newAddress" @click="addContact">
-          {{ editIndex !== null ? 'Update' : 'Save' }}
-        </Button>
-      </div>
+    <div class="space-y-6 pt-2">
+      <p class="px-1 text-sm leading-5 text-text-muted">
+        Save trusted recipients and their destination tags.
+      </p>
 
-      <!-- Search -->
-      <div v-if="contacts.length > 0" class="px-4 py-2">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search contacts..."
-          class="form-control"
-        />
-      </div>
+      <SettingsSection v-if="showForm" :title="editIndex !== null ? 'Edit Contact' : 'New Contact'">
+        <form class="space-y-4 p-4" @submit.prevent="addContact">
+          <Input v-model="newName" label="Name" autocomplete="off" placeholder="Contact name" />
+          <Input
+            v-model="newAddress"
+            label="XRPL address"
+            autocomplete="off"
+            placeholder="rAddress..."
+          />
+          <Input
+            v-model="newTag"
+            label="Destination tag (optional)"
+            autocomplete="off"
+            placeholder="12345"
+          />
+          <Input
+            v-model="newNotes"
+            label="Notes (optional)"
+            autocomplete="off"
+            placeholder="How you know this address"
+          />
+          <Button
+            type="submit"
+            variant="ink"
+            block
+            :disabled="!newName.trim() || !newAddress.trim()"
+          >
+            {{ editIndex !== null ? 'Update Contact' : 'Save Contact' }}
+          </Button>
+        </form>
+      </SettingsSection>
 
-      <!-- Contact list -->
+      <Input
+        v-if="contacts.length > 0"
+        v-model="searchQuery"
+        label="Search contacts"
+        placeholder="Name or address"
+      />
+
       <div
         v-if="filteredContacts.length === 0 && !showForm"
-        class="flex-1 flex items-center justify-center p-4"
+        class="flex min-h-64 flex-col items-center justify-center rounded-[22px] border border-border bg-bg-subtle px-8 text-center shadow-card"
       >
-        <div class="text-center">
-          <p class="text-sm text-text-muted">No contacts</p>
-          <p class="text-xs text-text-muted mt-1">Add addresses for quick access</p>
-        </div>
+        <span
+          class="flex h-14 w-14 items-center justify-center rounded-full bg-bg-hover text-text-muted"
+        >
+          <svg
+            class="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M16 20v-1.5a4.5 4.5 0 00-4.5-4.5h-3A4.5 4.5 0 004 18.5V20m6-10a3 3 0 100-6 3 3 0 000 6zm7-1v6m3-3h-6"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+        <h2 class="mt-4 text-base font-bold">
+          {{ searchQuery ? 'No matching contacts' : 'No contacts yet' }}
+        </h2>
+        <p class="mt-1 text-xs leading-5 text-text-muted">
+          {{ searchQuery ? 'Try a different name or address.' : 'Add addresses you use often.' }}
+        </p>
       </div>
 
-      <div v-else class="divide-y divide-border">
+      <SettingsSection v-else-if="filteredContacts.length > 0" title="Contacts">
         <div
-          v-for="(contact, i) in filteredContacts"
-          :key="contact.address"
-          class="px-4 py-3 flex items-center justify-between"
+          v-for="contact in filteredContacts"
+          :key="`${contact.address}:${contact.tag ?? ''}`"
+          class="flex min-h-[76px] items-center gap-2 px-3 py-3"
         >
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium">{{ contact.name }}</p>
-            <p class="text-xs text-text-muted font-mono truncate">{{ contact.address }}</p>
-            <p v-if="contact.tag" class="text-[10px] text-text-muted">Tag: {{ contact.tag }}</p>
+          <div class="min-w-0 flex-1 pl-1">
+            <p class="truncate text-sm font-semibold">{{ contact.name }}</p>
+            <p class="mt-0.5 truncate font-mono text-xs text-text-muted">{{ contact.address }}</p>
+            <p v-if="contact.tag" class="mt-1 text-[11px] text-text-muted">
+              Destination tag {{ contact.tag }}
+            </p>
           </div>
-          <div class="flex gap-1 ml-2">
-            <button class="p-1 text-text-muted hover:text-text" @click="editContact(i)">
-              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
-            </button>
-            <button class="p-1 text-text-muted hover:text-danger" @click="deleteContact(i)">
-              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
-            </button>
-          </div>
+          <button
+            type="button"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-text-muted transition hover:bg-bg-hover hover:text-text focus:outline-none focus:ring-2 focus:ring-text"
+            :aria-label="`Edit ${contact.name}`"
+            @click="editContact(contact)"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.41-9.41a2 2 0 112.82 2.82L11.83 15H9v-2.83l8.59-8.58z"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-text-muted transition hover:bg-danger/10 hover:text-danger focus:outline-none focus:ring-2 focus:ring-danger"
+            :aria-label="`Delete ${contact.name}`"
+            @click="deleteContact(contact)"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                d="M19 7l-.87 12.14A2 2 0 0116.14 21H7.86a2 2 0 01-2-1.86L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
         </div>
-      </div>
+      </SettingsSection>
     </div>
-  </div>
+  </SettingsPageShell>
 </template>

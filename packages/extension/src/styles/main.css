@@ -55,9 +55,9 @@
     --accent: 0 122 255;
     --accent-fg: 255 255 255;
     --link: 0 102 204;
-    --success: 36 138 61;
+    --success: 48 209 88;
     --warning: 179 86 0;
-    --danger: 215 0 21;
+    --danger: 255 69 58;
     --card-shadow: 0 1px 2px rgba(28, 28, 30, 0.04), 0 8px 24px rgba(28, 28, 30, 0.05);
   }
 
@@ -72,9 +72,7 @@
     --accent: 10 132 255;
     --accent-fg: 255 255 255;
     --link: 64 156 255;
-    --success: 48 209 88;
     --warning: 255 159 10;
-    --danger: 255 69 58;
     --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 10px 28px rgba(0, 0, 0, 0.28);
   }
 

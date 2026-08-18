@@ -138,4 +138,31 @@ describe('popup shell', () => {
     await wrapper.get('[aria-label="Back to wallet overview"]').trigger('click')
     expect(mocks.push).toHaveBeenCalledWith('/')
   })
+
+  it.each([
+    '/settings',
+    '/settings/networks',
+    '/settings/networks/add',
+    '/settings/backup',
+    '/settings/dapps',
+    '/address-book',
+  ])('lets the immersive Settings screen own the header on %s', async (path) => {
+    mocks.currentRoute.value.path = path
+    const wrapper = mount(App, {
+      global: {
+        stubs: {
+          AccountSelector: true,
+          NetworkSelector: true,
+          OfflineBanner: true,
+          Unlock: true,
+          RouterView: { template: '<div data-test="route-view" />' },
+          RouterLink: true,
+        },
+      },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('header').exists()).toBe(false)
+    expect(wrapper.find('[data-test="route-view"]').exists()).toBe(true)
+  })
 })

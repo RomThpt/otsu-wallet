@@ -1,137 +1,163 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '../../stores/wallet'
 import { networkIndicatorClass } from '../../lib/network-appearance'
+import Button from '../../components/common/Button.vue'
+import SettingsPageShell from '../../components/settings/SettingsPageShell.vue'
+import SettingsSection from '../../components/settings/SettingsSection.vue'
 
 const router = useRouter()
 const wallet = useWalletStore()
+const pendingNetworkId = ref<string | null>(null)
+const removingNetworkId = ref<string | null>(null)
+const error = ref('')
 
 onMounted(async () => {
   await wallet.fetchNetworks()
 })
 
 async function handleSwitch(networkId: string) {
-  await wallet.switchNetwork(networkId)
-  await Promise.all([wallet.fetchBalance(), wallet.fetchXrpPrice()])
+  if (pendingNetworkId.value) return
+  pendingNetworkId.value = networkId
+  error.value = ''
+  try {
+    await wallet.switchNetwork(networkId)
+    await Promise.all([wallet.fetchBalance(), wallet.fetchXrpPrice()])
+  } catch (e) {
+    error.value = (e as Error).message
+  } finally {
+    pendingNetworkId.value = null
+  }
 }
 
-async function handleRemove(networkId: string) {
-  const ok = await wallet.removeCustomNetwork(networkId)
-  if (ok) {
+async function handleRemove(networkId: string, networkName: string) {
+  if (!confirm(`Remove ${networkName}?`)) return
+  removingNetworkId.value = networkId
+  error.value = ''
+  try {
+    const removed = await wallet.removeCustomNetwork(networkId)
+    if (!removed) error.value = `Could not remove ${networkName}`
+  } catch (e) {
+    error.value = (e as Error).message
+  } finally {
+    removingNetworkId.value = null
   }
 }
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <div class="flex items-center justify-between px-4 py-3 border-b border-border">
-      <div class="flex items-center gap-2">
-        <button class="p-1 rounded hover:bg-bg-hover transition-colors" @click="router.back()">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <SettingsPageShell title="Networks" back-to="/settings" back-label="Back to Settings">
+    <template #action>
+      <Button variant="ink" @click="router.push('/settings/networks/add')">Add</Button>
+    </template>
+
+    <div class="space-y-6 pt-2">
+      <p class="px-1 text-sm leading-5 text-text-muted">
+        Choose the network Otsu uses for balances, activity, and transactions.
+      </p>
+
+      <SettingsSection title="Built-in Networks">
+        <button
+          v-for="config in Object.values(wallet.predefinedNetworks)"
+          :key="config.id"
+          type="button"
+          class="flex min-h-[68px] w-full items-center gap-3 px-4 py-3 transition hover:bg-bg-hover focus:outline-none focus:ring-2 focus:ring-inset focus:ring-text"
+          :aria-pressed="config.id === wallet.network"
+          :disabled="pendingNetworkId !== null"
+          @click="handleSwitch(config.id)"
+        >
+          <span
+            class="h-3 w-3 shrink-0 rounded-full ring-4 ring-bg-hover"
+            :class="networkIndicatorClass(config)"
+          />
+          <div class="min-w-0 flex-1 text-left">
+            <p class="text-sm font-semibold text-text">{{ config.name }}</p>
+            <p class="mt-0.5 truncate text-xs text-text-muted">{{ config.url }}</p>
+          </div>
+          <svg
+            v-if="config.id === wallet.network"
+            class="h-5 w-5 shrink-0 text-text"
+            fill="none"
+            viewBox="0 0 24 24"
+            aria-label="Selected"
+          >
             <path
+              d="M6 12.5l4 4L18 8"
+              stroke="currentColor"
+              stroke-width="1.8"
               stroke-linecap="round"
               stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
             />
           </svg>
         </button>
-        <h2 class="text-sm font-bold">Networks</h2>
-      </div>
-      <button
-        class="text-xs text-accent font-medium px-2 py-1 rounded hover:bg-bg-subtle transition-colors"
-        @click="router.push('/settings/networks/add')"
-      >
-        + Add
-      </button>
-    </div>
+      </SettingsSection>
 
-    <div class="flex-1 overflow-y-auto">
-      <!-- Predefined networks -->
-      <div class="px-4 py-2">
-        <p class="text-[11px] font-medium text-text-muted uppercase tracking-wide mb-1">
-          Built-in Networks
-        </p>
-      </div>
-      <button
-        v-for="config in Object.values(wallet.predefinedNetworks)"
-        :key="config.id"
-        class="w-full flex items-center gap-3 px-4 py-3 hover:bg-bg-hover transition-colors"
-        @click="handleSwitch(config.id)"
-      >
-        <span class="h-2.5 w-2.5 shrink-0 rounded-full" :class="networkIndicatorClass(config)" />
-        <div class="flex-1 min-w-0 text-left">
-          <p class="text-sm font-medium text-text">{{ config.name }}</p>
-          <p class="text-xs text-text-muted truncate">{{ config.url }}</p>
-        </div>
-        <svg
-          v-if="config.id === wallet.network"
-          class="w-4 h-4 text-accent shrink-0"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-            clip-rule="evenodd"
-          />
-        </svg>
-      </button>
-
-      <!-- Custom networks -->
-      <template v-if="wallet.customNetworks.length > 0">
-        <div class="px-4 py-2 mt-2">
-          <p class="text-[11px] font-medium text-text-muted uppercase tracking-wide mb-1">
-            Custom Networks
-          </p>
-        </div>
+      <SettingsSection v-if="wallet.customNetworks.length > 0" title="Custom Networks">
         <div
           v-for="config in wallet.customNetworks"
           :key="config.id"
-          class="flex items-center gap-3 px-4 py-3 hover:bg-bg-hover transition-colors"
+          class="flex min-h-[68px] items-center gap-2 px-3 py-2"
         >
           <button
-            class="flex items-center gap-3 flex-1 min-w-0 text-left"
+            type="button"
+            class="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-2 text-left transition hover:bg-bg-hover focus:outline-none focus:ring-2 focus:ring-text"
+            :aria-pressed="config.id === wallet.network"
+            :disabled="pendingNetworkId !== null || removingNetworkId === config.id"
             @click="handleSwitch(config.id)"
           >
             <span
-              class="h-2.5 w-2.5 shrink-0 rounded-full"
+              class="h-3 w-3 shrink-0 rounded-full ring-4 ring-bg-hover"
               :class="networkIndicatorClass(config)"
             />
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-text">{{ config.name }}</p>
-              <p class="text-xs text-text-muted truncate">{{ config.url }}</p>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-text">{{ config.name }}</p>
+              <p class="mt-0.5 truncate text-xs text-text-muted">{{ config.url }}</p>
             </div>
             <svg
               v-if="config.id === wallet.network"
-              class="w-4 h-4 text-accent shrink-0"
-              fill="currentColor"
-              viewBox="0 0 20 20"
+              class="h-5 w-5 shrink-0 text-text"
+              fill="none"
+              viewBox="0 0 24 24"
+              aria-label="Selected"
             >
               <path
-                fill-rule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clip-rule="evenodd"
+                d="M6 12.5l4 4L18 8"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
               />
             </svg>
           </button>
           <button
-            class="p-1 rounded text-text-muted hover:text-danger hover:bg-bg-subtle transition-colors shrink-0"
-            title="Remove network"
-            @click="handleRemove(config.id)"
+            type="button"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-text-muted transition hover:bg-danger/10 hover:text-danger focus:outline-none focus:ring-2 focus:ring-danger disabled:opacity-50"
+            :aria-label="`Remove ${config.name}`"
+            :disabled="removingNetworkId !== null || pendingNetworkId !== null"
+            @click="handleRemove(config.id, config.name)"
           >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
               <path
+                d="M8 8l8 8m0-8-8 8"
+                stroke="currentColor"
+                stroke-width="1.8"
                 stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
               />
             </svg>
           </button>
         </div>
-      </template>
+      </SettingsSection>
+      <p v-if="pendingNetworkId" class="text-center text-xs text-text-muted" role="status">
+        Switching network…
+      </p>
+      <p v-if="error" class="text-center text-xs text-danger" role="alert">{{ error }}</p>
     </div>
-  </div>
+  </SettingsPageShell>
 </template>

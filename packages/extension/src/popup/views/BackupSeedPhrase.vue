@@ -3,7 +3,8 @@ import { ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '../../stores/wallet'
 import Button from '../../components/common/Button.vue'
-import Card from '../../components/common/Card.vue'
+import Input from '../../components/common/Input.vue'
+import SettingsPageShell from '../../components/settings/SettingsPageShell.vue'
 
 const router = useRouter()
 const wallet = useWalletStore()
@@ -76,9 +77,16 @@ function clearMnemonic() {
 
 let clipboardTimer: ReturnType<typeof setTimeout> | null = null
 
-function copyToClipboard() {
-  navigator.clipboard.writeText(words.value.join(' '))
-  copied.value = true
+async function copyToClipboard() {
+  try {
+    await navigator.clipboard.writeText(words.value.join(' '))
+    copied.value = true
+    error.value = ''
+  } catch {
+    copied.value = false
+    error.value = 'Could not copy the recovery phrase. Write it down manually.'
+    return
+  }
 
   if (clipboardTimer) clearTimeout(clipboardTimer)
   clipboardTimer = setTimeout(async () => {
@@ -90,6 +98,11 @@ function copyToClipboard() {
     copied.value = false
     clipboardTimer = null
   }, 15000)
+}
+
+function finishBackup() {
+  clearMnemonic()
+  router.replace('/settings')
 }
 
 onUnmounted(() => {
@@ -107,101 +120,97 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
-      <button
-        class="p-1 rounded hover:bg-bg-hover transition-colors"
-        @click="router.push('/settings')"
-      >
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
-      </button>
-      <h2 class="text-sm font-bold">Backup Seed Phrase</h2>
-    </div>
-
-    <div class="flex-1 overflow-y-auto p-4 space-y-4">
-      <!-- Verification Step -->
+  <SettingsPageShell title="Backup Seed Phrase" back-to="/settings" back-label="Back to Settings">
+    <div class="space-y-5 pt-2">
       <template v-if="step === 'verify'">
-        <div class="rounded-lg bg-bg-subtle border border-danger/30 p-3">
-          <p class="text-xs text-danger">
-            Anyone with your seed phrase can access your funds. Never share it with anyone.
+        <div class="text-center">
+          <div
+            class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-danger/10 text-danger"
+          >
+            <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" aria-hidden="true">
+              <path
+                d="M12 3l9 16H3L12 3z"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12 9v4m0 3h.01"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+              />
+            </svg>
+          </div>
+          <h2 class="mt-4 text-xl font-bold tracking-tight">Reveal your recovery phrase</h2>
+          <p class="mt-2 text-sm leading-5 text-text-muted">
+            Anyone with these words can control your funds. Make sure nobody can see your screen.
           </p>
         </div>
 
-        <!-- Password verification -->
-        <template v-if="wallet.authMethod === 'password'">
-          <div class="form-field">
-            <label class="form-label">Enter Password</label>
-            <input
+        <div class="rounded-[22px] border border-border bg-bg-subtle p-4 shadow-card">
+          <template v-if="wallet.authMethod === 'password'">
+            <Input
               v-model="password"
+              label="Wallet password"
               type="password"
+              autocomplete="current-password"
               placeholder="Your wallet password"
-              class="form-control"
               @keyup.enter="revealWithPassword"
             />
-          </div>
+            <Button
+              class="mt-4"
+              variant="ink"
+              block
+              :loading="loading"
+              :disabled="!password"
+              @click="revealWithPassword"
+            >
+              Reveal Seed Phrase
+            </Button>
+          </template>
 
-          <p v-if="error" class="form-error">{{ error }}</p>
-
-          <Button block :loading="loading" :disabled="!password" @click="revealWithPassword">
-            Reveal Seed Phrase
+          <Button v-else variant="ink" block :loading="loading" @click="revealWithPasskey">
+            Verify with Passkey
           </Button>
-        </template>
 
-        <!-- Passkey verification -->
-        <template v-else>
-          <p v-if="error" class="form-error">{{ error }}</p>
-
-          <Button block :loading="loading" @click="revealWithPasskey">
-            <span class="flex items-center justify-center gap-2">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"
-                />
-              </svg>
-              Verify with Passkey
-            </span>
-          </Button>
-        </template>
+          <p v-if="error" class="mt-3 text-center text-xs text-danger" role="alert">{{ error }}</p>
+        </div>
       </template>
 
-      <!-- Reveal Step -->
       <template v-else>
-        <div class="rounded-lg bg-bg-subtle border border-danger/30 p-3">
-          <p class="text-xs text-danger">
-            This will auto-clear in 60 seconds. Write down the words and store them safely.
+        <div class="rounded-2xl border border-warning/30 bg-warning/10 p-3.5">
+          <p class="text-xs leading-5 text-warning">
+            This screen clears automatically in 60 seconds. Write the words down in order and store
+            them offline.
           </p>
         </div>
 
-        <Card>
-          <div class="grid grid-cols-3 gap-2">
-            <div
+        <div class="overflow-hidden rounded-[22px] border border-border bg-bg-subtle shadow-card">
+          <ol class="grid grid-cols-2 gap-x-3 gap-y-1 p-4">
+            <li
               v-for="(word, index) in words"
               :key="index"
-              class="flex items-center gap-2 rounded-lg bg-bg-subtle px-3 py-2"
+              class="flex min-w-0 items-center gap-2 rounded-xl px-1.5 py-2"
             >
-              <span class="text-xs text-text-muted w-5 text-right">{{ index + 1 }}</span>
-              <span class="text-sm font-mono">{{ word }}</span>
-            </div>
-          </div>
-        </Card>
+              <span class="w-5 shrink-0 text-right text-xs text-text-muted">{{ index + 1 }}</span>
+              <span class="min-w-0 break-words font-mono text-xs font-semibold text-text">{{
+                word
+              }}</span>
+            </li>
+          </ol>
+        </div>
+
+        <p v-if="error" class="text-center text-xs text-danger" role="alert">{{ error }}</p>
 
         <div class="flex gap-3">
           <Button variant="secondary" block @click="copyToClipboard">
-            {{ copied ? 'Copied' : 'Copy' }}
+            {{ copied ? 'Copied' : 'Copy Phrase' }}
           </Button>
-          <Button block @click="clearMnemonic"> Done </Button>
+          <Button variant="ink" block @click="finishBackup"> Done </Button>
         </div>
+        <p class="sr-only" aria-live="polite">{{ copied ? 'Recovery phrase copied' : '' }}</p>
       </template>
     </div>
-  </div>
+  </SettingsPageShell>
 </template>
